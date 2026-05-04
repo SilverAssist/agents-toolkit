@@ -176,7 +176,7 @@ export default function UserList({ users }: UserListProps) {
 
 ```tsx
 export default function Form() {
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     // ...
   };
