@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-05-04
+
+### Added
+
+- `--global` / `-g` flag for `install` and `update` commands — installs to `~/.copilot/` for user-level availability across all projects
+- Global config support: `~/.agents-toolkit.json` is created automatically and used as fallback when no project-level config exists
+- Config resolution cascade: CLI flags → project `.agents-toolkit.json` → global `~/.agents-toolkit.json` → defaults
+- Two new regression tests for `--global` flag and help output (17 tests total)
+
+### Changed
+
+- Project-level files (`AGENTS.md`, `copilot-instructions.md`) are skipped when installing with `--global` since they are project-specific
+- README updated with Global Install section, updated CLI reference table, and command comparison
+
+### Fixed
+
+- Renamed `.copilot-prompts.json` to `.agents-toolkit.json` in the repository root (config file was already using the new name in code)
+- Updated `.npmignore` to exclude `.agents-toolkit.json` instead of the old `.copilot-prompts.json`
+
 ## [2.0.0] - 2026-05-04
 
 ### Changed

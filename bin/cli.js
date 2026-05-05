@@ -148,18 +148,34 @@ function info(message) {
 }
 
 /**
- * Get the target directory for Copilot installation
- * @returns {string} Path to .github directory
+ * Get the user home directory
+ * @returns {string} Path to home directory
  */
-function getTargetDir() {
+function getHomeDir() {
+  return process.env.HOME || process.env.USERPROFILE || '';
+}
+
+/**
+ * Get the target directory for Copilot installation
+ * @param {boolean} global - Install to user-level ~/.copilot/
+ * @returns {string} Path to .github or ~/.copilot directory
+ */
+function getTargetDir(global = false) {
+  if (global) {
+    return path.join(getHomeDir(), '.copilot');
+  }
   return path.join(process.cwd(), '.github');
 }
 
 /**
  * Get the target directory for Claude Code installation
+ * @param {boolean} global - Install to user-level ~/.claude/
  * @returns {string} Path to .claude directory
  */
-function getClaudeTargetDir() {
+function getClaudeTargetDir(global = false) {
+  if (global) {
+    return path.join(getHomeDir(), '.claude');
+  }
   return path.join(process.cwd(), '.claude');
 }
 
@@ -285,20 +301,21 @@ function getChangeCount(result, dryRun) {
   return dryRun ? result.planned : result.written;
 }
 
-function ensureConfigFile({ dryRun = false } = {}) {
-  const configPath = path.join(process.cwd(), '.agents-toolkit.json');
+function ensureConfigFile({ dryRun = false, global = false } = {}) {
+  const configDir = global ? getHomeDir() : process.cwd();
+  const configPath = path.join(configDir, '.agents-toolkit.json');
 
   if (fs.existsSync(configPath)) {
     return { written: 0, planned: 0 };
   }
 
   if (dryRun) {
-    info('Would create .agents-toolkit.json');
+    info(`Would create ${global ? '~' : '.'}/.agents-toolkit.json`);
     return { written: 0, planned: 1 };
   }
 
   fs.writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
-  success('Created .agents-toolkit.json config file');
+  success(`Created ${global ? '~' : '.'}/.agents-toolkit.json config file`);
   return { written: 1, planned: 1 };
 }
 
@@ -422,10 +439,11 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     force = false,
     append = false,
     dryRun = false,
+    global: isGlobal = false,
     filters = { stack: 'all', tracker: 'all' },
   } = options;
   const isCodex = target === 'codex';
-  const targetDir = getTargetDir();
+  const targetDir = getTargetDir(isGlobal);
   const scope = getInstallScope(options);
   let totalChanges = 0;
 
@@ -437,7 +455,11 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
   const promptsFilter = makeFilter('prompts');
   const partialsFilter = makeFilter('partials');
 
-  log(isCodex ? '\n⚡ Codex Installer\n' : '\n📦 Agents Toolkit Installer\n', 'bright');
+  log(isCodex ? '\n⚡ Codex Installer\n' : isGlobal ? '\n🌐 Agents Toolkit Global Installer\n' : '\n📦 Agents Toolkit Installer\n', 'bright');
+
+  if (isGlobal) {
+    info(`Target: ${targetDir}\n`);
+  }
 
   if (dryRun) {
     info('Dry run mode - no files will be copied\n');
@@ -473,15 +495,15 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     }
   }
 
-  const configResult = ensureConfigFile({ dryRun });
+  const configResult = ensureConfigFile({ dryRun, global: isGlobal });
   totalChanges += getChangeCount(configResult, dryRun);
 
-  if (scope.shouldInstallInstructions && !isCodex) {
+  if (!isGlobal && scope.shouldInstallInstructions && !isCodex) {
     const copilotInstructionsResult = installCopilotInstructions({ targetDir, dryRun });
     totalChanges += getChangeCount(copilotInstructionsResult, dryRun);
   }
 
-  if (scope.shouldInstallInstructions) {
+  if (!isGlobal && scope.shouldInstallInstructions) {
     const agentsTemplatePath = isCodex
       ? path.join(TEMPLATES_DIR, 'agents', 'AGENTS.codex.md')
       : path.join(TEMPLATES_DIR, 'agents', 'AGENTS.md');
@@ -495,14 +517,20 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
   } else if (totalChanges > 0) {
     success(`Installation complete! ${totalChanges} files installed.`);
     console.log('');
-    info('Next steps:');
-    console.log('  1. Update .agents-toolkit.json with your Jira project key');
-    if (isCodex) {
-      console.log('  2. Review AGENTS.md in the project root');
-      console.log('  3. Run Codex from this project root');
+    if (isGlobal) {
+      info('Next steps:');
+      console.log(`  1. Update ~/.agents-toolkit.json with your defaults`);
+      console.log('  2. Instructions/prompts/skills are now available globally in VS Code');
     } else {
-      console.log('  2. Configure Atlassian MCP in VS Code');
-      console.log('  3. Run prompts via Command Palette > "GitHub Copilot: Run Prompt"');
+      info('Next steps:');
+      console.log('  1. Update .agents-toolkit.json with your Jira project key');
+      if (isCodex) {
+        console.log('  2. Review AGENTS.md in the project root');
+        console.log('  3. Run Codex from this project root');
+      } else {
+        console.log('  2. Configure Atlassian MCP in VS Code');
+        console.log('  3. Run prompts via Command Palette > "GitHub Copilot: Run Prompt"');
+      }
     }
   } else {
     warn('No new files installed. Use --force to overwrite existing files.');
@@ -531,10 +559,10 @@ function installCodex(options = {}) {
  * @param {Object} options - Install options
  */
 function installClaude(options = {}) {
-  const { force = false, dryRun = false, filters = { stack: 'all', tracker: 'all' } } = options;
+  const { force = false, dryRun = false, global: isGlobal = false, filters = { stack: 'all', tracker: 'all' } } = options;
   const scope = getInstallScope(options);
-  const claudeDir = getClaudeTargetDir();
-  const githubDir = getTargetDir();
+  const claudeDir = getClaudeTargetDir(isGlobal);
+  const githubDir = getTargetDir(isGlobal);
   let totalChanges = 0;
 
   const makeFilter = (category) => (name) => {
@@ -588,7 +616,7 @@ function installClaude(options = {}) {
     }
   }
 
-  if (scope.shouldInstallInstructions) {
+  if (!isGlobal && scope.shouldInstallInstructions) {
     const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
     const claudeMdTemplate = path.join(TEMPLATES_DIR, 'agents', 'CLAUDE.md');
 
@@ -608,7 +636,7 @@ function installClaude(options = {}) {
     }
   }
 
-  const configResult = ensureConfigFile({ dryRun });
+  const configResult = ensureConfigFile({ dryRun, global: isGlobal });
   totalChanges += getChangeCount(configResult, dryRun);
 
   console.log('');
@@ -617,10 +645,16 @@ function installClaude(options = {}) {
   } else if (totalChanges > 0) {
     success(`Installation complete! ${totalChanges} files installed.`);
     console.log('');
-    info('Next steps:');
-    console.log('  1. Update .agents-toolkit.json with your Jira project key');
-    console.log('  2. Configure Atlassian MCP in Claude Code settings');
-    console.log('  3. Run slash commands with /analyze-ticket, /work-ticket, etc.');
+    if (isGlobal) {
+      info('Next steps:');
+      console.log('  1. Update ~/.agents-toolkit.json with your defaults');
+      console.log('  2. Claude commands are now available globally');
+    } else {
+      info('Next steps:');
+      console.log('  1. Update .agents-toolkit.json with your Jira project key');
+      console.log('  2. Configure Atlassian MCP in Claude Code settings');
+      console.log('  3. Run slash commands with /analyze-ticket, /work-ticket, etc.');
+    }
   } else {
     warn('No new files installed. Use --force to overwrite existing files.');
   }
@@ -700,6 +734,7 @@ function showHelp() {
   console.log('');
   log('Options:', 'cyan');
   console.log('  --force, -f         Overwrite existing files');
+  console.log('  --global, -g        Install to ~/.copilot/ (user-level, all projects)');
   console.log('  --target <name>     Target installer: copilot | claude | codex');
   console.log('  --stack <name>      Filter by stack: react | wordpress | all (default: all)');
   console.log('  --tracker <name>    Filter by tracker: jira | github | all (default: all)');
@@ -714,7 +749,9 @@ function showHelp() {
 
   console.log('');
   log('Examples:', 'cyan');
-  console.log('  npx agents-toolkit install                          # All content');
+  console.log('  npx agents-toolkit install                          # All content to .github/');
+  console.log('  npx agents-toolkit install --global                 # All content to ~/.copilot/');
+  console.log('  npx agents-toolkit install --global --stack react   # React only to ~/.copilot/');
   console.log('  npx agents-toolkit install --stack react            # React/TS only');
   console.log('  npx agents-toolkit install --stack wordpress        # PHP/WordPress only');
   console.log('  npx agents-toolkit install --tracker github         # GitHub Issues workflow');
@@ -779,6 +816,7 @@ function parseArgs() {
 
   const options = {
     force: flags.includes('--force') || flags.includes('-f'),
+    global: flags.includes('--global') || flags.includes('-g'),
     promptsOnly: flags.includes('--prompts-only'),
     partialsOnly: flags.includes('--partials-only'),
     skillsOnly: flags.includes('--skills-only'),
@@ -841,6 +879,7 @@ function resolveInstallTarget(options = {}) {
 
 /**
  * Resolve stack and tracker filters from flags or config file
+ * Resolution order: CLI flags > project config > global config > defaults
  * @param {Object} options - Parsed CLI options
  * @returns {{ stack: string, tracker: string }} Resolved filters
  */
@@ -851,6 +890,19 @@ function resolveFilters(options = {}) {
   let stack = 'all';
   let tracker = 'all';
 
+  // Check global config first (~/.agents-toolkit.json)
+  const globalConfigPath = path.join(getHomeDir(), '.agents-toolkit.json');
+  if (fs.existsSync(globalConfigPath)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
+      if (config.stack) stack = config.stack;
+      if (config.tracker) tracker = config.tracker;
+    } catch {
+      // Ignore invalid config
+    }
+  }
+
+  // Project config overrides global
   const configPath = path.join(process.cwd(), '.agents-toolkit.json');
   if (fs.existsSync(configPath)) {
     try {

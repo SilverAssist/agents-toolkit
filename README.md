@@ -11,16 +11,23 @@ Reusable AI agent prompts for development workflows — supports **GitHub Copilo
 - ✅ **Multi-Agent Support**: Works with GitHub Copilot, Claude Code, and Codex
 - ✅ **Multi-Stack Filtering**: Install only React or WordPress content with `--stack`
 - ✅ **Multi-Tracker Support**: Choose GitHub Issues or Jira workflows with `--tracker`
+- ✅ **Global Install**: Install once for all projects with `--global`
 - ✅ **Modular Partials**: Reusable prompt fragments
 - ✅ **Customizable**: Easy to extend and modify
 - ✅ **CLI Tool**: Quick installation in any project
 
 ## Installation
 
-**For GitHub Copilot:**
+**For GitHub Copilot (project):**
 
 ```bash
 npx @silverassist/agents-toolkit@latest install
+```
+
+**For GitHub Copilot (global — all projects):**
+
+```bash
+npx @silverassist/agents-toolkit@latest install --global
 ```
 
 **For Claude Code:**
@@ -141,6 +148,26 @@ AGENTS.md                             # Project instructions for Codex (project 
     └── testing-patterns/
 ```
 
+### Global Install (Optional)
+
+Install once and have instructions, prompts, and skills available across **all your projects** without running `install` in each one:
+
+```bash
+# Install everything to ~/.copilot/
+npx @silverassist/agents-toolkit@latest install --global
+
+# Filter by stack/tracker
+npx @silverassist/agents-toolkit@latest install --global --stack wordpress
+npx @silverassist/agents-toolkit@latest install --global --stack react --tracker github
+
+# Update global install
+npx @silverassist/agents-toolkit@latest update --global
+```
+
+This installs to `~/.copilot/` (instructions, prompts, skills) and creates `~/.agents-toolkit.json` as the global config. Project-level files (AGENTS.md, copilot-instructions.md) are skipped since they are project-specific.
+
+> **Config resolution order:** CLI flags → project `.agents-toolkit.json` → global `~/.agents-toolkit.json` → defaults.
+
 ### Configure Project (Optional)
 
 Update `.agents-toolkit.json` in your project root (created automatically):
@@ -218,6 +245,7 @@ npx @silverassist/agents-toolkit@latest install [options]
 
 | Option | Description |
 |--------|-------------|
+| `--global`, `-g` | Install to `~/.copilot/` for all projects (user-level) |
 | `--target <name>` | Target installer: `copilot`, `claude`, or `codex` |
 | `--stack <name>` | Filter by tech stack: `react`, `wordpress`, or `all` (default) |
 | `--tracker <name>` | Filter by issue tracker: `github`, `jira`, or `all` (default) |
@@ -269,6 +297,11 @@ npx @silverassist/agents-toolkit@latest install --tracker jira
 # Combine stack + tracker
 npx @silverassist/agents-toolkit@latest install --stack react --tracker github
 npx @silverassist/agents-toolkit@latest install --stack wordpress --tracker jira --claude
+
+# Global install (all projects, no per-project setup needed)
+npx @silverassist/agents-toolkit@latest install --global
+npx @silverassist/agents-toolkit@latest install --global --stack wordpress
+npx @silverassist/agents-toolkit@latest update --global
 ```
 
 ### update
@@ -296,9 +329,11 @@ npx @silverassist/agents-toolkit@latest list
 | Scenario | Command |
 |----------|---------|
 | First time installation (Copilot) | `install` |
-| First time installation (Any target) | `install --target <copilot|claude|codex>` |
+| First time installation (Any target) | `install --target <copilot\|claude\|codex>` |
 | First time installation (Claude) | `install --claude` |
 | First time installation (Codex) | `install --codex` |
+| Install once for all projects | `install --global` |
+| Update global install | `update --global` |
 | Add only new files (keep customizations) | `install` |
 | Get latest version (discard customizations) | `update` |
 | Update specific category only | `update --prompts-only` |
