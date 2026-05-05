@@ -107,3 +107,85 @@ test('append mode merges AGENTS.md when instructions are missing', (t) => {
   assert.match(merged, /Added by agents-toolkit \(\-\-append\)/);
   assert.match(merged, /## 🔄 Agent Workflow \(Complex Tasks\)/);
 });
+
+test('--stack react excludes WordPress content', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--dry-run', '--stack', 'react'], tempDir);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /css-styling\.instructions\.md/);
+  assert.match(stdout, /react-components\.instructions\.md/);
+  assert.doesNotMatch(stdout, /php-standards\.instructions\.md/);
+  assert.doesNotMatch(stdout, /wordpress-plugin-architecture\.instructions\.md/);
+  assert.doesNotMatch(stdout, /new-wp-component\.prompt\.md/);
+  assert.doesNotMatch(stdout, /plugin-creation/);
+});
+
+test('--stack wordpress excludes React content', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--dry-run', '--stack', 'wordpress'], tempDir);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /php-standards\.instructions\.md/);
+  assert.match(stdout, /new-wp-component\.prompt\.md/);
+  assert.doesNotMatch(stdout, /css-styling\.instructions\.md/);
+  assert.doesNotMatch(stdout, /react-components\.instructions\.md/);
+  assert.doesNotMatch(stdout, /component-architecture/);
+});
+
+test('--tracker github excludes Jira prompts', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--dry-run', '--tracker', 'github'], tempDir);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /analyze-github-issue\.prompt\.md/);
+  assert.match(stdout, /work-github-issue\.prompt\.md/);
+  assert.match(stdout, /github-integration\.md/);
+  assert.doesNotMatch(stdout, /analyze-ticket\.prompt\.md/);
+  assert.doesNotMatch(stdout, /work-ticket\.prompt\.md/);
+  assert.doesNotMatch(stdout, /jira-integration\.md/);
+});
+
+test('--tracker jira excludes GitHub prompts', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--dry-run', '--tracker', 'jira'], tempDir);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /analyze-ticket\.prompt\.md/);
+  assert.match(stdout, /work-ticket\.prompt\.md/);
+  assert.match(stdout, /jira-integration\.md/);
+  assert.doesNotMatch(stdout, /analyze-github-issue\.prompt\.md/);
+  assert.doesNotMatch(stdout, /work-github-issue\.prompt\.md/);
+  assert.doesNotMatch(stdout, /github-integration\.md/);
+});
+
+test('invalid --stack value fails with a clear error', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--stack', 'python'], tempDir);
+
+  assert.equal(status, 1);
+  assert.match(stdout, /Invalid --stack value/);
+});
+
+test('invalid --tracker value fails with a clear error', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--tracker', 'linear'], tempDir);
+
+  assert.equal(status, 1);
+  assert.match(stdout, /Invalid --tracker value/);
+});
+
+test('config file stack/tracker values are used when no flags provided', (t) => {
+  const tempDir = createTempProject(t);
+  fs.writeFileSync(path.join(tempDir, '.agents-toolkit.json'), JSON.stringify({
+    stack: 'react',
+    tracker: 'github',
+  }));
+
+  const { status, stdout } = runCli(['install', '--dry-run'], tempDir);
+  assert.equal(status, 0);
+  assert.match(stdout, /react-components\.instructions\.md/);
+  assert.doesNotMatch(stdout, /php-standards\.instructions\.md/);
+  assert.match(stdout, /analyze-github-issue\.prompt\.md/);
+  assert.doesNotMatch(stdout, /analyze-ticket\.prompt\.md/);
+});
