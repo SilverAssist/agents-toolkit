@@ -2,7 +2,7 @@
 
 /**
  * CLI tool for installing and managing AI agent prompts
- * @module copilot-prompts-kit/cli
+ * @module agents-toolkit/cli
  */
 
 import fs from 'fs';
@@ -208,26 +208,26 @@ function getChangeCount(result, dryRun) {
 }
 
 function ensureConfigFile({ dryRun = false } = {}) {
-  const configPath = path.join(process.cwd(), '.copilot-prompts.json');
+  const configPath = path.join(process.cwd(), '.agents-toolkit.json');
 
   if (fs.existsSync(configPath)) {
     return { written: 0, planned: 0 };
   }
 
   if (dryRun) {
-    info('Would create .copilot-prompts.json');
+    info('Would create .agents-toolkit.json');
     return { written: 0, planned: 1 };
   }
 
   fs.writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
-  success('Created .copilot-prompts.json config file');
+  success('Created .agents-toolkit.json config file');
   return { written: 1, planned: 1 };
 }
 
 function installCopilotInstructions({ targetDir, dryRun = false } = {}) {
   const result = { written: 0, planned: 0 };
   const copilotInstructionsPath = path.join(targetDir, 'copilot-instructions.md');
-  const templatePath = path.join(TEMPLATES_DIR, 'copilot-instructions.md');
+  const templatePath = path.join(TEMPLATES_DIR, 'agents', 'copilot-instructions.md');
 
   if (!fs.existsSync(templatePath)) {
     return result;
@@ -251,7 +251,7 @@ function installCopilotInstructions({ targetDir, dryRun = false } = {}) {
     }
 
     const sectionsToAppend = templateContent.split('\n').slice(4).join('\n');
-    const newContent = `${existingContent}\n\n<!-- Added by copilot-prompts-kit -->\n${sectionsToAppend}`;
+    const newContent = `${existingContent}\n\n<!-- Added by agents-toolkit -->\n${sectionsToAppend}`;
     fs.writeFileSync(copilotInstructionsPath, newContent);
     success('Appended key sections to existing copilot-instructions.md');
     result.written++;
@@ -332,7 +332,7 @@ function installAgentsFile(options = {}) {
 
   const templateContent = fs.readFileSync(templatePath, 'utf-8');
   const templateBody = getAgentsTemplateBody(templateContent);
-  const mergedContent = `${existingContent}\n\n<!-- Added by copilot-prompts-kit (--append) -->\n\n${templateBody}`;
+  const mergedContent = `${existingContent}\n\n<!-- Added by agents-toolkit (--append) -->\n\n${templateBody}`;
   fs.writeFileSync(agentsPath, mergedContent);
   success('Appended missing sections to AGENTS.md');
   result.written++;
@@ -350,7 +350,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
   const scope = getInstallScope(options);
   let totalChanges = 0;
 
-  log(isCodex ? '\n⚡ Codex Installer\n' : '\n📦 Copilot Prompts Kit Installer\n', 'bright');
+  log(isCodex ? '\n⚡ Codex Installer\n' : '\n📦 Agents Toolkit Installer\n', 'bright');
 
   if (dryRun) {
     info('Dry run mode - no files will be copied\n');
@@ -358,7 +358,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallPrompts) {
     info('Installing prompts...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -368,7 +368,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallInstructions) {
     info('Installing instructions...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'instructions'), path.join(targetDir, 'instructions'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(targetDir, 'instructions'), { force, dryRun });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -378,7 +378,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallSkills) {
     info('Installing skills...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'skills'), path.join(targetDir, 'skills'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(targetDir, 'skills'), { force, dryRun });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -396,8 +396,8 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallInstructions) {
     const agentsTemplatePath = isCodex
-      ? path.join(TEMPLATES_DIR, 'codex', 'AGENTS.md')
-      : path.join(TEMPLATES_DIR, 'AGENTS.md');
+      ? path.join(TEMPLATES_DIR, 'agents', 'AGENTS.codex.md')
+      : path.join(TEMPLATES_DIR, 'agents', 'AGENTS.md');
     const agentsResult = installAgentsFile({ templatePath: agentsTemplatePath, force, append, dryRun });
     totalChanges += getChangeCount(agentsResult, dryRun);
   }
@@ -409,7 +409,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     success(`Installation complete! ${totalChanges} files installed.`);
     console.log('');
     info('Next steps:');
-    console.log('  1. Update .copilot-prompts.json with your Jira project key');
+    console.log('  1. Update .agents-toolkit.json with your Jira project key');
     if (isCodex) {
       console.log('  2. Review AGENTS.md in the project root');
       console.log('  3. Run Codex from this project root');
@@ -458,7 +458,7 @@ function installClaude(options = {}) {
 
   if (scope.shouldInstallPrompts) {
     info('Installing slash commands...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'prompts'), path.join(claudeDir, 'commands'), {
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(claudeDir, 'commands'), {
       force,
       dryRun,
       renameFile: (name) => name.replace(/\.prompt\.md$/, '.md'),
@@ -473,7 +473,7 @@ function installClaude(options = {}) {
 
   if (scope.shouldInstallInstructions) {
     info('Installing instructions...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'instructions'), path.join(githubDir, 'instructions'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(githubDir, 'instructions'), { force, dryRun });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -483,7 +483,7 @@ function installClaude(options = {}) {
 
   if (scope.shouldInstallSkills) {
     info('Installing skills...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'skills'), path.join(githubDir, 'skills'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(githubDir, 'skills'), { force, dryRun });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -493,7 +493,7 @@ function installClaude(options = {}) {
 
   if (scope.shouldInstallInstructions) {
     const claudeMdPath = path.join(process.cwd(), 'CLAUDE.md');
-    const claudeMdTemplate = path.join(TEMPLATES_DIR, 'claude', 'CLAUDE.md');
+    const claudeMdTemplate = path.join(TEMPLATES_DIR, 'agents', 'CLAUDE.md');
 
     if (fs.existsSync(claudeMdTemplate)) {
       const exists = fs.existsSync(claudeMdPath);
@@ -521,7 +521,7 @@ function installClaude(options = {}) {
     success(`Installation complete! ${totalChanges} files installed.`);
     console.log('');
     info('Next steps:');
-    console.log('  1. Update .copilot-prompts.json with your Jira project key');
+    console.log('  1. Update .agents-toolkit.json with your Jira project key');
     console.log('  2. Configure Atlassian MCP in Claude Code settings');
     console.log('  3. Run slash commands with /analyze-ticket, /work-ticket, etc.');
   } else {
@@ -536,7 +536,7 @@ function installClaude(options = {}) {
 function list() {
   log('\n📋 Available Prompts\n', 'bright');
 
-  const promptsDir = path.join(TEMPLATES_DIR, 'prompts');
+  const promptsDir = path.join(TEMPLATES_DIR, 'shared', 'prompts');
   
   if (!fs.existsSync(promptsDir)) {
     error('Templates directory not found');
@@ -575,7 +575,7 @@ function list() {
 
   console.log('');
   log('Skills:', 'cyan');
-  const skillsDir = path.join(TEMPLATES_DIR, 'skills');
+  const skillsDir = path.join(TEMPLATES_DIR, 'shared', 'skills');
   if (fs.existsSync(skillsDir)) {
     const skills = fs.readdirSync(skillsDir, { withFileTypes: true })
       .filter(d => d.isDirectory())
@@ -591,8 +591,8 @@ function list() {
  * Show help message
  */
 function showHelp() {
-  log('\n📦 Copilot Prompts Kit\n', 'bright');
-  console.log('Usage: copilot-prompts <command> [options]\n');
+  log('\n📦 Agents Toolkit\n', 'bright');
+  console.log('Usage: agents-toolkit <command> [options]\n');
   
   log('Commands:', 'cyan');
   console.log('  install     Install prompts (default target: copilot)');
@@ -615,17 +615,17 @@ function showHelp() {
 
   console.log('');
   log('Examples:', 'cyan');
-  console.log('  npx copilot-prompts install              # GitHub Copilot');
-  console.log('  npx copilot-prompts install --target codex');
-  console.log('  npx copilot-prompts install --target=claude');
-  console.log('  npx copilot-prompts install --claude     # Claude Code');
-  console.log('  npx copilot-prompts install --codex      # Codex');
-  console.log('  npx copilot-prompts install --force');
-  console.log('  npx copilot-prompts install --append --instructions-only');
-  console.log('  npx copilot-prompts install --claude --force');
-  console.log('  npx copilot-prompts install --codex --force');
-  console.log('  npx copilot-prompts install --prompts-only');
-  console.log('  npx copilot-prompts list');
+  console.log('  npx agents-toolkit install              # GitHub Copilot');
+  console.log('  npx agents-toolkit install --target codex');
+  console.log('  npx agents-toolkit install --target=claude');
+  console.log('  npx agents-toolkit install --claude     # Claude Code');
+  console.log('  npx agents-toolkit install --codex      # Codex');
+  console.log('  npx agents-toolkit install --force');
+  console.log('  npx agents-toolkit install --append --instructions-only');
+  console.log('  npx agents-toolkit install --claude --force');
+  console.log('  npx agents-toolkit install --codex --force');
+  console.log('  npx agents-toolkit install --prompts-only');
+  console.log('  npx agents-toolkit list');
   console.log('');
 }
 

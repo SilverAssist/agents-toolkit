@@ -30,7 +30,7 @@ Verify:
 ### 2. Review Changes
 
 ```bash
-BASE_BRANCH=$(node -e "try{const c=require('./.copilot-prompts.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
+BASE_BRANCH=$(node -e "try{const c=require('./.agents-toolkit.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
 git diff "$BASE_BRANCH" --name-only
 ```
 
@@ -110,7 +110,7 @@ Brief description of what this PR accomplishes.
 
 #### PR Settings
 - **Source**: Current branch
-- **Target**: `<base-branch>` resolved from `.copilot-prompts.json` (fallback: `main`)
+- **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
 - **Reviewers**: Based on changed files
 
 ### 7. Link PR to Jira

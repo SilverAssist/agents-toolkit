@@ -28,7 +28,7 @@ function runCli(args, cwd) {
 }
 
 function createTempProject(t) {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'copilot-prompts-kit-'));
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-toolkit-'));
   t.after(() => {
     fs.rmSync(tempDir, { recursive: true, force: true });
   });
@@ -104,6 +104,6 @@ test('append mode merges AGENTS.md when instructions are missing', (t) => {
 
   const merged = fs.readFileSync(agentsPath, 'utf-8');
   assert.match(merged, /Custom content only\./);
-  assert.match(merged, /Added by copilot-prompts-kit \(\-\-append\)/);
+  assert.match(merged, /Added by agents-toolkit \(\-\-append\)/);
   assert.match(merged, /## 🔄 Agent Workflow \(Complex Tasks\)/);
 });

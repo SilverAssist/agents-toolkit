@@ -33,7 +33,7 @@ If there are unresolved comments:
 ### 3. Sync with Base Branch
 
 ```bash
-BASE_BRANCH=$(node -e "try{const c=require('./.copilot-prompts.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
+BASE_BRANCH=$(node -e "try{const c=require('./.agents-toolkit.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
 git fetch origin
 git rebase "origin/${BASE_BRANCH}"
 ```
