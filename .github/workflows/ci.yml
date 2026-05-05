@@ -38,7 +38,10 @@ jobs:
       
       - name: Test CLI list
         run: node bin/cli.js list
-      
+
+      - name: Run tests
+        run: npm test
+
       - name: Create summary
         if: success()
         run: |

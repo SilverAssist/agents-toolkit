@@ -29,6 +29,9 @@ jobs:
       - name: Test CLI
         run: node bin/cli.js list
       
+      - name: Run tests
+        run: npm test
+
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -42,10 +45,10 @@ jobs:
           echo "**Version:** \`$PACKAGE_VERSION\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
-          echo "- [View on npm](https://www.npmjs.com/package/@silverassist/copilot-prompts-kit/v/$PACKAGE_VERSION)" >> $GITHUB_STEP_SUMMARY
-          echo "- [npm package page](https://www.npmjs.com/package/@silverassist/copilot-prompts-kit)" >> $GITHUB_STEP_SUMMARY
+          echo "- [View on npm](https://www.npmjs.com/package/@silverassist/agents-toolkit/v/$PACKAGE_VERSION)" >> $GITHUB_STEP_SUMMARY
+          echo "- [npm package page](https://www.npmjs.com/package/@silverassist/agents-toolkit)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📥 Install" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "npx @silverassist/copilot-prompts-kit install" >> $GITHUB_STEP_SUMMARY
+          echo "npx @silverassist/agents-toolkit install" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
