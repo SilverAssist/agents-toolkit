@@ -117,8 +117,7 @@ function stripCopilotFrontmatter(content) {
 function adaptPathsForClaude(content) {
   return content
     .replace(/\.github\/copilot-instructions\.md/g, 'CLAUDE.md')
-    .replace(/\.github\/prompts\/_partials\//g, '.claude/commands/_partials/')
-    .replace(/\.github\/instructions\//g, '.github/instructions/');
+    .replace(/\.github\/prompts\/_partials\//g, '.claude/commands/_partials/');
 }
 
 /**
