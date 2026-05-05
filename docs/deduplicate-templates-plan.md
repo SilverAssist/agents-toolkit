@@ -1,4 +1,4 @@
-# Implementation Plan: Deduplicate `templates/`
+# Implementation Plan: Deduplicate `templates/` + Rename Package
 
 > Issue: [#7](https://github.com/SilverAssist/copilot-prompts-kit/issues/7)
 > Branch: `refactor/7-deduplicate-templates`
@@ -9,12 +9,28 @@
 
 The `templates/` directory duplicates content across flat top-level folders and agent-specific subdirectories. ~28 files are maintained in two locations (`templates/` and `.github/`), creating drift risk and maintenance burden.
 
+Additionally, the package is named `copilot-prompts-kit` but now supports GitHub Copilot, Claude Code, and Codex — the name is misleading.
+
 **Observed drift (3 files):**
 - `skills/README.md` — "GitHub Copilot" vs "agents" wording (templates is correct/canonical)
 - `skills/component-architecture/SKILL.md` — `export default function` vs `export function` (templates is correct per project conventions)
 - `.github/prompts/release.prompt.md` — repo-specific, should stay in `.github/` only
 
 All other files (instructions: 5, prompts: 16, skills: 2) are **identical**.
+
+---
+
+## Package Rename (BREAKING CHANGE → v2.0.0)
+
+| Item | Old | New |
+|------|-----|-----|
+| npm package | `@silverassist/copilot-prompts-kit` | `@silverassist/agents-toolkit` |
+| bin command | `copilot-prompts` | `agents-toolkit` |
+| Config file | `.copilot-prompts.json` | `.agents-toolkit.json` |
+| Display title | "Copilot Prompts Kit" | "Agents Toolkit" |
+| Module JSDoc | `@module copilot-prompts-kit/cli` | `@module agents-toolkit/cli` |
+
+**Post-publish:** `npm deprecate @silverassist/copilot-prompts-kit "Renamed to @silverassist/agents-toolkit"`
 
 ---
 
@@ -134,5 +150,7 @@ Confirm all files under `templates/shared/` and `templates/agents/` are included
 - [ ] Agent-specific files isolated in `templates/agents/`
 - [ ] CLI installs correctly for all targets: `--copilot`, `--codex`, `--claude`
 - [ ] All existing tests pass
-- [ ] No breaking changes to the public CLI interface
-- [ ] CHANGELOG updated
+- [ ] Package renamed to `@silverassist/agents-toolkit` (bin: `agents-toolkit`)
+- [ ] Config file renamed to `.agents-toolkit.json`
+- [ ] Version bumped to 2.0.0
+- [ ] CHANGELOG updated with breaking changes
