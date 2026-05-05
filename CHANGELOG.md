@@ -16,9 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: Config file renamed from `.copilot-prompts.json` to `.agents-toolkit.json`
 - Restructured `templates/` directory: shared content in `templates/shared/`, agent-specific root files in `templates/agents/`
 - Eliminated ~28 duplicate files by consolidating instructions, prompts, and skills into single source of truth
+- `pr-template.md` partial rewritten with dual-format support (GitHub Issues + Jira)
 
 ### Added
 
+- `--stack <react|wordpress|all>` CLI flag to filter content by tech stack
+- `--tracker <github|jira|all>` CLI flag to filter content by issue tracker
+- `stack` and `tracker` fields in `.agents-toolkit.json` for persistent configuration
+- GitHub issue workflow prompts: `analyze-github-issue`, `work-github-issue`
+- GitHub integration partial: `_partials/github-integration.md`
 - PHP/WordPress instructions: `php-standards`, `wordpress-plugin-architecture`, `testing-standards`
 - Documentation & workflow instructions: `documentation-language`, `github-workflow`
 - WordPress prompts: `new-wp-component`, `new-wp-plugin`, `prepare-release`, `quality-check`

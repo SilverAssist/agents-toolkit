@@ -1,6 +1,6 @@
 # @silverassist/agents-toolkit
 
-Reusable AI agent prompts for development workflows with Jira integration — supports **GitHub Copilot**, **Claude Code**, and **Codex**.
+Reusable AI agent prompts for development workflows — supports **GitHub Copilot**, **Claude Code**, and **Codex** with multi-stack and multi-tracker filtering.
 
 [![npm version](https://img.shields.io/npm/v/@silverassist/agents-toolkit.svg)](https://www.npmjs.com/package/@silverassist/agents-toolkit)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/SilverAssist/copilot-prompts-kit/blob/main/LICENSE)
@@ -9,8 +9,9 @@ Reusable AI agent prompts for development workflows with Jira integration — su
 
 - ✅ **Complete Workflow Prompts**: From ticket analysis to PR merge
 - ✅ **Multi-Agent Support**: Works with GitHub Copilot, Claude Code, and Codex
+- ✅ **Multi-Stack Filtering**: Install only React or WordPress content with `--stack`
+- ✅ **Multi-Tracker Support**: Choose GitHub Issues or Jira workflows with `--tracker`
 - ✅ **Modular Partials**: Reusable prompt fragments
-- ✅ **Jira Integration**: Built-in Atlassian MCP support
 - ✅ **Customizable**: Easy to extend and modify
 - ✅ **CLI Tool**: Quick installation in any project
 
@@ -140,12 +141,14 @@ AGENTS.md                             # Project instructions for Codex (project 
     └── testing-patterns/
 ```
 
-### Configure Jira (Optional)
+### Configure Project (Optional)
 
 Update `.agents-toolkit.json` in your project root (created automatically):
 
 ```json
 {
+  "stack": "react",
+  "tracker": "github",
   "jira": {
     "projectKey": "WEB",
     "baseUrl": "https://your-org.atlassian.net"
@@ -156,20 +159,29 @@ Update `.agents-toolkit.json` in your project root (created automatically):
 }
 ```
 
+| Field | Values | Description |
+|-------|--------|-------------|
+| `stack` | `react`, `wordpress`, `all` | Filter instructions/skills by tech stack |
+| `tracker` | `github`, `jira`, `all` | Filter prompts/partials by issue tracker |
+| `jira` | object | Jira connection settings (when tracker is `jira`) |
+| `git` | object | Git workflow settings |
+
 ## Available Prompts / Commands
 
 The same set of prompts is available for all supported tools.
 
 ### Workflow
 
-| Prompt / Command | Description | Variables |
-|------------------|-------------|-----------|
-| `analyze-ticket` | Analyze a Jira ticket | `{ticket-id}` |
-| `create-plan` | Create implementation plan | `{feature-description}` |
-| `work-ticket` | Start working on a ticket | `{ticket-id}` |
-| `prepare-pr` | Prepare code for PR | — |
-| `create-pr` | Create a pull request | `{ticket-id}` |
-| `finalize-pr` | Finalize and merge PR | `{ticket-id}` |
+| Prompt / Command | Description | Variables | Tracker |
+|------------------|-------------|-----------|---------|
+| `analyze-ticket` | Analyze a Jira ticket | `{ticket-id}` | Jira |
+| `analyze-github-issue` | Analyze a GitHub issue | `{issue-number}` | GitHub |
+| `create-plan` | Create implementation plan | `{feature-description}` | All |
+| `work-ticket` | Start working on a Jira ticket | `{ticket-id}` | Jira |
+| `work-github-issue` | Start working on a GitHub issue | `{issue-number}` | GitHub |
+| `prepare-pr` | Prepare code for PR | — | All |
+| `create-pr` | Create a pull request | `{ticket-id}` | All |
+| `finalize-pr` | Finalize and merge PR | `{ticket-id}` | All |
 
 ### Utility
 
@@ -207,6 +219,8 @@ npx @silverassist/agents-toolkit@latest install [options]
 | Option | Description |
 |--------|-------------|
 | `--target <name>` | Target installer: `copilot`, `claude`, or `codex` |
+| `--stack <name>` | Filter by tech stack: `react`, `wordpress`, or `all` (default) |
+| `--tracker <name>` | Filter by issue tracker: `github`, `jira`, or `all` (default) |
 | `--claude` | Install for Claude Code (`.claude/commands/` + `CLAUDE.md`) |
 | `--codex` | Install for Codex (`AGENTS.md` + shared `.github` files) |
 | `--append` | Append missing sections to existing `AGENTS.md` (instead of overwrite) |
@@ -243,6 +257,18 @@ npx @silverassist/agents-toolkit@latest install --codex --instructions-only --ap
 npx @silverassist/agents-toolkit@latest install --dry-run
 npx @silverassist/agents-toolkit@latest install --claude --dry-run
 npx @silverassist/agents-toolkit@latest install --codex --dry-run
+
+# Filter by tech stack
+npx @silverassist/agents-toolkit@latest install --stack react
+npx @silverassist/agents-toolkit@latest install --stack wordpress
+
+# Filter by issue tracker
+npx @silverassist/agents-toolkit@latest install --tracker github
+npx @silverassist/agents-toolkit@latest install --tracker jira
+
+# Combine stack + tracker
+npx @silverassist/agents-toolkit@latest install --stack react --tracker github
+npx @silverassist/agents-toolkit@latest install --stack wordpress --tracker jira --claude
 ```
 
 ### update
@@ -287,8 +313,9 @@ Reusable prompt fragments shared between tools:
 | `validations.md` | Code quality validation steps |
 | `git-operations.md` | Git workflow operations |
 | `jira-integration.md` | Jira/Atlassian MCP operations |
+| `github-integration.md` | GitHub issue operations (MCP) |
 | `documentation.md` | Documentation standards |
-| `pr-template.md` | Pull request templates |
+| `pr-template.md` | Pull request templates (GitHub Issues + Jira) |
 
 ## Instructions
 
@@ -343,7 +370,8 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 
 - Node.js 18+
 - Git installed and configured
-- Atlassian MCP configured (for Jira integration)
+- **For Jira tracker:** Atlassian MCP configured
+- **For GitHub tracker:** GitHub MCP configured
 - **For GitHub Copilot:** VS Code with GitHub Copilot extension
 - **For Claude Code:** Claude Code CLI or VS Code extension
 - **For Codex:** Codex CLI/session running at project root
