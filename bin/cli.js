@@ -24,6 +24,8 @@ const COLORS = {
 };
 
 const DEFAULT_CONFIG = {
+  stack: 'all',
+  tracker: 'all',
   jira: {
     projectKey: 'PROJECT',
     baseUrl: 'https://your-org.atlassian.net'
@@ -41,6 +43,68 @@ const DEFAULT_CONFIG = {
     template: 'default'
   }
 };
+
+/**
+ * File categorization for stack/tracker filtering
+ */
+const FILE_CATEGORIES = {
+  instructions: {
+    react: ['css-styling', 'react-components', 'server-actions', 'tests', 'typescript'],
+    wordpress: ['php-standards', 'wordpress-plugin-architecture', 'testing-standards'],
+    universal: ['documentation-language', 'github-workflow'],
+  },
+  prompts: {
+    react: [],
+    wordpress: ['new-wp-component', 'new-wp-plugin', 'quality-check'],
+    universal: [
+      'analyze-ticket', 'work-ticket', 'analyze-github-issue', 'work-github-issue',
+      'create-plan', 'create-pr', 'prepare-pr', 'finalize-pr',
+      'review-code', 'fix-issues', 'add-tests', 'prepare-release',
+    ],
+    jira: ['analyze-ticket', 'work-ticket'],
+    github: ['analyze-github-issue', 'work-github-issue'],
+  },
+  partials: {
+    jira: ['jira-integration'],
+    github: ['github-integration'],
+    universal: ['git-operations', 'pr-template', 'validations', 'documentation'],
+  },
+  skills: {
+    react: ['component-architecture', 'testing-patterns'],
+    wordpress: ['create-component', 'plugin-creation', 'quality-checks', 'testing'],
+    universal: ['domain-driven-design', 'release-management'],
+  },
+};
+
+/**
+ * Determine if a file should be included based on stack/tracker filters
+ * @param {string} filename - File basename without extension
+ * @param {string} category - Category: instructions, prompts, partials, or skills
+ * @param {{ stack: string, tracker: string }} filters - Active filters
+ * @returns {boolean} Whether to include the file
+ */
+function shouldIncludeFile(filename, category, { stack, tracker }) {
+  const cats = FILE_CATEGORIES[category];
+  if (!cats) return true;
+
+  if (cats.universal && cats.universal.includes(filename)) {
+    if (tracker !== 'all' && cats.jira && cats.jira.includes(filename) && tracker !== 'jira') return false;
+    if (tracker !== 'all' && cats.github && cats.github.includes(filename) && tracker !== 'github') return false;
+    return true;
+  }
+
+  if (stack !== 'all') {
+    if (cats.react && cats.react.includes(filename)) return stack === 'react';
+    if (cats.wordpress && cats.wordpress.includes(filename)) return stack === 'wordpress';
+  }
+
+  if (tracker !== 'all') {
+    if (cats.jira && cats.jira.includes(filename)) return tracker === 'jira';
+    if (cats.github && cats.github.includes(filename)) return tracker === 'github';
+  }
+
+  return true;
+}
 
 /**
  * Print colored message to console
@@ -129,6 +193,7 @@ function adaptPathsForClaude(content) {
  * @param {boolean} options.dryRun - Only show what would be copied
  * @param {(name: string) => string} [options.renameFile] - Optional file rename function
  * @param {(content: string) => string} [options.transformContent] - Optional content transform
+ * @param {(name: string) => boolean} [options.filter] - Optional file filter function
  * @returns {{ written: number, planned: number }} Number of written/planned files
  */
 function copyDir(src, dest, options = {}) {
@@ -137,6 +202,8 @@ function copyDir(src, dest, options = {}) {
     dryRun = false,
     renameFile = (name) => name,
     transformContent = null,
+    filter = null,
+    dirFilter = null,
   } = options;
   const totals = { written: 0, planned: 0 };
 
@@ -154,10 +221,21 @@ function copyDir(src, dest, options = {}) {
     const srcPath = path.join(src, entry.name);
 
     if (entry.isDirectory()) {
-      const nested = copyDir(srcPath, path.join(dest, entry.name), options);
+      if (dirFilter && !dirFilter(entry.name)) {
+        continue;
+      }
+      const nestedOptions = { ...options };
+      if (entry.name === '_partials' && options.partialsFilter) {
+        nestedOptions.filter = options.partialsFilter;
+      }
+      const nested = copyDir(srcPath, path.join(dest, entry.name), nestedOptions);
       totals.written += nested.written;
       totals.planned += nested.planned;
     } else {
+      if (filter && !filter(entry.name)) {
+        continue;
+      }
+
       const destName = renameFile(entry.name);
       const destPath = path.join(dest, destName);
       const exists = fs.existsSync(destPath);
@@ -344,11 +422,20 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     force = false,
     append = false,
     dryRun = false,
+    filters = { stack: 'all', tracker: 'all' },
   } = options;
   const isCodex = target === 'codex';
   const targetDir = getTargetDir();
   const scope = getInstallScope(options);
   let totalChanges = 0;
+
+  const makeFilter = (category) => (name) => {
+    const basename = name.replace(/\.(prompt\.md|instructions\.md|md)$/, '');
+    return shouldIncludeFile(basename, category, filters);
+  };
+
+  const promptsFilter = makeFilter('prompts');
+  const partialsFilter = makeFilter('partials');
 
   log(isCodex ? '\n⚡ Codex Installer\n' : '\n📦 Agents Toolkit Installer\n', 'bright');
 
@@ -358,7 +445,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallPrompts) {
     info('Installing prompts...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun, filter: promptsFilter, partialsFilter });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -368,7 +455,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallInstructions) {
     info('Installing instructions...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(targetDir, 'instructions'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(targetDir, 'instructions'), { force, dryRun, filter: makeFilter('instructions') });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -378,7 +465,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallSkills) {
     info('Installing skills...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(targetDir, 'skills'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(targetDir, 'skills'), { force, dryRun, dirFilter: makeFilter('skills') });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -444,11 +531,19 @@ function installCodex(options = {}) {
  * @param {Object} options - Install options
  */
 function installClaude(options = {}) {
-  const { force = false, dryRun = false } = options;
+  const { force = false, dryRun = false, filters = { stack: 'all', tracker: 'all' } } = options;
   const scope = getInstallScope(options);
   const claudeDir = getClaudeTargetDir();
   const githubDir = getTargetDir();
   let totalChanges = 0;
+
+  const makeFilter = (category) => (name) => {
+    const basename = name.replace(/\.(prompt\.md|instructions\.md|md)$/, '');
+    return shouldIncludeFile(basename, category, filters);
+  };
+
+  const promptsFilter = makeFilter('prompts');
+  const partialsFilter = makeFilter('partials');
 
   log('\n🤖 Claude Code Installer\n', 'bright');
 
@@ -461,6 +556,8 @@ function installClaude(options = {}) {
     const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(claudeDir, 'commands'), {
       force,
       dryRun,
+      filter: promptsFilter,
+      partialsFilter,
       renameFile: (name) => name.replace(/\.prompt\.md$/, '.md'),
       transformContent: (content) => adaptPathsForClaude(stripCopilotFrontmatter(content)),
     });
@@ -473,7 +570,7 @@ function installClaude(options = {}) {
 
   if (scope.shouldInstallInstructions) {
     info('Installing instructions...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(githubDir, 'instructions'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(githubDir, 'instructions'), { force, dryRun, filter: makeFilter('instructions') });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -483,7 +580,7 @@ function installClaude(options = {}) {
 
   if (scope.shouldInstallSkills) {
     info('Installing skills...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(githubDir, 'skills'), { force, dryRun });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(githubDir, 'skills'), { force, dryRun, dirFilter: makeFilter('skills') });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -604,6 +701,8 @@ function showHelp() {
   log('Options:', 'cyan');
   console.log('  --force, -f         Overwrite existing files');
   console.log('  --target <name>     Target installer: copilot | claude | codex');
+  console.log('  --stack <name>      Filter by stack: react | wordpress | all (default: all)');
+  console.log('  --tracker <name>    Filter by tracker: jira | github | all (default: all)');
   console.log('  --claude            Install for Claude Code (.claude/commands/ + CLAUDE.md)');
   console.log('  --codex             Install for Codex (AGENTS.md + shared .github files)');
   console.log('  --append            Append missing AGENTS.md sections instead of overwriting');
@@ -615,11 +714,13 @@ function showHelp() {
 
   console.log('');
   log('Examples:', 'cyan');
-  console.log('  npx agents-toolkit install              # GitHub Copilot');
+  console.log('  npx agents-toolkit install                          # All content');
+  console.log('  npx agents-toolkit install --stack react            # React/TS only');
+  console.log('  npx agents-toolkit install --stack wordpress        # PHP/WordPress only');
+  console.log('  npx agents-toolkit install --tracker github         # GitHub Issues workflow');
+  console.log('  npx agents-toolkit install --tracker jira           # Jira workflow');
   console.log('  npx agents-toolkit install --target codex');
   console.log('  npx agents-toolkit install --target=claude');
-  console.log('  npx agents-toolkit install --claude     # Claude Code');
-  console.log('  npx agents-toolkit install --codex      # Codex');
   console.log('  npx agents-toolkit install --force');
   console.log('  npx agents-toolkit install --append --instructions-only');
   console.log('  npx agents-toolkit install --claude --force');
@@ -639,6 +740,8 @@ function parseArgs() {
   const flags = args.slice(1);
 
   let target = null;
+  let stack = null;
+  let tracker = null;
   for (let i = 0; i < flags.length; i++) {
     const arg = flags[i];
     if (arg === '--target') {
@@ -651,6 +754,26 @@ function parseArgs() {
       }
     } else if (arg.startsWith('--target=')) {
       target = arg.split('=').slice(1).join('=');
+    } else if (arg === '--stack') {
+      const value = flags[i + 1];
+      if (value && !value.startsWith('-')) {
+        stack = value;
+        i++;
+      } else {
+        stack = '';
+      }
+    } else if (arg.startsWith('--stack=')) {
+      stack = arg.split('=').slice(1).join('=');
+    } else if (arg === '--tracker') {
+      const value = flags[i + 1];
+      if (value && !value.startsWith('-')) {
+        tracker = value;
+        i++;
+      } else {
+        tracker = '';
+      }
+    } else if (arg.startsWith('--tracker=')) {
+      tracker = arg.split('=').slice(1).join('=');
     }
   }
 
@@ -665,6 +788,8 @@ function parseArgs() {
     codex: flags.includes('--codex'),
     append: flags.includes('--append'),
     target,
+    stack,
+    tracker,
   };
   
   return { command, options };
@@ -715,6 +840,58 @@ function resolveInstallTarget(options = {}) {
 }
 
 /**
+ * Resolve stack and tracker filters from flags or config file
+ * @param {Object} options - Parsed CLI options
+ * @returns {{ stack: string, tracker: string }} Resolved filters
+ */
+function resolveFilters(options = {}) {
+  const validStacks = ['react', 'wordpress', 'all'];
+  const validTrackers = ['jira', 'github', 'all'];
+
+  let stack = 'all';
+  let tracker = 'all';
+
+  const configPath = path.join(process.cwd(), '.agents-toolkit.json');
+  if (fs.existsSync(configPath)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (config.stack) stack = config.stack;
+      if (config.tracker) tracker = config.tracker;
+    } catch {
+      // Ignore invalid config
+    }
+  }
+
+  if (options.stack !== null && options.stack !== undefined) {
+    const value = options.stack.trim().toLowerCase();
+    if (!value) {
+      error('Missing value for --stack. Use react, wordpress, or all.');
+      process.exit(1);
+    }
+    if (!validStacks.includes(value)) {
+      error(`Invalid --stack value: ${options.stack}. Use react, wordpress, or all.`);
+      process.exit(1);
+    }
+    stack = value;
+  }
+
+  if (options.tracker !== null && options.tracker !== undefined) {
+    const value = options.tracker.trim().toLowerCase();
+    if (!value) {
+      error('Missing value for --tracker. Use jira, github, or all.');
+      process.exit(1);
+    }
+    if (!validTrackers.includes(value)) {
+      error(`Invalid --tracker value: ${options.tracker}. Use jira, github, or all.`);
+      process.exit(1);
+    }
+    tracker = value;
+  }
+
+  return { stack, tracker };
+}
+
+/**
  * Main CLI entry point
  */
 function main() {
@@ -722,24 +899,27 @@ function main() {
   const target = (command === 'install' || command === 'update')
     ? resolveInstallTarget(options)
     : null;
+  const filters = (command === 'install' || command === 'update')
+    ? resolveFilters(options)
+    : { stack: 'all', tracker: 'all' };
 
   switch (command) {
     case 'install':
       if (target === 'claude') {
-        installClaude(options);
+        installClaude({ ...options, filters });
       } else if (target === 'codex') {
-        installCodex(options);
+        installCodex({ ...options, filters });
       } else {
-        install(options);
+        install({ ...options, filters });
       }
       break;
     case 'update':
       if (target === 'claude') {
-        installClaude({ ...options, force: true });
+        installClaude({ ...options, force: true, filters });
       } else if (target === 'codex') {
-        installCodex({ ...options, force: true });
+        installCodex({ ...options, force: true, filters });
       } else {
-        install({ ...options, force: true });
+        install({ ...options, force: true, filters });
       }
       break;
     case 'list':
