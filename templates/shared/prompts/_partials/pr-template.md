@@ -4,11 +4,62 @@ Reusable PR templates and steps for prompts.
 
 ## Usage
 
-Include these templates when creating or reviewing pull requests.
+Include these templates when creating or reviewing pull requests. Choose the format matching your project's issue tracker.
 
 ---
 
-## PR Title Format
+## Format A: GitHub Issues (Conventional Commits)
+
+### PR Title Format
+
+```
+type: Short description of changes
+```
+
+Examples:
+- `feat: Add rate limiting middleware`
+- `fix: Resolve CORS headers for image requests`
+- `refactor: Extract validation into middleware`
+
+### PR Description Template
+
+```markdown
+## Description
+Brief summary of what this PR accomplishes.
+
+## Related Issue
+Closes #ISSUE_NUMBER
+
+## Changes Made
+- Change 1: Description
+- Change 2: Description
+- Change 3: Description
+
+## Type of Change
+- [ ] Bug fix (non-breaking change fixing an issue)
+- [ ] New feature (non-breaking change adding functionality)
+- [ ] Breaking change (fix or feature causing existing functionality to break)
+- [ ] Documentation update
+- [ ] Refactoring (no functional changes)
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Manual testing performed
+- [ ] Integration tests added/updated
+
+## Checklist
+- [ ] Code follows project style guidelines
+- [ ] Self-review completed
+- [ ] Documentation updated
+- [ ] Tests pass locally
+- [ ] No new warnings introduced
+```
+
+---
+
+## Format B: Jira Ticket Reference
+
+### PR Title Format
 
 ```
 {TICKET-ID}: Short description of changes
@@ -19,9 +70,7 @@ Examples:
 - `WEB-734: Fix responsive logo sizing in mobile header`
 - `WEB-800: Refactor contact form validation`
 
----
-
-## PR Description Template
+### PR Description Template
 
 ```markdown
 ## Summary
@@ -49,17 +98,6 @@ Describe how changes were tested:
 - [ ] Manual testing performed
 - [ ] E2E tests added/updated
 
-### Test Cases
-1. Test case 1: Expected result
-2. Test case 2: Expected result
-
-## Screenshots
-<!-- If UI changes, add before/after screenshots -->
-
-| Before | After |
-|--------|-------|
-| [image] | [image] |
-
 ## Checklist
 - [ ] Code follows project style guidelines
 - [ ] Self-review completed
@@ -68,18 +106,11 @@ Describe how changes were tested:
 - [ ] No new warnings introduced
 - [ ] Tests pass locally
 
-## Dependencies
-List any dependencies added or updated:
-- `package-name@version`: Reason for adding
-
 ## Deployment Notes
 Any special deployment considerations:
 - Database migrations needed
 - Environment variables to add
 - Cache invalidation required
-
-## Reviewers
-@suggested-reviewer based on changed files
 ```
 
 ---
@@ -89,13 +120,13 @@ Any special deployment considerations:
 ### Step: Prepare PR Description
 
 1. **Gather information**:
-   - Get ticket summary from Jira
+   - Get issue/ticket title and description
    - List all changed files
    - Identify type of change
 
 2. **Fill template sections**:
-   - Summary from ticket description
-   - Link to Jira ticket
+   - Summary from issue description
+   - Link to issue (GitHub `Closes #N` or Jira URL)
    - List key changes made
    - Describe testing performed
 
@@ -108,26 +139,33 @@ Any special deployment considerations:
 
 ### Step: Set PR Metadata
 
-1. **Title**: `{TICKET-ID}: {Ticket Summary}`
-2. **Source branch**: Your feature/bugfix branch
-3. **Target branch**: `dev`
+1. **Title**: `type: description` (GitHub) or `{TICKET-ID}: description` (Jira)
+2. **Source branch**: Your feature/fix branch
+3. **Target branch**: `main` (or project default from `.agents-toolkit.json`)
 4. **Reviewers**: Based on code owners or changed files
-5. **Labels**: Bug, Feature, Documentation, etc.
+5. **Labels**: Match issue labels where appropriate
 
 ---
 
-## Reviewer Selection Guide
+## PR Size Guidelines
 
-| Changed Area | Suggested Reviewers |
-|--------------|---------------------|
-| `src/components/ui/` | Frontend lead |
-| `src/actions/` | Backend lead |
-| `src/lib/wpApi.ts` | WordPress integration owner |
-| `src/providers/` | Architecture owner |
-| `cypress/` | QA team |
-| `docs/` | Tech writer or team lead |
+| Size | Files Changed | Recommendation |
+|------|---------------|----------------|
+| Small | 1-5 files | ✅ Ideal |
+| Medium | 6-15 files | ⚠️ Acceptable |
+| Large | 16+ files | ❌ Consider splitting |
 
 ---
+
+## PR Merge Checklist
+
+Before merging:
+- [ ] All review comments addressed
+- [ ] CI/CD pipeline passes
+- [ ] Branch is up-to-date with target
+- [ ] No merge conflicts
+- [ ] Documentation complete
+- [ ] Issue linked and will auto-close
 
 ## PR Size Guidelines
 
