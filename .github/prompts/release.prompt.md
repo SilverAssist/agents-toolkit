@@ -111,7 +111,7 @@ git branch --show-current
    ```
 
 2. Create a GitHub Release:
-   - Go to: https://github.com/SilverAssist/agents-toolkit/releases/new
+   - Go to: https://github.com/SilverAssist/copilot-prompts-kit/releases/new
    - Tag: `v{version}` (create new tag)
    - Title: `v{version}`
    - Description: Copy from CHANGELOG.md
@@ -124,7 +124,7 @@ git branch --show-current
    - Create a summary
 
 4. Verify publication:
-   - Check workflow: https://github.com/SilverAssist/agents-toolkit/actions
+   - Check workflow: https://github.com/SilverAssist/copilot-prompts-kit/actions
    - Check npm: https://www.npmjs.com/package/@silverassist/agents-toolkit
 
 ---
