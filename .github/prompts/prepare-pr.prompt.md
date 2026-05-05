@@ -16,7 +16,7 @@ Prepare the current branch for a pull request by running all validations.
 ### 1. Check Branch Status
 
 ```bash
-BASE_BRANCH=$(node -e "try{const c=require('./.copilot-prompts.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
+BASE_BRANCH=$(node -e "try{const c=require('./.agents-toolkit.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
 git branch --show-current
 git status
 git log --oneline -5

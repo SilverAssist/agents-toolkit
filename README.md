@@ -1,16 +1,17 @@
-# @silverassist/copilot-prompts-kit
+# @silverassist/agents-toolkit
 
-Reusable AI agent prompts for development workflows with Jira integration — supports **GitHub Copilot**, **Claude Code**, and **Codex**.
+Reusable AI agent prompts for development workflows — supports **GitHub Copilot**, **Claude Code**, and **Codex** with multi-stack and multi-tracker filtering.
 
-[![npm version](https://img.shields.io/npm/v/@silverassist/copilot-prompts-kit.svg)](https://www.npmjs.com/package/@silverassist/copilot-prompts-kit)
-[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/SilverAssist/copilot-prompts-kit/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/@silverassist/agents-toolkit.svg)](https://www.npmjs.com/package/@silverassist/agents-toolkit)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/SilverAssist/agents-toolkit/blob/main/LICENSE)
 
 ## Features
 
 - ✅ **Complete Workflow Prompts**: From ticket analysis to PR merge
 - ✅ **Multi-Agent Support**: Works with GitHub Copilot, Claude Code, and Codex
+- ✅ **Multi-Stack Filtering**: Install only React or WordPress content with `--stack`
+- ✅ **Multi-Tracker Support**: Choose GitHub Issues or Jira workflows with `--tracker`
 - ✅ **Modular Partials**: Reusable prompt fragments
-- ✅ **Jira Integration**: Built-in Atlassian MCP support
 - ✅ **Customizable**: Easy to extend and modify
 - ✅ **CLI Tool**: Quick installation in any project
 
@@ -19,19 +20,19 @@ Reusable AI agent prompts for development workflows with Jira integration — su
 **For GitHub Copilot:**
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install
+npx @silverassist/agents-toolkit@latest install
 ```
 
 **For Claude Code:**
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --claude
+npx @silverassist/agents-toolkit@latest install --claude
 ```
 
 **For Codex:**
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --codex
+npx @silverassist/agents-toolkit@latest install --codex
 ```
 
 ## Setup
@@ -41,7 +42,7 @@ npx @silverassist/copilot-prompts-kit@latest install --codex
 Run the CLI to install prompts into your project:
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install
+npx @silverassist/agents-toolkit@latest install
 ```
 
 This creates the following structure:
@@ -80,7 +81,7 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 Run the CLI with the `--claude` flag:
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --claude
+npx @silverassist/agents-toolkit@latest install --claude
 ```
 
 This creates the following structure:
@@ -114,7 +115,7 @@ Type `/` in the chat to see all available slash commands:
 Run the CLI with the `--codex` flag:
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --codex
+npx @silverassist/agents-toolkit@latest install --codex
 ```
 
 This creates the following structure:
@@ -140,12 +141,14 @@ AGENTS.md                             # Project instructions for Codex (project 
     └── testing-patterns/
 ```
 
-### Configure Jira (Optional)
+### Configure Project (Optional)
 
-Update `.copilot-prompts.json` in your project root (created automatically):
+Update `.agents-toolkit.json` in your project root (created automatically):
 
 ```json
 {
+  "stack": "react",
+  "tracker": "github",
   "jira": {
     "projectKey": "WEB",
     "baseUrl": "https://your-org.atlassian.net"
@@ -156,20 +159,29 @@ Update `.copilot-prompts.json` in your project root (created automatically):
 }
 ```
 
+| Field | Values | Description |
+|-------|--------|-------------|
+| `stack` | `react`, `wordpress`, `all` | Filter instructions/skills by tech stack |
+| `tracker` | `github`, `jira`, `all` | Filter prompts/partials by issue tracker |
+| `jira` | object | Jira connection settings (when tracker is `jira`) |
+| `git` | object | Git workflow settings |
+
 ## Available Prompts / Commands
 
 The same set of prompts is available for all supported tools.
 
 ### Workflow
 
-| Prompt / Command | Description | Variables |
-|------------------|-------------|-----------|
-| `analyze-ticket` | Analyze a Jira ticket | `{ticket-id}` |
-| `create-plan` | Create implementation plan | `{feature-description}` |
-| `work-ticket` | Start working on a ticket | `{ticket-id}` |
-| `prepare-pr` | Prepare code for PR | — |
-| `create-pr` | Create a pull request | `{ticket-id}` |
-| `finalize-pr` | Finalize and merge PR | `{ticket-id}` |
+| Prompt / Command | Description | Variables | Tracker |
+|------------------|-------------|-----------|---------|
+| `analyze-ticket` | Analyze a Jira ticket | `{ticket-id}` | Jira |
+| `analyze-github-issue` | Analyze a GitHub issue | `{issue-number}` | GitHub |
+| `create-plan` | Create implementation plan | `{feature-description}` | All |
+| `work-ticket` | Start working on a Jira ticket | `{ticket-id}` | Jira |
+| `work-github-issue` | Start working on a GitHub issue | `{issue-number}` | GitHub |
+| `prepare-pr` | Prepare code for PR | — | All |
+| `create-pr` | Create a pull request | `{ticket-id}` | Jira |
+| `finalize-pr` | Finalize and merge PR | `{ticket-id}` | Jira |
 
 ### Utility
 
@@ -201,12 +213,14 @@ The same set of prompts is available for all supported tools.
 Install prompts into your project. **Does not overwrite existing files by default** — safe to run multiple times.
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install [options]
+npx @silverassist/agents-toolkit@latest install [options]
 ```
 
 | Option | Description |
 |--------|-------------|
 | `--target <name>` | Target installer: `copilot`, `claude`, or `codex` |
+| `--stack <name>` | Filter by tech stack: `react`, `wordpress`, or `all` (default) |
+| `--tracker <name>` | Filter by issue tracker: `github`, `jira`, or `all` (default) |
 | `--claude` | Install for Claude Code (`.claude/commands/` + `CLAUDE.md`) |
 | `--codex` | Install for Codex (`AGENTS.md` + shared `.github` files) |
 | `--append` | Append missing sections to existing `AGENTS.md` (instead of overwrite) |
@@ -221,28 +235,40 @@ npx @silverassist/copilot-prompts-kit@latest install [options]
 
 ```bash
 # GitHub Copilot — first install
-npx @silverassist/copilot-prompts-kit@latest install
+npx @silverassist/agents-toolkit@latest install
 
 # Claude Code — first install
-npx @silverassist/copilot-prompts-kit@latest install --claude
+npx @silverassist/agents-toolkit@latest install --claude
 
 # Codex — first install
-npx @silverassist/copilot-prompts-kit@latest install --codex
-npx @silverassist/copilot-prompts-kit@latest install --target codex
-npx @silverassist/copilot-prompts-kit@latest install --target=claude
+npx @silverassist/agents-toolkit@latest install --codex
+npx @silverassist/agents-toolkit@latest install --target codex
+npx @silverassist/agents-toolkit@latest install --target=claude
 
 # Force overwrite all files
-npx @silverassist/copilot-prompts-kit@latest install --force
-npx @silverassist/copilot-prompts-kit@latest install --claude --force
-npx @silverassist/copilot-prompts-kit@latest install --codex --force
+npx @silverassist/agents-toolkit@latest install --force
+npx @silverassist/agents-toolkit@latest install --claude --force
+npx @silverassist/agents-toolkit@latest install --codex --force
 
 # Merge AGENTS.md sections without overwriting
-npx @silverassist/copilot-prompts-kit@latest install --codex --instructions-only --append
+npx @silverassist/agents-toolkit@latest install --codex --instructions-only --append
 
 # Preview without installing
-npx @silverassist/copilot-prompts-kit@latest install --dry-run
-npx @silverassist/copilot-prompts-kit@latest install --claude --dry-run
-npx @silverassist/copilot-prompts-kit@latest install --codex --dry-run
+npx @silverassist/agents-toolkit@latest install --dry-run
+npx @silverassist/agents-toolkit@latest install --claude --dry-run
+npx @silverassist/agents-toolkit@latest install --codex --dry-run
+
+# Filter by tech stack
+npx @silverassist/agents-toolkit@latest install --stack react
+npx @silverassist/agents-toolkit@latest install --stack wordpress
+
+# Filter by issue tracker
+npx @silverassist/agents-toolkit@latest install --tracker github
+npx @silverassist/agents-toolkit@latest install --tracker jira
+
+# Combine stack + tracker
+npx @silverassist/agents-toolkit@latest install --stack react --tracker github
+npx @silverassist/agents-toolkit@latest install --stack wordpress --tracker jira --claude
 ```
 
 ### update
@@ -250,9 +276,9 @@ npx @silverassist/copilot-prompts-kit@latest install --codex --dry-run
 Update all prompts to the latest version. **Overwrites existing files** (equivalent to `install --force`).
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest update [options]
-npx @silverassist/copilot-prompts-kit@latest update --claude
-npx @silverassist/copilot-prompts-kit@latest update --codex
+npx @silverassist/agents-toolkit@latest update [options]
+npx @silverassist/agents-toolkit@latest update --claude
+npx @silverassist/agents-toolkit@latest update --codex
 ```
 
 > ⚠️ **Warning:** This will replace any customizations you've made to the installed files.
@@ -262,7 +288,7 @@ npx @silverassist/copilot-prompts-kit@latest update --codex
 List all available prompts and skills.
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest list
+npx @silverassist/agents-toolkit@latest list
 ```
 
 ### Command Comparison
@@ -287,8 +313,9 @@ Reusable prompt fragments shared between tools:
 | `validations.md` | Code quality validation steps |
 | `git-operations.md` | Git workflow operations |
 | `jira-integration.md` | Jira/Atlassian MCP operations |
+| `github-integration.md` | GitHub issue operations (MCP) |
 | `documentation.md` | Documentation standards |
-| `pr-template.md` | Pull request templates |
+| `pr-template.md` | Pull request templates (GitHub Issues + Jira) |
 
 ## Instructions
 
@@ -343,18 +370,19 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 
 - Node.js 18+
 - Git installed and configured
-- Atlassian MCP configured (for Jira integration)
+- **For Jira tracker:** Atlassian MCP configured
+- **For GitHub tracker:** GitHub MCP configured
 - **For GitHub Copilot:** VS Code with GitHub Copilot extension
 - **For Claude Code:** Claude Code CLI or VS Code extension
 - **For Codex:** Codex CLI/session running at project root
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](https://github.com/SilverAssist/copilot-prompts-kit/blob/main/LICENSE)
+[PolyForm Noncommercial License 1.0.0](https://github.com/SilverAssist/agents-toolkit/blob/main/LICENSE)
 
 ## Links
 
-- [GitHub Repository](https://github.com/SilverAssist/copilot-prompts-kit)
-- [npm Package](https://www.npmjs.com/package/@silverassist/copilot-prompts-kit)
+- [GitHub Repository](https://github.com/SilverAssist/agents-toolkit)
+- [npm Package](https://www.npmjs.com/package/@silverassist/agents-toolkit)
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)

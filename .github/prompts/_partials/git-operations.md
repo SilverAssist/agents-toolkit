@@ -14,7 +14,7 @@ Include these steps in prompts that require Git operations.
 
 1. **Read base branch from config**:
    ```bash
-   BASE_BRANCH=$(node -e "try{const c=require('./.copilot-prompts.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
+   BASE_BRANCH=$(node -e "try{const c=require('./.agents-toolkit.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
    echo "$BASE_BRANCH"
    ```
 

@@ -1,6 +1,6 @@
 # Skills
 
-Skills are specialized knowledge guides that GitHub Copilot can use to understand project-specific patterns and conventions.
+Skills are specialized knowledge guides that GitHub Copilot, Claude Code, and Codex can use to understand project-specific patterns and conventions.
 
 ## What are Skills?
 
@@ -25,7 +25,7 @@ Each skill lives in its own folder with a `SKILL.md` file:
 ```yaml
 ---
 name: skill-name
-description: When to use this skill. Copilot uses this to decide relevance.
+description: When to use this skill. Agents use this to decide relevance.
 ---
 ```
 
@@ -39,7 +39,7 @@ description: When to use this skill. Copilot uses this to decide relevance.
 
 ## Usage
 
-Skills are automatically picked up by GitHub Copilot when relevant to your question. You can also reference them explicitly:
+Skills are automatically picked up by agents when relevant to your question. You can also reference them explicitly:
 
 ```
 @workspace Use the component-architecture skill to create a new payment form component

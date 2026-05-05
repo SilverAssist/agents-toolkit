@@ -56,7 +56,7 @@ Create planning document at `docs/{feature-name}-plan.md`:
 
 Resolve base branch from config, then branch from latest base:
 ```bash
-BASE_BRANCH=$(node -e "try{const c=require('./.copilot-prompts.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
+BASE_BRANCH=$(node -e "try{const c=require('./.agents-toolkit.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
 git checkout "$BASE_BRANCH"
 git pull origin "$BASE_BRANCH"
 git checkout -b feature/{ticket-id}-short-description

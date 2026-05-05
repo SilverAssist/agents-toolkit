@@ -1,9 +1,9 @@
 ---
-description: "Prepare and validate a new release for copilot-prompts-kit"
+description: "Prepare and validate a new release for agents-toolkit"
 agent: agent
 ---
 
-# Release Preparation for copilot-prompts-kit
+# Release Preparation for agents-toolkit
 
 Prepare a new release following the checklist below. **DO NOT publish to npm directly** — use the GitHub Release workflow.
 
@@ -35,7 +35,7 @@ Verify the version is consistent across all files:
 
 Verify `package.json` has correct configuration:
 
-- [ ] `name` is `@silverassist/copilot-prompts-kit`
+- [ ] `name` is `@silverassist/agents-toolkit`
 - [ ] `version` matches target version
 - [ ] `files` array includes: `bin`, `src`, `templates`, `README.md`, `LICENSE`
 - [ ] `main` points to `src/index.js`
@@ -111,7 +111,7 @@ git branch --show-current
    ```
 
 2. Create a GitHub Release:
-   - Go to: https://github.com/SilverAssist/copilot-prompts-kit/releases/new
+   - Go to: https://github.com/SilverAssist/agents-toolkit/releases/new
    - Tag: `v{version}` (create new tag)
    - Title: `v{version}`
    - Description: Copy from CHANGELOG.md
@@ -124,8 +124,8 @@ git branch --show-current
    - Create a summary
 
 4. Verify publication:
-   - Check workflow: https://github.com/SilverAssist/copilot-prompts-kit/actions
-   - Check npm: https://www.npmjs.com/package/@silverassist/copilot-prompts-kit
+   - Check workflow: https://github.com/SilverAssist/agents-toolkit/actions
+   - Check npm: https://www.npmjs.com/package/@silverassist/agents-toolkit
 
 ---
 
@@ -133,6 +133,6 @@ git branch --show-current
 
 If something goes wrong after publishing:
 
-1. **npm:** `npm deprecate @silverassist/copilot-prompts-kit@{version} "reason"`
+1. **npm:** `npm deprecate @silverassist/agents-toolkit@{version} "reason"`
 2. **GitHub:** Delete the release and tag
 3. Fix the issue and release a patch version

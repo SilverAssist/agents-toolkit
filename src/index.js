@@ -1,9 +1,9 @@
 /**
- * Copilot Prompts Kit
- * @module @silverassist/copilot-prompts-kit
+ * Agents Toolkit
+ * @module @silverassist/agents-toolkit
  */
 
-export const VERSION = "1.5.1";
+export const VERSION = "2.0.0";
 
 export const PROMPTS = {
   workflow: [

@@ -124,7 +124,7 @@ interface ContactFormProps {
   initialValues?: Record<string, string>;
 }
 
-export function ContactForm({ onSubmit, initialValues }: ContactFormProps) {
+export default function ContactForm({ onSubmit, initialValues }: ContactFormProps) {
   // Implementation
 }
 ```
@@ -301,7 +301,7 @@ import LoginForm from "@/components/auth/login-form";
 
 ```typescript
 // ✅ CORRECT
-export function Component({ data }: Props) {
+export default function Component({ data }: Props) {
   const [state, setState] = useState(initialState);
   const handleClick = useCallback(() => {}, []);
 
