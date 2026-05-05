@@ -180,8 +180,8 @@ The same set of prompts is available for all supported tools.
 | `work-ticket` | Start working on a Jira ticket | `{ticket-id}` | Jira |
 | `work-github-issue` | Start working on a GitHub issue | `{issue-number}` | GitHub |
 | `prepare-pr` | Prepare code for PR | — | All |
-| `create-pr` | Create a pull request | `{ticket-id}` | All |
-| `finalize-pr` | Finalize and merge PR | `{ticket-id}` | All |
+| `create-pr` | Create a pull request | `{ticket-id}` | Jira |
+| `finalize-pr` | Finalize and merge PR | `{ticket-id}` | Jira |
 
 ### Utility
 

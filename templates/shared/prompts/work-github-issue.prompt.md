@@ -27,6 +27,8 @@ Fetch issue **#{issue-number}** with all details:
 ### 2. Analyze Project Context
 
 Read project conventions:
+- `AGENTS.md` — Agent instructions (Copilot/Codex)
+- `CLAUDE.md` — Agent instructions (Claude Code)
 - `copilot-instructions.md` or `.github/copilot-instructions.md` — Project guidelines
 - `.github/instructions/` — File-type specific instructions
 - `docs/` — Related documentation

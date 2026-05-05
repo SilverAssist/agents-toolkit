@@ -61,7 +61,7 @@ const FILE_CATEGORIES = {
       'create-plan', 'create-pr', 'prepare-pr', 'finalize-pr',
       'review-code', 'fix-issues', 'add-tests', 'prepare-release',
     ],
-    jira: ['analyze-ticket', 'work-ticket'],
+    jira: ['analyze-ticket', 'work-ticket', 'create-pr', 'finalize-pr'],
     github: ['analyze-github-issue', 'work-github-issue'],
   },
   partials: {
