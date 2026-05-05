@@ -1,8 +1,8 @@
-# @silverassist/copilot-prompts-kit
+# @silverassist/agents-toolkit
 
 Reusable AI agent prompts for development workflows with Jira integration — supports **GitHub Copilot**, **Claude Code**, and **Codex**.
 
-[![npm version](https://img.shields.io/npm/v/@silverassist/copilot-prompts-kit.svg)](https://www.npmjs.com/package/@silverassist/copilot-prompts-kit)
+[![npm version](https://img.shields.io/npm/v/@silverassist/agents-toolkit.svg)](https://www.npmjs.com/package/@silverassist/agents-toolkit)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/SilverAssist/copilot-prompts-kit/blob/main/LICENSE)
 
 ## Features
@@ -19,19 +19,19 @@ Reusable AI agent prompts for development workflows with Jira integration — su
 **For GitHub Copilot:**
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install
+npx @silverassist/agents-toolkit@latest install
 ```
 
 **For Claude Code:**
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --claude
+npx @silverassist/agents-toolkit@latest install --claude
 ```
 
 **For Codex:**
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --codex
+npx @silverassist/agents-toolkit@latest install --codex
 ```
 
 ## Setup
@@ -41,7 +41,7 @@ npx @silverassist/copilot-prompts-kit@latest install --codex
 Run the CLI to install prompts into your project:
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install
+npx @silverassist/agents-toolkit@latest install
 ```
 
 This creates the following structure:
@@ -80,7 +80,7 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 Run the CLI with the `--claude` flag:
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --claude
+npx @silverassist/agents-toolkit@latest install --claude
 ```
 
 This creates the following structure:
@@ -114,7 +114,7 @@ Type `/` in the chat to see all available slash commands:
 Run the CLI with the `--codex` flag:
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install --codex
+npx @silverassist/agents-toolkit@latest install --codex
 ```
 
 This creates the following structure:
@@ -142,7 +142,7 @@ AGENTS.md                             # Project instructions for Codex (project 
 
 ### Configure Jira (Optional)
 
-Update `.copilot-prompts.json` in your project root (created automatically):
+Update `.agents-toolkit.json` in your project root (created automatically):
 
 ```json
 {
@@ -201,7 +201,7 @@ The same set of prompts is available for all supported tools.
 Install prompts into your project. **Does not overwrite existing files by default** — safe to run multiple times.
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest install [options]
+npx @silverassist/agents-toolkit@latest install [options]
 ```
 
 | Option | Description |
@@ -221,28 +221,28 @@ npx @silverassist/copilot-prompts-kit@latest install [options]
 
 ```bash
 # GitHub Copilot — first install
-npx @silverassist/copilot-prompts-kit@latest install
+npx @silverassist/agents-toolkit@latest install
 
 # Claude Code — first install
-npx @silverassist/copilot-prompts-kit@latest install --claude
+npx @silverassist/agents-toolkit@latest install --claude
 
 # Codex — first install
-npx @silverassist/copilot-prompts-kit@latest install --codex
-npx @silverassist/copilot-prompts-kit@latest install --target codex
-npx @silverassist/copilot-prompts-kit@latest install --target=claude
+npx @silverassist/agents-toolkit@latest install --codex
+npx @silverassist/agents-toolkit@latest install --target codex
+npx @silverassist/agents-toolkit@latest install --target=claude
 
 # Force overwrite all files
-npx @silverassist/copilot-prompts-kit@latest install --force
-npx @silverassist/copilot-prompts-kit@latest install --claude --force
-npx @silverassist/copilot-prompts-kit@latest install --codex --force
+npx @silverassist/agents-toolkit@latest install --force
+npx @silverassist/agents-toolkit@latest install --claude --force
+npx @silverassist/agents-toolkit@latest install --codex --force
 
 # Merge AGENTS.md sections without overwriting
-npx @silverassist/copilot-prompts-kit@latest install --codex --instructions-only --append
+npx @silverassist/agents-toolkit@latest install --codex --instructions-only --append
 
 # Preview without installing
-npx @silverassist/copilot-prompts-kit@latest install --dry-run
-npx @silverassist/copilot-prompts-kit@latest install --claude --dry-run
-npx @silverassist/copilot-prompts-kit@latest install --codex --dry-run
+npx @silverassist/agents-toolkit@latest install --dry-run
+npx @silverassist/agents-toolkit@latest install --claude --dry-run
+npx @silverassist/agents-toolkit@latest install --codex --dry-run
 ```
 
 ### update
@@ -250,9 +250,9 @@ npx @silverassist/copilot-prompts-kit@latest install --codex --dry-run
 Update all prompts to the latest version. **Overwrites existing files** (equivalent to `install --force`).
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest update [options]
-npx @silverassist/copilot-prompts-kit@latest update --claude
-npx @silverassist/copilot-prompts-kit@latest update --codex
+npx @silverassist/agents-toolkit@latest update [options]
+npx @silverassist/agents-toolkit@latest update --claude
+npx @silverassist/agents-toolkit@latest update --codex
 ```
 
 > ⚠️ **Warning:** This will replace any customizations you've made to the installed files.
@@ -262,7 +262,7 @@ npx @silverassist/copilot-prompts-kit@latest update --codex
 List all available prompts and skills.
 
 ```bash
-npx @silverassist/copilot-prompts-kit@latest list
+npx @silverassist/agents-toolkit@latest list
 ```
 
 ### Command Comparison
@@ -355,6 +355,6 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 ## Links
 
 - [GitHub Repository](https://github.com/SilverAssist/copilot-prompts-kit)
-- [npm Package](https://www.npmjs.com/package/@silverassist/copilot-prompts-kit)
+- [npm Package](https://www.npmjs.com/package/@silverassist/agents-toolkit)
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
