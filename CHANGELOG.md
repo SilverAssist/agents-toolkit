@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - PHP/WordPress instructions: `php-standards`, `wordpress-plugin-architecture`, `testing-standards`
 - Documentation & workflow instructions: `documentation-language`, `github-workflow`
-- WordPress prompts: `new-component`, `new-plugin`, `prepare-release`, `quality-check`
+- WordPress prompts: `new-wp-component`, `new-wp-plugin`, `prepare-release`, `quality-check`
 - WordPress skills: `create-component`, `plugin-creation`, `quality-checks`, `release-management`, `testing`
 
 ### Fixed
