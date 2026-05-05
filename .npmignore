@@ -27,7 +27,7 @@ jest.config.*
 
 # Documentation for development only
 CONTRIBUTING.md
-.copilot-prompts.json
+.agents-toolkit.json
 
 # CI/CD
 .github/

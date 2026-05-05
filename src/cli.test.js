@@ -189,3 +189,31 @@ test('config file stack/tracker values are used when no flags provided', (t) => 
   assert.match(stdout, /analyze-github-issue\.prompt\.md/);
   assert.doesNotMatch(stdout, /analyze-ticket\.prompt\.md/);
 });
+
+test('--global installs to ~/.copilot/ and skips project-level files', (t) => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-toolkit-global-'));
+  t.after(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  const result = spawnSync(process.execPath, [CLI_PATH, 'install', '--global', '--dry-run'], {
+    cwd: os.tmpdir(),
+    encoding: 'utf-8',
+    env: { ...process.env, HOME: tempDir, USERPROFILE: tempDir },
+  });
+
+  const stdout = stripAnsi(result.stdout || '');
+  assert.equal(result.status, 0);
+  assert.match(stdout, /Global Installer/);
+  assert.match(stdout, new RegExp(tempDir.replace(/[/\\]/g, '.')));
+  // Should NOT include AGENTS.md or copilot-instructions.md in global mode
+  assert.doesNotMatch(stdout, /Would create AGENTS\.md/);
+  assert.doesNotMatch(stdout, /Would create copilot-instructions\.md/);
+});
+
+test('help shows --global option', () => {
+  const { status, stdout } = runCli(['help'], process.cwd());
+  assert.equal(status, 0);
+  assert.match(stdout, /--global, -g/);
+  assert.match(stdout, /install --global/);
+});
