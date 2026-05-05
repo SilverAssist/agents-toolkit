@@ -3,7 +3,7 @@
 Reusable AI agent prompts for development workflows — supports **GitHub Copilot**, **Claude Code**, and **Codex** with multi-stack and multi-tracker filtering.
 
 [![npm version](https://img.shields.io/npm/v/@silverassist/agents-toolkit.svg)](https://www.npmjs.com/package/@silverassist/agents-toolkit)
-[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/SilverAssist/copilot-prompts-kit/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/SilverAssist/agents-toolkit/blob/main/LICENSE)
 
 ## Features
 
@@ -378,11 +378,11 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](https://github.com/SilverAssist/copilot-prompts-kit/blob/main/LICENSE)
+[PolyForm Noncommercial License 1.0.0](https://github.com/SilverAssist/agents-toolkit/blob/main/LICENSE)
 
 ## Links
 
-- [GitHub Repository](https://github.com/SilverAssist/copilot-prompts-kit)
+- [GitHub Repository](https://github.com/SilverAssist/agents-toolkit)
 - [npm Package](https://www.npmjs.com/package/@silverassist/agents-toolkit)
 - [GitHub Copilot Documentation](https://docs.github.com/en/copilot)
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
