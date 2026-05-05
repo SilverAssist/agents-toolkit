@@ -175,8 +175,10 @@ export default function UserList({ users }: UserListProps) {
 **✅ Use `handle` prefix** for event handlers:
 
 ```tsx
+import type { ChangeEvent, SyntheticEvent } from "react";
+
 export default function Form() {
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     // ...
   };

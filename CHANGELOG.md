@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Remove identity replacement in `adaptPathsForClaude()` that replaced `.github/instructions/` with itself (CodeQL CWE-116)
+- Use portable `import type { SyntheticEvent, ChangeEvent } from "react"` in react-components instructions instead of `React.` namespace that requires `esModuleInterop`
 
 ## [1.5.1] - 2026-04-20
 
