@@ -37,6 +37,7 @@ export const SKILLS = [
   "component-architecture",
   "domain-driven-design",
   "testing-patterns",
+  "ai-seo-optimization",
 ];
 
 // Claude Code equivalents

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `ai-seo-optimization` skill — comprehensive AI Search optimization knowledge base (semantic HTML, E-E-A-T, structured data, agent-friendly UX patterns)
+- New `audit-ai-seo` prompt — on-demand 6-area audit with scoring output template (🟢/🟡/🔴)
+- Registered `ai-seo-optimization` in SKILLS export array
+
 ## [2.1.0] - 2026-05-04
 
 ### Added
