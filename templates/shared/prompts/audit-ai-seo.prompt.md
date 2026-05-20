@@ -15,11 +15,13 @@ Use the `ai-seo-optimization` skill as reference for all criteria. This audit fo
 
 ### 1. Technical Baseline
 
+> **Scope**: The checks below use Next.js App Router terminology (Server Components, `generateMetadata`). For non-Next.js projects, adapt to the equivalent patterns (e.g., SSR/SSG for content rendering, `<meta>` tags for metadata).
+
 Check the following in the codebase:
 
-- [ ] Pages use Server Components (content is SSR, not client-only)
+- [ ] Pages use Server Components or SSR (content is rendered server-side, not client-only)
 - [ ] No `nosnippet` or `data-nosnippet` on key content
-- [ ] `generateMetadata` provides title, description, and OpenGraph for all pages
+- [ ] Metadata (title, description, OpenGraph) is set for all pages
 - [ ] Canonical tags are properly set (no duplicates)
 - [ ] XML sitemap exists and includes all valuable pages
 - [ ] `robots.txt` doesn't block critical resources

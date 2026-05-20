@@ -68,7 +68,7 @@ Browser agents (Google's Mariner, OpenAI's Operator, etc.) interact with sites t
 - [ ] No layout shifts after load (CLS < 0.1)
 - [ ] Interactive elements have stable positions (no jumping during scroll)
 - [ ] No transparent overlays blocking clickable elements (ghost overlays)
-- [ ] All actionable elements have > 8px visible area
+- [ ] All actionable elements meet minimum target size of 24×24 CSS px (WCAG 2.2 SC 2.5.8)
 - [ ] Images have explicit `width` and `height` (prevent layout shift)
 
 ### CSS Signals for Agents
@@ -185,7 +185,7 @@ For existing commodity content, improve by adding:
 - [ ] Internal linking connects related content (topic clusters)
 - [ ] Breadcrumb navigation with schema markup
 - [ ] Clean URL structure reflecting content hierarchy
-- [ ] Pagination handled with proper `rel="next"` / `rel="prev"` or view-all option
+- [ ] Pagination handled with view-all option or clear next/previous links (note: `rel="next"`/`rel="prev"` is no longer used as a Google indexing signal)
 
 ### Performance & Page Experience
 
@@ -205,6 +205,7 @@ Structured data helps Google understand content relationships. While NOT require
 
 ```json
 {
+  "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": "Community Name",
   "address": {
@@ -227,6 +228,7 @@ Structured data helps Google understand content relationships. While NOT require
 
 ```json
 {
+  "@context": "https://schema.org",
   "@type": "Person",
   "name": "Author Name",
   "jobTitle": "Senior Care Advisor",
@@ -240,6 +242,7 @@ Structured data helps Google understand content relationships. While NOT require
 
 ```json
 {
+  "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Article Title",
   "author": { "@type": "Person", "name": "Author", "url": "/about/authors/slug" },
