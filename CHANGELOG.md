@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-05-19
+
 ### Added
 
 - New `ai-seo-optimization` skill — comprehensive AI Search optimization knowledge base (semantic HTML, E-E-A-T, structured data, agent-friendly UX patterns)
