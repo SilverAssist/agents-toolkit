@@ -395,10 +395,13 @@ PostToolUse hooks run automatically after GitHub Copilot edits files. They provi
 | `validate-tsx` | `*.tsx` in `components/` | Validates kebab-case folders, `index.tsx` naming, default export, and Props interface |
 | `lint-format` | `*.ts, *.tsx, *.js, *.jsx, *.css` | Runs ESLint `--fix` and Prettier `--write` on the modified file |
 
-Hooks are installed to `.github/hooks/` (Copilot) or `hooks/` (Codex/standalone):
+Hooks are installed to:
+
+- **Project** (default): `.github/hooks/`
+- **Global** (`--global`): `~/.copilot/hooks/`
 
 ```
-hooks/
+.github/hooks/              # or ~/.copilot/hooks/ for global
 ├── validate-tsx.json       # Hook config (PostToolUse trigger)
 ├── lint-format.json        # Hook config (PostToolUse trigger)
 └── scripts/
@@ -409,7 +412,11 @@ hooks/
 Install only hooks:
 
 ```bash
+# Project-level (hooks apply to this project only)
 npx @silverassist/agents-toolkit@latest install --hooks-only
+
+# Global (hooks apply to all Copilot sessions)
+npx @silverassist/agents-toolkit@latest install --hooks-only --global
 ```
 
 ## Agent Instructions Files

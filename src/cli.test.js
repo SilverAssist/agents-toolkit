@@ -286,3 +286,32 @@ test('help shows --hooks-only option', () => {
   assert.equal(status, 0);
   assert.match(stdout, /--hooks-only/);
 });
+
+test('--global --hooks-only installs hooks to ~/.copilot/hooks/', (t) => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-toolkit-global-hooks-'));
+  t.after(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  const result = spawnSync(process.execPath, [CLI_PATH, 'install', '--global', '--hooks-only'], {
+    cwd: os.tmpdir(),
+    encoding: 'utf-8',
+    env: { ...process.env, HOME: tempDir, USERPROFILE: tempDir },
+  });
+
+  const stdout = stripAnsi(result.stdout || '');
+  assert.equal(result.status, 0);
+
+  // Verify hooks are installed under ~/.copilot/hooks/
+  const hooksDir = path.join(tempDir, '.copilot', 'hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'validate-tsx.json')), 'validate-tsx.json should exist in global hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'lint-format.json')), 'lint-format.json should exist in global hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'validate-tsx.sh')), 'validate-tsx.sh should exist in global hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'lint-format.sh')), 'lint-format.sh should exist in global hooks');
+
+  // Verify the JSON configs use relative command paths (work for both project and global)
+  const config = JSON.parse(fs.readFileSync(path.join(hooksDir, 'lint-format.json'), 'utf-8'));
+  const command = config.hooks.PostToolUse[0].command;
+  assert.ok(!command.includes('.github/'), 'command path should not contain .github/ (must work globally)');
+  assert.match(command, /^scripts\//, 'command should use relative path from hooks dir');
+});

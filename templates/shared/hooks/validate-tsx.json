@@ -3,7 +3,7 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": ".github/hooks/scripts/validate-tsx.sh",
+        "command": "scripts/validate-tsx.sh",
         "timeout": 30
       }
     ]

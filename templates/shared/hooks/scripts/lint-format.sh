@@ -2,7 +2,7 @@
 # lint-format.sh — PostToolUse hook for VS Code Copilot
 # Runs eslint --fix and prettier --write on files modified by the agent.
 # This ensures agent-generated code follows project formatting standards.
-# Exit 0 = pass (always), warnings printed to stderr.
+# Exit 0 = pass (always), diagnostics printed to stderr.
 
 set -uo pipefail
 
@@ -17,6 +17,11 @@ case "$FILE" in
   *.ts|*.tsx|*.js|*.jsx|*.css) ;;
   *) exit 0 ;;
 esac
+
+# Resolve to absolute path to prevent infinite loop in directory walk
+if [[ "$FILE" != /* ]]; then
+  FILE="$(cd "$(dirname "$FILE")" && pwd)/$(basename "$FILE")"
+fi
 
 # File must exist
 if [[ ! -f "$FILE" ]]; then
@@ -46,14 +51,14 @@ PRETTIER="$PROJECT_ROOT/node_modules/.bin/prettier"
 case "$FILE" in
   *.ts|*.tsx|*.js|*.jsx)
     if [[ -x "$ESLINT" ]]; then
-      "$ESLINT" --fix "$FILE" 2>/dev/null || true
+      "$ESLINT" --fix "$FILE" || true
     fi
     ;;
 esac
 
 # Run Prettier --write
 if [[ -x "$PRETTIER" ]]; then
-  "$PRETTIER" --write "$FILE" 2>/dev/null || true
+  "$PRETTIER" --write "$FILE" || true
 fi
 
 exit 0

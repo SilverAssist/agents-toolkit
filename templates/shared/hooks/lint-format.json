@@ -3,7 +3,7 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": ".github/hooks/scripts/lint-format.sh",
+        "command": "scripts/lint-format.sh",
         "timeout": 30
       }
     ]

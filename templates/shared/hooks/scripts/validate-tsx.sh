@@ -60,8 +60,8 @@ fi
 
 # --- Rule 5: No relative imports (must use @/ prefix) ---
 if [[ -f "$FILE" ]]; then
-  if grep -qE "^import .+ from ['\"]\.\./" "$FILE"; then
-    ERRORS+=("Use absolute imports with @/ prefix instead of relative paths (../)")
+  if grep -qE "^import .+ from ['\"]\.\.?/" "$FILE"; then
+    ERRORS+=("Use absolute imports with @/ prefix instead of relative paths (./ or ../)")
   fi
 fi
 
