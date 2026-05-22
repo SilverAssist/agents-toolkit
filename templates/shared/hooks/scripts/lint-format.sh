@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # lint-format.sh — PostToolUse hook for VS Code Copilot
 # Runs eslint --fix and prettier --write on files modified by the agent.
 # This ensures agent-generated code follows project formatting standards.

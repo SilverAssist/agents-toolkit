@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # validate-tsx.sh — PostToolUse hook for VS Code Copilot
 # Validates that TSX component files follow project conventions.
 # Exit 0 = pass, Exit 1 = fail (shown as warning to Copilot).
@@ -60,9 +60,7 @@ fi
 
 # --- Rule 5: No relative imports (must use @/ prefix) ---
 if [[ -f "$FILE" ]]; then
-  if grep -qE "^import .+ from ['\"]\.\.?/" "$FILE"; then
-    ERRORS+=("Use absolute imports with @/ prefix instead of relative paths (./ or ../)")
-  fi
+  if grep -qE "^import .+ from ['\"]\.\.?/" "$FILE" || grep -qE "^import ['\"]\.\.?/" "$FILE"; then
 fi
 
 # --- Report ---
