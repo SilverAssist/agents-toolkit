@@ -14,6 +14,7 @@ Reusable AI agent prompts for development workflows — supports **GitHub Copilo
 - ✅ **Global Install**: Install once for all projects with `--global`
 - ✅ **Modular Partials**: Reusable prompt fragments
 - ✅ **Customizable**: Easy to extend and modify
+- ✅ **PostToolUse Hooks**: Automated validation and formatting after Copilot edits
 - ✅ **CLI Tool**: Quick installation in any project
 
 ## Installation
@@ -257,6 +258,7 @@ npx @silverassist/agents-toolkit@latest install [options]
 | `--instructions-only` | Only install instructions and instructions file |
 | `--partials-only` | Only install partials |
 | `--skills-only` | Only install skills |
+| `--hooks-only` | Only install hooks (PostToolUse validation scripts) |
 | `--dry-run` | Show what would be installed without making changes |
 
 **Examples:**
@@ -383,6 +385,39 @@ Specialized knowledge guides for domain-specific patterns:
 **Claude Code** — skills are stored in `.github/skills/` and can be referenced in any prompt or command.
 
 **Codex** — skills are stored in `.github/skills/` and can be referenced from `AGENTS.md` and task context.
+
+## Hooks
+
+PostToolUse hooks run automatically after GitHub Copilot edits files. They provide real-time validation and formatting without manual intervention.
+
+| Hook | Trigger | Description |
+|------|---------|-------------|
+| `validate-tsx` | `*.tsx` in `components/` | Validates kebab-case folders, `index.tsx` naming, default export, and Props interface |
+| `lint-format` | `*.ts, *.tsx, *.js, *.jsx, *.css` | Runs ESLint `--fix` and Prettier `--write` on the modified file |
+
+Hooks are installed to:
+
+- **Project** (default): `.github/hooks/`
+- **Global** (`--global`): `~/.copilot/hooks/`
+
+```
+.github/hooks/              # or ~/.copilot/hooks/ for global
+├── validate-tsx.json       # Hook config (PostToolUse trigger)
+├── lint-format.json        # Hook config (PostToolUse trigger)
+└── scripts/
+    ├── validate-tsx.sh     # Validation logic (exit 1 = warning)
+    └── lint-format.sh      # Auto-fix logic (always exit 0)
+```
+
+Install only hooks:
+
+```bash
+# Project-level (hooks apply to this project only)
+npx @silverassist/agents-toolkit@latest install --hooks-only
+
+# Global (hooks apply to all Copilot sessions)
+npx @silverassist/agents-toolkit@latest install --hooks-only --global
+```
 
 ## Agent Instructions Files
 

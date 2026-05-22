@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- PostToolUse hooks system — automated validation and formatting after Copilot/Codex file edits
+- `validate-tsx` hook — validates TSX component conventions (kebab-case folders, `index.tsx` naming, default export, Props interface)
+- `lint-format` hook — runs ESLint `--fix` and Prettier `--write` on modified files automatically
+- `--hooks-only` CLI flag for `install` command — installs only hook configs and scripts
+- `installHooks()` function with script chmod and dry-run support
+- `HOOKS` export array in `src/index.js`
+
 ## [2.2.0] - 2026-05-19
 
 ### Added

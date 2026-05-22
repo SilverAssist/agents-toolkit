@@ -40,6 +40,8 @@ export const SKILLS = [
   "ai-seo-optimization",
 ];
 
+export const HOOKS = ["validate-tsx", "lint-format"];
+
 // Claude Code equivalents
 export const CLAUDE_COMMANDS = [
   "analyze-ticket",

@@ -217,3 +217,101 @@ test('help shows --global option', () => {
   assert.match(stdout, /--global, -g/);
   assert.match(stdout, /install --global/);
 });
+
+// --- Hooks tests ---
+
+test('--hooks-only installs hook files', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--hooks-only'], tempDir);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /Installing hooks/);
+
+  // Verify hook config files were created
+  const hooksDir = path.join(tempDir, '.github', 'hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'validate-tsx.json')), 'validate-tsx.json should exist');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'lint-format.json')), 'lint-format.json should exist');
+
+  // Verify scripts directory and files
+  const scriptsDir = path.join(hooksDir, 'scripts');
+  assert.ok(fs.existsSync(path.join(scriptsDir, 'validate-tsx.sh')), 'validate-tsx.sh should exist');
+  assert.ok(fs.existsSync(path.join(scriptsDir, 'lint-format.sh')), 'lint-format.sh should exist');
+});
+
+test('--hooks-only makes scripts executable', (t) => {
+  const tempDir = createTempProject(t);
+  runCli(['install', '--hooks-only'], tempDir);
+
+  const hooksDir = path.join(tempDir, '.github', 'hooks');
+  const scriptsDir = path.join(hooksDir, 'scripts');
+
+  // Check file permissions (0o755 = rwxr-xr-x)
+  for (const script of ['validate-tsx.sh', 'lint-format.sh']) {
+    const scriptPath = path.join(scriptsDir, script);
+    if (fs.existsSync(scriptPath)) {
+      const stat = fs.statSync(scriptPath);
+      const mode = stat.mode & 0o777;
+      assert.equal(mode, 0o755, `${script} should be executable (0755)`);
+    }
+  }
+});
+
+test('--hooks-only --dry-run does not create files', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--hooks-only', '--dry-run'], tempDir);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /Dry run complete/);
+
+  // No files should exist
+  const hooksDir = path.join(tempDir, '.github', 'hooks');
+  assert.ok(!fs.existsSync(hooksDir), 'hooks dir should not exist in dry-run');
+});
+
+test('--hooks-only does not install prompts or instructions', (t) => {
+  const tempDir = createTempProject(t);
+  runCli(['install', '--hooks-only'], tempDir);
+
+  // Prompts should NOT be installed
+  const promptsDir = path.join(tempDir, '.github', 'prompts');
+  assert.ok(!fs.existsSync(promptsDir), 'prompts should not be installed with --hooks-only');
+
+  // Instructions should NOT be installed
+  const instructionsDir = path.join(tempDir, '.github', 'instructions');
+  assert.ok(!fs.existsSync(instructionsDir), 'instructions should not be installed with --hooks-only');
+});
+
+test('help shows --hooks-only option', () => {
+  const { status, stdout } = runCli(['help'], process.cwd());
+  assert.equal(status, 0);
+  assert.match(stdout, /--hooks-only/);
+});
+
+test('--global --hooks-only installs hooks to ~/.copilot/hooks/', (t) => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-toolkit-global-hooks-'));
+  t.after(() => {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  const result = spawnSync(process.execPath, [CLI_PATH, 'install', '--global', '--hooks-only'], {
+    cwd: os.tmpdir(),
+    encoding: 'utf-8',
+    env: { ...process.env, HOME: tempDir, USERPROFILE: tempDir },
+  });
+
+  const stdout = stripAnsi(result.stdout || '');
+  assert.equal(result.status, 0);
+
+  // Verify hooks are installed under ~/.copilot/hooks/
+  const hooksDir = path.join(tempDir, '.copilot', 'hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'validate-tsx.json')), 'validate-tsx.json should exist in global hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'lint-format.json')), 'lint-format.json should exist in global hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'validate-tsx.sh')), 'validate-tsx.sh should exist in global hooks');
+  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'lint-format.sh')), 'lint-format.sh should exist in global hooks');
+
+  // Verify the JSON configs use relative command paths (work for both project and global)
+  const config = JSON.parse(fs.readFileSync(path.join(hooksDir, 'lint-format.json'), 'utf-8'));
+  const command = config.hooks.PostToolUse[0].command;
+  assert.ok(!command.includes('.github/'), 'command path should not contain .github/ (must work globally)');
+  assert.match(command, /^scripts\//, 'command should use relative path from hooks dir');
+});
