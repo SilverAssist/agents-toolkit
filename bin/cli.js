@@ -286,19 +286,52 @@ function getInstallScope(options = {}) {
     partialsOnly = false,
     skillsOnly = false,
     instructionsOnly = false,
+    hooksOnly = false,
   } = options;
 
-  const hasSpecificFlag = promptsOnly || partialsOnly || skillsOnly || instructionsOnly;
+  const hasSpecificFlag = promptsOnly || partialsOnly || skillsOnly || instructionsOnly || hooksOnly;
 
   return {
     shouldInstallPrompts: !hasSpecificFlag || promptsOnly || partialsOnly,
     shouldInstallInstructions: !hasSpecificFlag || instructionsOnly,
     shouldInstallSkills: !hasSpecificFlag || skillsOnly,
+    shouldInstallHooks: !hasSpecificFlag || hooksOnly,
   };
 }
 
 function getChangeCount(result, dryRun) {
   return dryRun ? result.planned : result.written;
+}
+
+function installHooks({ targetDir, force = false, dryRun = false }) {
+  const hooksSrc = path.join(TEMPLATES_DIR, 'shared', 'hooks');
+  const hooksDest = path.join(targetDir, 'hooks');
+
+  if (!fs.existsSync(hooksSrc)) {
+    warn('No hooks templates found — skipping');
+    return { written: 0, skipped: 0, planned: 0 };
+  }
+
+  // Copy hook JSON configs and scripts
+  const result = copyDir(hooksSrc, hooksDest, { force, dryRun });
+
+  // Make scripts executable (non-dry-run only)
+  if (!dryRun) {
+    const scriptsDir = path.join(hooksDest, 'scripts');
+    if (fs.existsSync(scriptsDir)) {
+      const scripts = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.sh'));
+      for (const script of scripts) {
+        const scriptPath = path.join(scriptsDir, script);
+        fs.chmodSync(scriptPath, 0o755);
+      }
+    }
+  }
+
+  if (!dryRun && result.written > 0) {
+    success(`Installed ${result.written} hook files`);
+  }
+
+  return result;
 }
 
 function ensureConfigFile({ dryRun = false, global = false } = {}) {
@@ -493,6 +526,12 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     if (!dryRun && result.written > 0) {
       success(`Installed ${result.written} skill files`);
     }
+  }
+
+  if (scope.shouldInstallHooks) {
+    info('Installing hooks...');
+    const hooksResult = installHooks({ targetDir, force, dryRun });
+    totalChanges += getChangeCount(hooksResult, dryRun);
   }
 
   const configResult = ensureConfigFile({ dryRun, global: isGlobal });
@@ -715,6 +754,17 @@ function list() {
       console.log(`  • ${s}`);
     });
   }
+
+  console.log('');
+  log('Hooks:', 'cyan');
+  const hooksDir = path.join(TEMPLATES_DIR, 'shared', 'hooks');
+  if (fs.existsSync(hooksDir)) {
+    const hooks = fs.readdirSync(hooksDir)
+      .filter(f => f.endsWith('.json'));
+    hooks.forEach(h => {
+      console.log(`  • ${h.replace('.json', '')}`);
+    });
+  }
   console.log('');
 }
 
@@ -745,6 +795,7 @@ function showHelp() {
   console.log('  --instructions-only Only install instructions');
   console.log('  --partials-only     Only install partials');
   console.log('  --skills-only       Only install skills');
+  console.log('  --hooks-only        Only install hooks (PostToolUse validation scripts)');
   console.log('  --dry-run           Show what would be installed');
 
   console.log('');
@@ -821,6 +872,7 @@ function parseArgs() {
     partialsOnly: flags.includes('--partials-only'),
     skillsOnly: flags.includes('--skills-only'),
     instructionsOnly: flags.includes('--instructions-only'),
+    hooksOnly: flags.includes('--hooks-only'),
     dryRun: flags.includes('--dry-run'),
     claude: flags.includes('--claude'),
     codex: flags.includes('--codex'),
