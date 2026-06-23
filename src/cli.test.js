@@ -635,8 +635,11 @@ test('install appends managed paths to .gitignore', (t) => {
 test('install does not duplicate .gitignore entries on re-run', (t) => {
   const tempDir = createTempProject(t);
 
-  runCli(['install', '--skills-only'], tempDir);
-  runCli(['install', '--skills-only', '--force'], tempDir);
+  const r1 = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(r1.status, 0, `first install failed:\n${r1.stdout}`);
+
+  const r2 = runCli(['install', '--skills-only', '--force'], tempDir);
+  assert.equal(r2.status, 0, `second install (--force) failed:\n${r2.stdout}`);
 
   const gitignore = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf-8');
   const count = (gitignore.match(/\.agents\/skills\//g) || []).length;
