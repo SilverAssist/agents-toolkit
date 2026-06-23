@@ -5,273 +5,160 @@ description: Guide for organizing code using Domain-Driven Design principles. Us
 
 # Domain-Driven Design (DDD) Skill
 
-This skill provides guidelines for organizing code following Domain-Driven Design principles.
+This skill provides guidelines for organizing the `@silverassist/agents-toolkit` codebase following
+Domain-Driven Design principles. The project is a **Node.js ESM CLI** with no React, TypeScript, or
+build step — adapt all examples accordingly.
 
 ## Core Principles
 
-1. **Group by Domain, Not by Type** - Organize files by business domain rather than technical type
-2. **Clear Boundaries** - Each domain has well-defined responsibilities
-3. **Self-Documenting Structure** - Folder names clearly communicate what the code does
-4. **Colocation** - Related code (components, utils, tests) lives together
+1. **Group by Responsibility, Not by Type** — Organize files by what they do, not what kind of file they are
+2. **Clear Boundaries** — Each module has well-defined inputs, outputs, and responsibilities
+3. **Self-Documenting Structure** — Folder and file names communicate intent without needing comments
+4. **Colocation** — Tests (`src/cli.test.js`) live next to the code they test
 
-## Domain Organization Rules
-
-### ✅ DO
-
-- Create domain folders that match business concepts
-- Keep domain-specific utilities inside domain folders
-- Place tests in `__tests__/` subfolders within each domain
-- Use clear, descriptive folder names
-
-### ❌ DON'T
-
-- Create generic folders like "helpers", "services", "utils" at root level
-- Mix different domain concerns in the same folder
-- Create deeply nested folder structures (max 3 levels)
-- Use abbreviations in folder names
-
-## Project Structure
-
-### Components Domain
+## Project Layout
 
 ```
-src/components/
-├── auth/                    # Authentication components
-│   ├── login-form/
-│   ├── register-form/
-│   └── password-reset/
-├── dashboard/               # Dashboard components
-│   ├── stats-card/
-│   ├── activity-feed/
-│   └── charts/
-├── checkout/                # Checkout flow components
-│   ├── cart-summary/
-│   ├── payment-form/
-│   └── order-confirmation/
-├── forms/                   # Reusable form components
-│   ├── contact-form/
-│   └── newsletter-form/
-├── layout/                  # Layout components
-│   ├── header/
-│   ├── footer/
-│   └── sidebar/
-├── shared/                  # Cross-domain reusable components
-│   ├── loading-spinner/
-│   ├── error-boundary/
-│   └── empty-state/
-└── ui/                      # Primitive UI components
-    ├── button/
-    ├── input/
-    └── modal/
+agents-toolkit/
+├── bin/
+│   └── cli.js              # Single CLI entry point — all install logic lives here
+├── src/
+│   ├── index.js            # Public API — metadata exports only (VERSION, PROMPTS, …)
+│   └── cli.test.js         # Full test suite (node:test + spawnSync)
+├── templates/
+│   ├── shared/             # Canonical source of truth for distributed content
+│   │   ├── instructions/   # .instructions.md files
+│   │   ├── prompts/        # .prompt.md files + _partials/
+│   │   ├── skills/         # SKILL.md folders
+│   │   └── hooks/          # .json hook definitions + scripts/
+│   └── agents/             # Root agent files (AGENTS.md, CLAUDE.md, …)
+├── .agents/skills/         # Canonical dev skills store (single source of truth)
+├── .github/
+│   ├── prompts/            # Dev workflow prompts for Copilot/Codex (real files)
+│   ├── skills/             # Symlinks → .agents/skills/
+│   └── instructions/       # (installed by consumers, not present in this repo)
+└── .claude/
+    ├── commands/           # Dev workflow commands for Claude Code (real files)
+    └── skills/             # Symlinks → .agents/skills/
 ```
 
-### Library Domain
+## Responsibility Boundaries
 
-```
-src/lib/
-├── api/                     # API client utilities
-│   ├── client.ts
-│   ├── endpoints.ts
-│   └── types.ts
-├── auth/                    # Authentication utilities
-│   ├── session.ts
-│   ├── tokens.ts
-│   └── permissions.ts
-├── email/                   # Email automation
-│   ├── templates.ts
-│   ├── sender.ts
-│   └── types.ts
-├── payment/                 # Payment processing
-│   ├── stripe.ts
-│   ├── checkout.ts
-│   └── types.ts
-└── utils/                   # Generic utilities (keep minimal)
-    ├── formatting.ts
-    └── validation.ts
-```
+### `bin/cli.js` — The CLI
 
-### Actions Domain (Next.js Server Actions)
+Single file responsible for all runtime behavior:
+- Argument parsing (`--stack`, `--tracker`, `--force`, `--dry-run`, `--global`, `--copy`)
+- Content filtering (`FILE_CATEGORIES` + `shouldIncludeFile()`)
+- Install orchestration (`install`, `installClaude`, `installCodex`, `installGitBasedTarget`)
+- File copy/symlink operations (`copyDir`, `installSkills`)
+- Path resolution helpers (`getTargetDir`, `getClaudeTargetDir`, `getAgentsSkillsDir`)
+- Console output helpers (`info`, `warn`, `success`, `error`)
 
-```
-src/actions/
-├── auth/                    # Auth-related actions
-│   ├── index.ts             # Barrel export
-│   ├── login.ts
-│   ├── logout.ts
-│   └── register.ts
-├── checkout/                # Checkout actions
-│   ├── index.ts             # Barrel export
-│   ├── create-order.ts
-│   ├── process-payment.ts
-│   └── add-to-cart.ts
-├── contact/                 # Contact form actions
-│   ├── index.ts
-│   └── submit-form.ts
-└── user/                    # User management actions
-    ├── index.ts
-    ├── update-profile.ts
-    └── change-password.ts
+**Rule:** Keep all install logic in `bin/cli.js`. Do not split into multiple files unless the file
+grows past ~1000 lines. Reuse existing helpers — do not add new ones for one-time operations.
+
+### `src/index.js` — Public Metadata
+
+Only exports package metadata. No logic:
+
+```js
+export const VERSION = "2.4.0";
+export const PROMPTS = { workflow: [...], utility: [...] };
+export const INSTRUCTIONS = [...];
+export const SKILLS = [...];
+// ...
 ```
 
-### Data Access Layer (DAL)
+**Rule:** Every array must stay alphabetically sorted and in sync with the corresponding
+`templates/shared/` directory. See `.github/instructions/index-exports.instructions.md`.
 
-```
-src/data/                    # Data Access Layer - server-only
-├── index.ts                 # Barrel export
-├── user.ts                  # User data operations
-├── product.ts               # Product data operations
-├── order.ts                 # Order data operations
-└── auth.ts                  # Auth/session utilities
-```
+### `templates/shared/` — Distributed Content
 
-> **CRITICAL**: All files in `src/data/` must start with `import "server-only"` to prevent
-> accidental client-side imports. See `server-actions.instructions.md` for security details.
+The single source of truth for what gets installed into end-user projects. Changes here affect
+what consumers receive on the next `npx @silverassist/agents-toolkit@latest install`.
 
-## Barrel Export Pattern
+**Rule:** Never reference project-specific paths (`bin/`, `src/`) inside templates. Templates
+must be generic enough to work in any project matching the target stack/tracker.
 
-Use **barrel exports** (`index.ts`) for folders with multiple internal files.
+### `src/cli.test.js` — Tests
 
-### Export Strategy by File Type
+Tests spawn the CLI as a child process against a temp directory and assert on the filesystem and
+stdout/stderr. Tests are the spec — new behavior requires a test.
 
-| File Type | Export Type | Reason |
-|-----------|-------------|--------|
-| Components | `export default` | Tree-shaking optimization (Next.js recommendation) |
-| Helpers/Utils | `export { name }` | Multiple functions per file |
-| Types | `export type { }` | Type-only exports |
-| Actions | `export { name }` | Named functions for clarity |
-| Hooks | `export { name }` | Named functions for clarity |
+**Rule:** Use `spawnSync` against temp dirs. Never mock internal functions. See the
+`testing-patterns` skill for patterns.
 
-### When to Create Barrel Exports
+## Organizing New Features
 
-- ✅ Domain folders with 3+ files
-- ✅ Component folders with multiple related components
-- ✅ When you want to hide internal file structure
-- ❌ Single-file folders (unnecessary)
+### Adding a new CLI flag
 
-### Component Barrel Export
+1. Parse in the `parseArgs()` / options section at the top of `bin/cli.js`
+2. Thread the value through `install*` functions that need it
+3. Honor the flag in all install paths (`install`, `installClaude`, `installCodex`)
+4. Add to the `help` command output
+5. Add a test: `help shows --flag-name option`
 
-```typescript
-// src/components/auth/index.ts
-// Components use "export default" in their files,
-// barrel re-exports with names for convenient imports
-export { default as LoginForm } from "./login-form";
-export { default as RegisterForm } from "./register-form";
-export { default as PasswordReset } from "./password-reset";
+### Adding a new template file
 
-// Usage - Clean named imports
-import { LoginForm, RegisterForm } from "@/components/auth";
-```
+1. Create the file under the correct `templates/shared/` subdirectory
+2. Add the name (without extension) to the appropriate `FILE_CATEGORIES` array in `bin/cli.js`
+3. Add to the matching export array in `src/index.js`
+4. Add `shouldIncludeFile()` logic if the file is stack- or tracker-specific
+5. Add/update a test asserting the file appears (or doesn't) under the right `--stack`/`--tracker`
 
-### Library Barrel Export
+### Adding a new skill to `.agents/skills/`
 
-```typescript
-// src/lib/payment/index.ts
-// Libraries use named exports throughout
-export { createCheckout, validateCart } from "./checkout";
-export { processPayment, refundPayment } from "./stripe";
-export type { PaymentIntent, CheckoutSession } from "./types";
-
-// Usage
-import { 
-  createCheckout,
-  processPayment,
-  type PaymentIntent,
-} from "@/lib/payment";
-```
-
-### Actions Barrel Export
-
-```typescript
-// src/actions/checkout/index.ts
-export { createOrder } from "./create-order";
-export { processPayment } from "./process-payment";
-export { addToCart } from "./add-to-cart";
-
-// Usage
-import { createOrder, addToCart } from "@/actions/checkout";
-```
-
-### Import Rules
-
-```typescript
-// ✅ CORRECT: Import from domain barrel
-import { LoginForm } from "@/components/auth";
-import { createCheckout } from "@/lib/payment";
-import { createOrder } from "@/actions/checkout";
-
-// ❌ INCORRECT: Deep imports when barrel exists
-import LoginForm from "@/components/auth/login-form";
-import { createCheckout } from "@/lib/payment/checkout";
-```
-
-## Domain Boundaries
-
-### Identifying Domains
-
-Ask these questions to identify domains:
-
-1. **What business concept does this code represent?**
-2. **Who is the primary user of this functionality?**
-3. **What would change together?**
-
-### Example Domain Identification
-
-| Feature | Domain | Reason |
-|---------|--------|--------|
-| Login form | `auth` | Authentication concern |
-| Product card | `products` or `catalog` | Product display concern |
-| Shopping cart | `checkout` | Purchase flow concern |
-| User settings | `user` or `settings` | User management concern |
+1. Create `.agents/skills/<name>/SKILL.md`
+2. Create symlinks: `.github/skills/<name>` → `../../.agents/skills/<name>` and
+   `.claude/skills/<name>` → `../../.agents/skills/<name>`
+3. The skill description must reflect **this repo** (Node.js CLI, ESM, `node:test`)
 
 ## Avoiding Common Mistakes
 
-### ❌ Generic Folder Anti-Patterns
+### ❌ Don't split `bin/cli.js` prematurely
 
 ```
-# ❌ BAD: Generic folders
-src/
-├── components/
-├── helpers/        # What kind of helpers?
-├── services/       # Too vague
-├── utils/          # Catch-all folder
-└── types/          # Types should live with their domain
+# ❌ BAD: premature modularization
+bin/
+├── cli.js
+├── install.js       # artificial split
+├── filter.js        # one function = one file
+└── helpers.js       # catch-all
 ```
 
-### ✅ Domain-Oriented Structure
-
 ```
-# ✅ GOOD: Domain-oriented
-src/
-├── components/
-│   ├── auth/
-│   ├── checkout/
-│   └── shared/
-├── lib/
-│   ├── auth/
-│   ├── payment/
-│   └── api/
-└── actions/
-    ├── auth/
-    └── checkout/
+# ✅ GOOD: keep related logic together until it genuinely warrants extraction
+bin/
+└── cli.js           # all install logic, clearly sectioned with comments
 ```
 
-## Migration Strategy
+### ❌ Don't put logic in `src/index.js`
 
-When refactoring to DDD:
+```js
+// ❌ BAD
+export function install(target) { ... }  // logic belongs in bin/cli.js
 
-1. **Identify current pain points** - What's hard to find?
-2. **Map business domains** - List all business concepts
-3. **Plan folder structure** - Design new organization
-4. **Migrate incrementally** - Move one domain at a time
-5. **Update imports** - Use find-and-replace for import paths
-6. **Add barrel exports** - Create index.ts files as you go
+// ✅ GOOD
+export const SKILLS = ['domain-driven-design', 'testing-patterns'];  // metadata only
+```
+
+### ❌ Don't add project-specific content to templates
+
+```
+# ❌ BAD: template references this repo's layout
+templates/shared/prompts/review-code.prompt.md mentions bin/cli.js
+
+# ✅ GOOD: template is generic
+templates/shared/prompts/review-code.prompt.md describes general code review steps
+```
 
 ## Checklist
 
-Before creating new code, verify:
+Before adding new code:
 
-- [ ] Code belongs to an identifiable business domain
-- [ ] Domain folder already exists or should be created
-- [ ] Related tests will live in `__tests__/` within the domain
-- [ ] Imports use domain paths (not deep internal paths)
-- [ ] No generic "utils" or "helpers" at root level
+- [ ] Is this logic (→ `bin/cli.js`) or metadata (→ `src/index.js`)?
+- [ ] If it's a new template, is it in the right `templates/shared/` subdirectory?
+- [ ] Is `FILE_CATEGORIES` updated in `bin/cli.js`?
+- [ ] Is `src/index.js` export updated and alphabetically sorted?
+- [ ] Is there a test for the new behavior?
+- [ ] Does the template avoid project-specific references?
