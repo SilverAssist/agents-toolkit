@@ -93,4 +93,4 @@ Report:
 
 - Begin implementation following the plan
 - Use `prepare-pr` when ready for review
-- Use `create-pr` to submit pull request
+- Use `create-github-pr` to submit pull request

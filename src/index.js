@@ -15,10 +15,19 @@ export const PROMPTS = {
     "finalize-github-pr",
     "finalize-pr",
     "prepare-pr",
+    "prepare-release",
     "work-github-issue",
     "work-ticket",
   ],
-  utility: ["add-tests", "fix-issues", "review-code"],
+  utility: [
+    "add-tests",
+    "audit-ai-seo",
+    "fix-issues",
+    "new-wp-component",
+    "new-wp-plugin",
+    "quality-check",
+    "review-code",
+  ],
 };
 
 export const PARTIALS = [
