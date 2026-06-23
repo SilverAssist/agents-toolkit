@@ -5,16 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Added
-
-- **GitHub-specific PR prompts** — `create-github-pr` and `finalize-github-pr` prompt the agent to use `gh` CLI and GitHub issue numbers (`{issue-number}`) instead of Jira ticket IDs, completing the GitHub workflow alongside the existing `analyze-github-issue` / `work-github-issue` pair
-- Developer workflow symlinks: `.github/prompts/` (9 prompts for Copilot/Codex) and `.claude/commands/` (9 commands for Claude Code) both point to `templates/shared/prompts/` as source of truth
-- Developer skills: `.agents/skills/` canonical store (4 Node.js-adapted skills) with `.github/skills/` and `.claude/skills/` symlinks
-- `src/index.js` PROMPTS export now includes all GitHub-workflow prompts (`analyze-github-issue`, `work-github-issue`, `create-github-pr`, `finalize-github-pr`), sorted alphabetically
-- `FILE_CATEGORIES.prompts.github` extended with `create-github-pr` and `finalize-github-pr` — `--tracker github` now correctly includes/excludes all four pairs
-
 ## [2.4.0] - 2026-06-22
 
 ### Added
@@ -24,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `bin/cli.js` helpers: `getAgentsSkillsDir()`, `linkSkill()`, `installSkillsStandard()`
 - `SKILLS_LAYOUT` export and `CLAUDE_FILES.skillsDir` in `src/index.js`
 - Six new regression tests covering canonical store, per-agent symlinks, shared source of truth, `--copy`, stack filtering, and dry-run (30 tests total)
+- **GitHub-specific PR prompts** — `create-github-pr` and `finalize-github-pr` complete the GitHub workflow pair alongside the existing `analyze-github-issue` / `work-github-issue`, using `{issue-number}` and `gh` CLI instead of Jira ticket IDs
+- `FILE_CATEGORIES.prompts.github` extended with `create-github-pr` and `finalize-github-pr` — `--tracker github` now correctly includes/excludes all four GitHub prompt pairs
+- Developer workflow symlinks: `.github/prompts/` (prompts for Copilot/Codex) and `.claude/commands/` (commands for Claude Code) both point to `templates/shared/prompts/` as source of truth
+- Developer skills: `.agents/skills/` canonical store (4 Node.js-adapted skills) with `.github/skills/` and `.claude/skills/` symlinks
 
 ### Changed
 
