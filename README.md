@@ -64,17 +64,20 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── analyze-ticket.prompt.md
 │   ├── create-plan.prompt.md
 │   ├── work-ticket.prompt.md
-│   └── ...
+│   └── ...                           # 10 prompts total (depends on --tracker)
 ├── instructions/
 │   ├── typescript.instructions.md
 │   ├── react-components.instructions.md
-│   ├── server-actions.instructions.md
-│   ├── tests.instructions.md
-│   └── css-styling.instructions.md
+│   └── ...                           # filtered by --stack
 └── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
-    ├── component-architecture -> ../../.agents/skills/component-architecture
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    └── testing-patterns       -> ../../.agents/skills/testing-patterns
+    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+    └── ...                           # filtered by --stack
+.agents/
+└── skills/                           # Canonical store (single source of truth)
+    ├── domain-driven-design/
+    ├── testing-patterns/
+    └── ...                           # 9 skills total, filtered by --stack
 ```
 
 > **Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard.** The real skill files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory contains symlinks to it — a single source of truth shared across Copilot, Claude Code, and Codex. Use `--copy` to materialize real copies instead of symlinks (e.g. on Windows without developer mode; symlinks also fall back to copies automatically when unsupported).
@@ -100,20 +103,20 @@ This creates the following structure:
 CLAUDE.md                             # Project instructions for Claude Code (project root)
 .agents/
 └── skills/                           # Canonical skills store (single source of truth)
-    ├── component-architecture/
     ├── domain-driven-design/
-    └── testing-patterns/
+    ├── testing-patterns/
+    └── ...                           # 9 skills total, filtered by --stack
 .claude/
 ├── commands/
 │   ├── _partials/
 │   ├── analyze-ticket.md
 │   ├── create-plan.md
 │   ├── work-ticket.md
-│   └── ...
+│   └── ...                           # 10 commands total (depends on --tracker)
 └── skills/                           # Symlinks → ../../.agents/skills/ (read natively by Claude Code)
-    ├── component-architecture -> ../../.agents/skills/component-architecture
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    └── testing-patterns       -> ../../.agents/skills/testing-patterns
+    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+    └── ...                           # filtered by --stack
 .github/
 └── instructions/                     # Shared with Copilot
 ```
@@ -149,17 +152,20 @@ AGENTS.md                             # Project instructions for Codex (project 
 │   ├── analyze-ticket.prompt.md
 │   ├── create-plan.prompt.md
 │   ├── work-ticket.prompt.md
-│   └── ...
+│   └── ...                           # 10 prompts total (depends on --tracker)
 ├── instructions/
 │   ├── typescript.instructions.md
 │   ├── react-components.instructions.md
-│   ├── server-actions.instructions.md
-│   ├── tests.instructions.md
-│   └── css-styling.instructions.md
+│   └── ...                           # filtered by --stack
 └── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
-    ├── component-architecture -> ../../.agents/skills/component-architecture
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    └── testing-patterns       -> ../../.agents/skills/testing-patterns
+    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+    └── ...                           # filtered by --stack
+.agents/
+└── skills/                           # Canonical store (single source of truth)
+    ├── domain-driven-design/
+    ├── testing-patterns/
+    └── ...                           # 9 skills total, filtered by --stack
 ```
 
 ### Global Install (Optional)

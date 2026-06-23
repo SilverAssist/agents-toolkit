@@ -9,8 +9,9 @@ agent content (instructions, prompts, skills, hooks) into a user's project for *
 Copilot, Claude Code, and Codex**. It is a distribution/installer tool — not an application.
 
 > ⚠️ This repo is the *source* of the toolkit. Do **not** run `install` inside this repo
-> (it would copy the templates onto themselves). The CLI uses the current working directory
-> as the target, ignoring positional arguments.
+> — it would overwrite the developer workflow files in `.github/prompts/`, `.claude/commands/`,
+> `.github/skills/`, and `.claude/skills/` with the generic end-user templates. The CLI uses
+> the current working directory as the target, ignoring positional arguments.
 
 ## Architecture
 
@@ -20,8 +21,12 @@ Copilot, Claude Code, and Codex**. It is a distribution/installer tool — not a
 | `src/index.js` | Package metadata exports (`VERSION`, `PROMPTS`, `INSTRUCTIONS`, `SKILLS`, `HOOKS`, `SKILLS_LAYOUT`, `CLAUDE_*`). |
 | `src/cli.test.js` | Tests using the native Node test runner (`node --test`). Spawn the CLI against temp dirs and assert on output/filesystem. |
 | `templates/shared/` | Single source of truth for content: `instructions/`, `prompts/` (+ `_partials/`), `skills/` (folders with `SKILL.md`), `hooks/`. |
-| `templates/agents/` | Agent root files: `AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`. |
-
+| `templates/agents/` | Agent root files: `AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`. || `.agents/skills/` | Canonical dev skills store — 4 Node.js-adapted skills (domain-driven-design, quality-checks, release-management, testing-patterns). |
+| `.github/prompts/` | Dev workflow prompts for Copilot/Codex — real files (not symlinks), tailored for this repo. |
+| `.github/skills/` | Symlinks → `.agents/skills/` for Copilot/Codex skill resolution. |
+| `.claude/commands/` | Dev workflow commands for Claude Code — real files matching `.github/prompts/`. |
+| `.claude/skills/` | Symlinks → `.agents/skills/` for Claude Code skill resolution. |
+| `.github/copilot-instructions.md` | Repo-wide Copilot code review checklist (template/export sync, test portability, ESM conventions). |
 ### Install targets (where content lands in the end-user project)
 
 - **Copilot/Codex** → `.github/{prompts,instructions,skills,hooks}` + root `AGENTS.md`.
