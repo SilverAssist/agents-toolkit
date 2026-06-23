@@ -27,6 +27,24 @@ function runCli(args, cwd) {
   };
 }
 
+/**
+ * Returns true when the OS / file-system supports symbolic links in dir.
+ * On Windows without Developer Mode symlink creation requires elevated
+ * privileges; the CLI falls back to real copies in that case.
+ * @param {string} dir - Directory to probe
+ * @returns {boolean}
+ */
+function symlinkSupported(dir) {
+  const probe = path.join(dir, '_symlink_probe');
+  try {
+    fs.symlinkSync(dir, probe);
+    fs.unlinkSync(probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function createTempProject(t) {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-toolkit-'));
   t.after(() => {
@@ -351,10 +369,14 @@ test('--skills-only creates canonical .agents/skills and symlinks .github/skills
 
   const link = path.join(tempDir, '.github', 'skills', 'domain-driven-design');
   const stat = fs.lstatSync(link);
-  assert.ok(stat.isSymbolicLink(), '.github/skills entry should be a symlink');
+  if (symlinkSupported(tempDir)) {
+    assert.ok(stat.isSymbolicLink(), '.github/skills entry should be a symlink');
+  } else {
+    assert.ok(stat.isDirectory(), '.github/skills entry should be a real directory (copy fallback)');
+  }
 
-  // Symlink should resolve to the canonical store and be readable through it.
-  assert.ok(fs.existsSync(path.join(link, 'SKILL.md')), 'symlink should resolve to SKILL.md');
+  // Skill must be readable through the agent entry regardless of symlink/copy.
+  assert.ok(fs.existsSync(path.join(link, 'SKILL.md')), 'skill should be readable through .github/skills');
 });
 
 test('--claude --skills-only symlinks .claude/skills to the same canonical store', (t) => {
@@ -367,11 +389,15 @@ test('--claude --skills-only symlinks .claude/skills to the same canonical store
 
   const link = path.join(tempDir, '.claude', 'skills', 'domain-driven-design');
   const stat = fs.lstatSync(link);
-  assert.ok(stat.isSymbolicLink(), '.claude/skills entry should be a symlink');
-
-  const target = fs.readlinkSync(link);
-  const resolved = path.resolve(path.dirname(link), target);
-  assert.equal(resolved, canonical, '.claude/skills symlink should point to .agents/skills canonical');
+  if (symlinkSupported(tempDir)) {
+    assert.ok(stat.isSymbolicLink(), '.claude/skills entry should be a symlink');
+    const target = fs.readlinkSync(link);
+    const resolved = path.resolve(path.dirname(link), target);
+    assert.equal(resolved, canonical, '.claude/skills symlink should point to .agents/skills canonical');
+  } else {
+    assert.ok(stat.isDirectory(), '.claude/skills entry should be a real directory (copy fallback)');
+    assert.ok(fs.existsSync(path.join(link, 'SKILL.md')), 'copied skill should be readable through .claude/skills');
+  }
 });
 
 test('installing both targets shares a single canonical skills store', (t) => {
@@ -379,14 +405,24 @@ test('installing both targets shares a single canonical skills store', (t) => {
   runCli(['install', '--skills-only'], tempDir);
   runCli(['install', '--claude', '--skills-only'], tempDir);
 
-  // Editing the canonical file is visible through both agent symlinks.
   const canonicalFile = path.join(tempDir, '.agents', 'skills', 'domain-driven-design', 'SKILL.md');
-  fs.appendFileSync(canonicalFile, '\n<!-- single source of truth marker -->\n');
+  const githubEntry = path.join(tempDir, '.github', 'skills', 'domain-driven-design', 'SKILL.md');
+  const claudeEntry = path.join(tempDir, '.claude', 'skills', 'domain-driven-design', 'SKILL.md');
 
-  const viaGithub = fs.readFileSync(path.join(tempDir, '.github', 'skills', 'domain-driven-design', 'SKILL.md'), 'utf-8');
-  const viaClaude = fs.readFileSync(path.join(tempDir, '.claude', 'skills', 'domain-driven-design', 'SKILL.md'), 'utf-8');
-  assert.match(viaGithub, /single source of truth marker/);
-  assert.match(viaClaude, /single source of truth marker/);
+  assert.ok(fs.existsSync(githubEntry), '.github/skills skill should be readable');
+  assert.ok(fs.existsSync(claudeEntry), '.claude/skills skill should be readable');
+
+  if (symlinkSupported(tempDir)) {
+    // When symlinks are used, editing the canonical file is immediately visible
+    // through both agent entries (single source of truth).
+    fs.appendFileSync(canonicalFile, '\n<!-- single source of truth marker -->\n');
+    const viaGithub = fs.readFileSync(githubEntry, 'utf-8');
+    const viaClaude = fs.readFileSync(claudeEntry, 'utf-8');
+    assert.match(viaGithub, /single source of truth marker/);
+    assert.match(viaClaude, /single source of truth marker/);
+  }
+  // When copy fallback is used, each entry is an independent copy — that is
+  // the intended behaviour; no further assertion is needed.
 });
 
 test('--copy produces real copies instead of symlinks', (t) => {

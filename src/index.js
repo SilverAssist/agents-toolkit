@@ -34,10 +34,15 @@ export const INSTRUCTIONS = [
 ];
 
 export const SKILLS = [
-  "component-architecture",
-  "domain-driven-design",
-  "testing-patterns",
   "ai-seo-optimization",
+  "component-architecture",
+  "create-component",
+  "domain-driven-design",
+  "plugin-creation",
+  "quality-checks",
+  "release-management",
+  "testing",
+  "testing-patterns",
 ];
 
 export const HOOKS = ["validate-tsx", "lint-format"];
