@@ -1,0 +1,1 @@
+../../templates/shared/prompts/finalize-github-pr.prompt.md

@@ -7,14 +7,18 @@ export const VERSION = "2.4.0";
 
 export const PROMPTS = {
   workflow: [
+    "analyze-github-issue",
     "analyze-ticket",
+    "create-github-pr",
     "create-plan",
-    "work-ticket",
-    "prepare-pr",
     "create-pr",
+    "finalize-github-pr",
     "finalize-pr",
+    "prepare-pr",
+    "work-github-issue",
+    "work-ticket",
   ],
-  utility: ["review-code", "fix-issues", "add-tests"],
+  utility: ["add-tests", "fix-issues", "review-code"],
 };
 
 export const PARTIALS = [
