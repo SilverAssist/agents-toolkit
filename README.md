@@ -71,11 +71,13 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── server-actions.instructions.md
 │   ├── tests.instructions.md
 │   └── css-styling.instructions.md
-└── skills/
-    ├── component-architecture/
-    ├── domain-driven-design/
-    └── testing-patterns/
+└── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
+    ├── component-architecture -> ../../.agents/skills/component-architecture
+    ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
+    └── testing-patterns       -> ../../.agents/skills/testing-patterns
 ```
+
+> **Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard.** The real skill files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory contains symlinks to it — a single source of truth shared across Copilot, Claude Code, and Codex. Use `--copy` to materialize real copies instead of symlinks (e.g. on Windows without developer mode; symlinks also fall back to copies automatically when unsupported).
 
 **Running prompts in VS Code:**
 
@@ -96,17 +98,27 @@ This creates the following structure:
 
 ```
 CLAUDE.md                             # Project instructions for Claude Code (project root)
+.agents/
+└── skills/                           # Canonical skills store (single source of truth)
+    ├── component-architecture/
+    ├── domain-driven-design/
+    └── testing-patterns/
 .claude/
-└── commands/
-    ├── _partials/
-    ├── analyze-ticket.md
-    ├── create-plan.md
-    ├── work-ticket.md
-    └── ...
+├── commands/
+│   ├── _partials/
+│   ├── analyze-ticket.md
+│   ├── create-plan.md
+│   ├── work-ticket.md
+│   └── ...
+└── skills/                           # Symlinks → ../../.agents/skills/ (read natively by Claude Code)
+    ├── component-architecture -> ../../.agents/skills/component-architecture
+    ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
+    └── testing-patterns       -> ../../.agents/skills/testing-patterns
 .github/
-├── instructions/                     # Shared with Copilot
-└── skills/                           # Shared with Copilot
+└── instructions/                     # Shared with Copilot
 ```
+
+> Skills now install to `.claude/skills/` (where Claude Code reads them natively) as symlinks to the canonical `.agents/skills/` store — no longer to `.github/skills/`.
 
 **Running commands in Claude Code:**
 
@@ -143,10 +155,10 @@ AGENTS.md                             # Project instructions for Codex (project 
 │   ├── server-actions.instructions.md
 │   ├── tests.instructions.md
 │   └── css-styling.instructions.md
-└── skills/
-    ├── component-architecture/
-    ├── domain-driven-design/
-    └── testing-patterns/
+└── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
+    ├── component-architecture -> ../../.agents/skills/component-architecture
+    ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
+    └── testing-patterns       -> ../../.agents/skills/testing-patterns
 ```
 
 ### Global Install (Optional)
@@ -259,6 +271,7 @@ npx @silverassist/agents-toolkit@latest install [options]
 | `--partials-only` | Only install partials |
 | `--skills-only` | Only install skills |
 | `--hooks-only` | Only install hooks (PostToolUse validation scripts) |
+| `--copy` | Copy skills into each agent dir instead of symlinking to `.agents/skills/` |
 | `--dry-run` | Show what would be installed without making changes |
 
 **Examples:**
@@ -376,15 +389,17 @@ Specialized knowledge guides for domain-specific patterns:
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `testing-patterns` | Jest + RTL patterns for Next.js 15 and Server Actions |
 
-**GitHub Copilot** — reference a skill explicitly:
+Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard: the real files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory symlinks to it (single source of truth, easy updates). Pass `--copy` to materialize real copies instead.
+
+**GitHub Copilot** — skills are symlinked into `.github/skills/`. Reference a skill explicitly:
 
 ```
 @workspace Use the component-architecture skill to create a new payment form
 ```
 
-**Claude Code** — skills are stored in `.github/skills/` and can be referenced in any prompt or command.
+**Claude Code** — skills are symlinked into `.claude/skills/`, where Claude Code reads them natively, and can be referenced in any prompt or command.
 
-**Codex** — skills are stored in `.github/skills/` and can be referenced from `AGENTS.md` and task context.
+**Codex** — skills are symlinked into `.github/skills/` and can be referenced from `AGENTS.md` and task context.
 
 ## Hooks
 

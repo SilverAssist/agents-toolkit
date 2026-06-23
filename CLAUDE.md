@@ -1,213 +1,68 @@
-# Claude Code Instructions
+# CLAUDE.md
 
-This file contains project-wide instructions for Claude Code.
+Project instructions for Claude Code working in this repository.
 
-## Agent Workflow for Complex Tasks
+## What This Project Is
 
-When implementing new features, refactoring code, or fixing complex issues, **always follow this systematic workflow**:
+`@silverassist/agents-toolkit` is a **Node.js ESM CLI package** that installs reusable AI
+agent content (instructions, prompts, skills, hooks) into a user's project for **GitHub
+Copilot, Claude Code, and Codex**. It is a distribution/installer tool — not an application.
 
-### Phase 1: Initial Analysis
-1. **Analyze the request** - Understand the full scope, dependencies, and potential impacts
-2. **Search existing code** - Use semantic search and grep to understand current implementation
-3. **Identify components** - List all files, functions, and components that need changes
-4. **Review documentation** - Check existing docs for patterns and conventions
+> ⚠️ This repo is the *source* of the toolkit. Do **not** run `install` inside this repo
+> (it would copy the templates onto themselves). The CLI uses the current working directory
+> as the target, ignoring positional arguments.
 
-### Phase 2: Planning Documentation
-1. **Create planning document** - `docs/[feature-name]-plan.md` with:
-   - Problem statement and objectives
-   - Current architecture analysis
-   - Proposed changes with before/after code examples
-   - Risk assessment and mitigation strategies
-   - Phase breakdown if complex
-2. **Add action plan** - Detailed step-by-step implementation guide
-3. **Create TODO list** - Use the TodoWrite tool to track all phases
-4. **Commit planning** - `git commit -m "PROJECT-XXX: Add [feature] implementation plan"`
+## Architecture
 
-### Phase 3: Implementation by Phases
-For each phase:
-1. **Mark TODO as in-progress** - Update status before starting work
-2. **Implement changes** - Make code changes following the plan
-3. **Write/update tests** - Add unit tests, ensure regression tests pass
-4. **Run tests** - `npm test` to verify no regressions
-5. **Mark TODO as completed** - Update status after successful implementation
-6. **Commit phase** - `git commit -m "PROJECT-XXX: Implement [feature] - Phase N"`
+| Path | Purpose |
+|------|---------|
+| `bin/cli.js` | The CLI. All install logic: arg parsing, filtering, copy/symlink, target installers (`install`, `installClaude`, `installCodex`, `installGitBasedTarget`). |
+| `src/index.js` | Package metadata exports (`VERSION`, `PROMPTS`, `INSTRUCTIONS`, `SKILLS`, `HOOKS`, `SKILLS_LAYOUT`, `CLAUDE_*`). |
+| `src/cli.test.js` | Tests using the native Node test runner (`node --test`). Spawn the CLI against temp dirs and assert on output/filesystem. |
+| `templates/shared/` | Single source of truth for content: `instructions/`, `prompts/` (+ `_partials/`), `skills/` (folders with `SKILL.md`), `hooks/`. |
+| `templates/agents/` | Agent root files: `AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`. |
 
-### Phase 4: Final Documentation
-1. **Create final documentation** - `docs/[feature-name].md`
-2. **Update related docs** - Update `project-overview.md`, `readme.md`, etc.
-3. **Delete planning docs** - Remove temporary planning documents
-4. **Final commit** - `git commit -m "PROJECT-XXX: Add [feature] documentation"`
+### Install targets (where content lands in the end-user project)
 
-### Key Principles
-- ✅ **One commit per phase** - Create clear checkpoint commits
-- ✅ **Test everything** - Run full test suite after each phase
-- ✅ **No breaking changes** - Ensure backward compatibility
-- ✅ **Document as you go** - Update docs with each phase
-- ✅ **Type safety** - Maintain full TypeScript coverage
+- **Copilot/Codex** → `.github/{prompts,instructions,skills,hooks}` + root `AGENTS.md`.
+- **Claude Code** → `.claude/commands/` (prompts, renamed `.prompt.md`→`.md`, frontmatter stripped, paths adapted), `.claude/skills/`, `.github/instructions/`, root `CLAUDE.md`.
+- **Skills** follow the [`npx skills`](https://github.com/vercel-labs/skills) standard: real files live once in canonical `.agents/skills/`; each agent's `skills/` dir holds per-skill symlinks to it (with `--copy` / auto-fallback to copies when symlinks are unsupported).
 
-## Slash Commands
+### Filtering
 
-Custom slash commands are available in `.claude/commands/`:
+`FILE_CATEGORIES` + `shouldIncludeFile()` in `bin/cli.js` filter content by `--stack`
+(`react`/`wordpress`/`all`) and `--tracker` (`jira`/`github`/`all`). Resolution order:
+CLI flags → project `.agents-toolkit.json` → global `~/.agents-toolkit.json` → defaults.
 
-| Command | Description |
-|---------|-------------|
-| `/analyze-ticket` | Analyze a Jira ticket without making changes |
-| `/create-plan` | Create an implementation plan for a ticket |
-| `/work-ticket` | Start working on a Jira ticket with full workflow setup |
-| `/prepare-pr` | Prepare code for pull request review |
-| `/create-pr` | Create and submit a pull request |
-| `/finalize-pr` | Finalize and merge a pull request |
-| `/review-code` | Review code for quality and issues |
-| `/fix-issues` | Fix identified code issues |
-| `/add-tests` | Add tests for existing code |
+## Conventions
 
-## Key Technologies & Frameworks
+- **ESM only** (`"type": "module"`); Node ≥ 18. Use `import`, `fileURLToPath` for `__dirname`.
+- **File naming**: kebab-case. Templates use `.instructions.md`, `.prompt.md`, `SKILL.md`.
+- **JSDoc** on functions in `bin/cli.js`, written in English.
+- Reuse existing helpers (`copyDir`, `getTargetDir`, `getClaudeTargetDir`, `getAgentsSkillsDir`, `info/warn/success/error`) instead of adding new ones.
+- Keep installers honoring `force`, `dryRun`, and `global` consistently.
 
-- **Next.js 15.x** with App Router for modern React development
-- **React 19** for latest React features and optimizations
-- **TypeScript** for comprehensive type safety
-- **Tailwind CSS v4** with custom CSS variables and shadcn/ui design system
-- **Jest & React Testing Library** for comprehensive testing
+## Workflow
 
-## Domain-Driven Design (DDD) Principles
+When adding a feature or fixing a bug:
 
-This project follows **Domain-Driven Design** principles.
+1. **Make the change** in `bin/cli.js` / `templates/` / `src/`.
+2. **Add or update tests** in `src/cli.test.js` (spawn CLI against a temp dir, assert filesystem + output).
+3. **Run the suite**: `npm test` — must stay green.
+4. **Update docs**: `README.md`, the relevant `templates/shared/*/README.md`, and `CHANGELOG.md`.
+5. **Bump version** in both `package.json` and `src/index.js` (`VERSION`) following SemVer.
 
-**Core Principles**:
-1. **Group by Domain, Not by Type** - Organize files by business domain rather than technical type
-2. **Clear Boundaries** - Each domain has well-defined responsibilities
-3. **Colocation** - Related code (components, utils, tests) lives together
+## Commands
 
-**Quick Rules**:
-- ✅ Create domain folders that match business concepts
-- ✅ Keep domain-specific utilities inside domain folders
-- ✅ Place tests in `__tests__/` subfolders within each domain
-- ❌ Don't create generic folders like "helpers", "services", "utils" at root level
-
-## Key Conventions
-
-### Code Style & Organization
-
-- **Imports**: Always organize imports alphabetically within each group
-- **API Functions**: Must have descriptive JSDoc comments in English
-- **Types**: Define interfaces and types properly, not directly in components
-- **No `any` Type**: Always define explicit types using `type` or `interface`
-- **File Naming**: All files should use kebab-case (e.g., `use-hash.ts`, `contact-form.tsx`)
-- **Object Destructuring**: Always use destructuring when iterating over objects
-- **Error Handling**: Apply robust error handling with try/catch for async operations
-- **Import Paths**: Always use absolute imports with `@/` prefix
-
-### Component Structure & Naming
-
-**CRITICAL: All components must follow these strict conventions:**
-
-#### 1. Folder & File Naming
-
-- **Folder names**: MUST use kebab-case (e.g., `user-profile/`, `checkout-wizard/`)
-- **File structure**: Every component MUST be in its own folder with an `index.tsx` file
-- **❌ NEVER**: Use camelCase or PascalCase for folder names
-- **❌ NEVER**: Create standalone component files like `Component.tsx` at root level
-
-```
-✅ CORRECT:
-src/components/user-profile/index.tsx
-src/components/contact-form/index.tsx
-
-❌ INCORRECT:
-src/components/UserProfile.tsx
-src/components/userProfile/index.tsx
+```bash
+npm test                          # Run the full test suite (node --test)
+node bin/cli.js help              # Show CLI help
+node bin/cli.js list              # List available prompts/skills/hooks
+node bin/cli.js install --dry-run # Preview an install (run in a sandbox dir, not this repo)
 ```
 
-#### 2. Component Export Pattern
+## Git Conventions
 
-- **Function name**: MUST use PascalCase for the exported function
-- **Export statement**: MUST use `export default function` for components
-- **Barrel file**: Re-export with a named alias from the domain `index.ts`
-- **Single responsibility**: Each file should export ONLY the component function
-
-```typescript
-// ✅ CORRECT: src/components/user-profile/index.tsx
-interface UserProfileProps {
-  userId: string;
-  className?: string;
-}
-
-export default function UserProfile({ userId, className }: UserProfileProps) {
-  // Component implementation
-}
-
-// ✅ CORRECT: src/components/index.ts (barrel)
-export { default as UserProfile } from "./user-profile";
-```
-
-#### 3. Props Interface Definition
-
-- **MUST**: Define props interface INSIDE the component file
-- **Interface name**: MUST match component name + "Props" suffix (PascalCase)
-- **Location**: Define interface immediately BEFORE the component function
-
-#### 4. Separation of Concerns
-
-- **Component file**: ONLY the component function and its props interface
-- **Helper functions**: Create separate `helpers.ts` or `utils.ts` in same folder
-- **Types/Interfaces**: Create separate `types.ts` if multiple types are shared
-- **Constants**: Create separate `constants.ts` for component-specific constants
-
----
-
-## React Patterns
-
-### Hook Placement Rules (CRITICAL)
-
-**✅ Correct:** All hooks before conditional returns
-
-```typescript
-export default function Component({ data }: Props) {
-  const [state, setState] = useState(initialState);
-  const handleClick = useCallback(() => {}, []);
-
-  // Early returns AFTER all hooks
-  if (!data) return null;
-  
-  return <div>...</div>;
-}
-```
-
-**❌ Incorrect:** Hooks after conditional returns
-
-```typescript
-export function Component({ data }: Props) {
-  if (!data) return null; // ❌ Early return before hooks
-  
-  const [state, setState] = useState(initialState); // ❌ Error!
-  return <div>...</div>;
-}
-```
-
----
-
-## Git Commit Guidelines
-
-### Commit Message Format
-
-```
-TYPE-XXX: Brief description
-
-- Detailed change 1
-- Detailed change 2
-```
-
-### Commit Types
-
-- `feat`: New feature
-- `fix`: Bug fix
-- `docs`: Documentation only
-- `refactor`: Code change that neither fixes a bug nor adds a feature
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
-
-### Branch Naming
-
-- `feature/TYPE-XXX-brief-description`
-- `bugfix/TYPE-XXX-brief-description`
-- `hotfix/TYPE-XXX-brief-description`
+- Commit format: `type: Brief description` (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`).
+- Branches: `feature/<issue#>-brief-description`, `bugfix/...`, `hotfix/...`.
+- One logical change per commit; keep the test suite green before pushing.
