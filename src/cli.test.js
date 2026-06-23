@@ -37,7 +37,7 @@ function runCli(args, cwd) {
 function symlinkSupported(dir) {
   const probe = path.join(dir, '_symlink_probe');
   try {
-    fs.symlinkSync(dir, probe);
+    fs.symlinkSync(dir, probe, 'dir');
     fs.unlinkSync(probe);
     return true;
   } catch {
