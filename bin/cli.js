@@ -226,29 +226,42 @@ function readLockfile(cwd = process.cwd()) {
 }
 
 /**
- * Write the project lockfile.
+ * Write the project lockfile, merging new skills with any existing entries.
+ * This preserves skills installed by a previous `install --target` run so that
+ * running `install` followed by `install --claude` does not lose the first
+ * target's entries in the lockfile.
  * @param {Object} params
- * @param {Record<string, {computedHash: string|null, agents: string[]}>} params.skills - Installed skills map
+ * @param {Record<string, {computedHash: string|null, agents: string[]}>} params.skills - Newly installed skills map
  * @param {{ stack: string, tracker: string }} params.config - Active install config
  * @param {string} params.packageVersion - Current package version
  * @param {string} [params.cwd] - Directory to write to (defaults to process.cwd())
  */
 function writeLockfile({ skills, config, packageVersion, cwd = process.cwd() }) {
   const lockPath = path.join(cwd, LOCKFILE_NAME);
-  const skillsEntry = {};
+
+  // Merge with any existing lockfile so successive multi-target installs
+  // (e.g. `install` then `install --claude`) accumulate entries.
+  const existing = readLockfile(cwd);
+  const mergedSkills = Object.assign({}, existing?.skills ?? {});
+
   for (const [name, meta] of Object.entries(skills)) {
-    skillsEntry[name] = {
+    const prev = mergedSkills[name];
+    // Merge agents arrays: union of previous and new agent dirs.
+    const prevAgents = prev?.agents ?? [];
+    const allAgents = Array.from(new Set([...prevAgents, ...meta.agents]));
+    mergedSkills[name] = {
       source: '@silverassist/agents-toolkit',
       packageVersion,
       computedHash: meta.computedHash,
-      agents: meta.agents,
+      agents: allAgents,
     };
   }
+
   const lockfile = {
     version: 1,
     packageVersion,
     config,
-    skills: skillsEntry,
+    skills: mergedSkills,
   };
   fs.writeFileSync(lockPath, JSON.stringify(lockfile, null, 2) + '\n', 'utf-8');
   success(`Wrote ${LOCKFILE_NAME}`);
@@ -1021,13 +1034,13 @@ function installClaude(options = {}) {
 /**
  * Restore skills from the lockfile.
  * Reads agents-toolkit-lock.json, reinstalls all skills, and verifies hashes.
+ * Restore always overwrites existing skill files — that is its purpose.
  * @param {Object} [options]
- * @param {boolean} [options.force] - Overwrite existing files
  * @param {boolean} [options.dryRun] - Only report planned changes
  * @param {boolean} [options.copy] - Copy instead of symlink
  */
 function restore(options = {}) {
-  const { force = false, dryRun = false, copy = false } = options;
+  const { dryRun = false, copy = false } = options;
   log('\n🔄 Agents Toolkit Restore\n', 'bright');
 
   const lockfile = readLockfile();
@@ -1067,7 +1080,7 @@ function restore(options = {}) {
     const result = installSkillsStandard({
       isGlobal: false,
       agentSkillsDir,
-      force: force || true, // restore always overwrites
+      force: true, // restore always overwrites — that is its purpose
       dryRun,
       copy,
       dirFilter: makeFilter('skills'),
