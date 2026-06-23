@@ -18,19 +18,25 @@ export const PROMPTS = {
 };
 
 export const PARTIALS = [
-  "validations",
-  "git-operations",
-  "jira-integration",
   "documentation",
+  "git-operations",
+  "github-integration",
+  "jira-integration",
   "pr-template",
+  "validations",
 ];
 
 export const INSTRUCTIONS = [
-  "typescript",
+  "css-styling",
+  "documentation-language",
+  "github-workflow",
+  "php-standards",
   "react-components",
   "server-actions",
+  "testing-standards",
   "tests",
-  "css-styling",
+  "typescript",
+  "wordpress-plugin-architecture",
 ];
 
 export const SKILLS = [

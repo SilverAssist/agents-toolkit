@@ -15,9 +15,21 @@ skills directory contains symlinks to it (single source of truth):
 
 ```
 .agents/skills/                       # canonical store (real files)
+├── ai-seo-optimization/
+│   └── SKILL.md
 ├── component-architecture/
 │   └── SKILL.md
+├── create-component/
+│   └── SKILL.md
 ├── domain-driven-design/
+│   └── SKILL.md
+├── plugin-creation/
+│   └── SKILL.md
+├── quality-checks/
+│   └── SKILL.md
+├── release-management/
+│   └── SKILL.md
+├── testing/
 │   └── SKILL.md
 └── testing-patterns/
     └── SKILL.md
@@ -56,7 +68,8 @@ Skills are automatically picked up by agents when relevant to your question. You
 
 ## Creating Custom Skills
 
-1. Create a folder: `.github/skills/your-skill-name/`
+1. Create a folder: `.agents/skills/your-skill-name/` (canonical store)
 2. Create `SKILL.md` with frontmatter
+3. Run `npx @silverassist/agents-toolkit install --skills-only` to symlink it into `.github/skills/` and `.claude/skills/`
 3. Document patterns, examples, and conventions
 4. Include ✅ CORRECT and ❌ INCORRECT examples
