@@ -1,195 +1,72 @@
-# Codex Agent Instructions
+# AGENTS.md
 
-> **IMPORTANT**: Prefer retrieval-led reasoning over pre-training-led reasoning.
-> Always read relevant instruction files from `.github/instructions/` before implementing changes.
+Instructions for AI coding agents (Codex, Cursor, and others that read the
+[agents.md](https://agents.md) standard) working in this repository. Claude Code
+reads the equivalent `CLAUDE.md`; keep both aligned when you change project guidance.
 
-> **CRITICAL**: This file contains mandatory instructions for Codex when working on this repository.
-> The agent MUST follow these rules when working on issues in this repository.
-> This file should be placed at the project root.
+## What This Project Is
 
----
+`@silverassist/agents-toolkit` is a **Node.js ESM CLI package** that installs reusable AI
+agent content (instructions, prompts, skills, hooks) into a user's project for **GitHub
+Copilot, Claude Code, and Codex**. It is a distribution/installer tool — not an application.
+There is no React, Next.js, or build step here.
 
-## 📚 Project Documentation Index
+> ⚠️ This repo is the *source* of the toolkit. Do **not** run `install` inside this repo
+> (it copies templates onto themselves and leaves stray `.github/`, `.agents/`,
+> `.agents-toolkit.json`, `AGENTS.md` artifacts). The CLI targets the current working
+> directory and ignores positional arguments.
 
-```
-[Instructions]|root:.github/instructions
-|css-styling.instructions.md       → CSS/Tailwind patterns, cn() utility, responsive design
-|react-components.instructions.md  → Component structure, exports, props, early returns
-|server-actions.instructions.md    → Server action patterns, validation, error handling
-|tests.instructions.md             → Test structure, mocking, assertions
-|typescript.instructions.md        → Type safety, destructuring, JSDoc
+## Architecture
 
-[Prompts]|root:.github/prompts
-|add-tests,analyze-ticket,create-plan,create-pr,finalize-pr,fix-issues,prepare-pr,review-code,work-ticket
+| Path | Purpose |
+| --- | --- |
+| `bin/cli.js` | The CLI. All install logic: arg parsing, filtering, copy/symlink, target installers (`install`, `installClaude`, `installCodex`, `installGitBasedTarget`). |
+| `src/index.js` | Package metadata exports (`VERSION`, `PROMPTS`, `INSTRUCTIONS`, `SKILLS`, `HOOKS`, `SKILLS_LAYOUT`, `CLAUDE_*`). |
+| `src/cli.test.js` | Tests using the native Node test runner (`node --test`). Spawn the CLI against temp dirs and assert on output/filesystem. |
+| `templates/shared/` | Single source of truth for content: `instructions/`, `prompts/` (+ `_partials/`), `skills/` (folders with `SKILL.md`), `hooks/`. |
+| `templates/agents/` | Agent root files: `AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`. |
 
-[Skills]|root:.github/skills
-|component-architecture/SKILL.md → Component design patterns
-|domain-driven-design/SKILL.md   → DDD principles and structure
-|testing-patterns/SKILL.md       → Testing strategies and patterns
-```
+### Install targets (where content lands in the end-user project)
 
----
+- **Copilot/Codex** → `.github/{prompts,instructions,skills,hooks}` + root `AGENTS.md`.
+- **Claude Code** → `.claude/commands/` (prompts, renamed `.prompt.md`→`.md`, frontmatter stripped, paths adapted), `.claude/skills/`, `.github/instructions/`, root `CLAUDE.md`.
+- **Skills** follow the [`npx skills`](https://github.com/vercel-labs/skills) standard: real files live once in canonical `.agents/skills/`; each agent's `skills/` dir holds per-skill symlinks to it (with `--copy` / auto-fallback to copies when symlinks are unsupported).
 
-## 🔄 Agent Workflow (Complex Tasks)
+### Filtering
 
-| Phase | Actions |
-|-------|---------|
-| **1. Analysis** | Analyze request → Search existing code → Identify components → Review docs |
-| **2. Planning** | Create `docs/[feature]-plan.md` → Track TODOs in the plan doc (or task tracker) → Commit plan |
-| **3. Implementation** | For each phase: mark in-progress → implement → test → commit → mark completed |
-| **4. Documentation** | Create final docs → Update related files → Cleanup planning docs → Final commit |
+`FILE_CATEGORIES` + `shouldIncludeFile()` in `bin/cli.js` filter content by `--stack`
+(`react`/`wordpress`/`all`) and `--tracker` (`jira`/`github`/`all`). Resolution order:
+CLI flags → project `.agents-toolkit.json` → global `~/.agents-toolkit.json` → defaults.
 
-### Key Principles
+## Conventions
 
-✅ One commit per phase • ✅ Test after each phase • ✅ No breaking changes
-✅ Document as you go • ✅ Type safety always • ✅ Follow existing patterns
+- **ESM only** (`"type": "module"`); Node ≥ 18. Use `import`, `fileURLToPath` for `__dirname`.
+- **File naming**: kebab-case. Templates use `.instructions.md`, `.prompt.md`, `SKILL.md`.
+- **JSDoc** on functions in `bin/cli.js`, written in English.
+- Reuse existing helpers (`copyDir`, `getTargetDir`, `getClaudeTargetDir`, `getAgentsSkillsDir`, `info/warn/success/error`) instead of adding new ones.
+- Keep installers honoring `force`, `dryRun`, and `global` consistently.
 
----
+## Workflow
 
-## ⚙️ Code Conventions (Quick Reference)
+When adding a feature or fixing a bug:
 
-| Rule | Standard |
-|------|----------|
-| **Imports** | Alphabetical order, absolute paths with `@/` |
-| **Naming** | Files: `kebab-case` • Components: `PascalCase` • Functions: `camelCase` |
-| **Types** | No `any` — use `interface` or `type` |
-| **Errors** | `try/catch` for all async operations |
-| **Comments** | JSDoc in English for public functions |
+1. **Make the change** in `bin/cli.js` / `templates/` / `src/`.
+2. **Add or update tests** in `src/cli.test.js` (spawn CLI against a temp dir, assert filesystem + output).
+3. **Run the suite**: `npm test` — must stay green.
+4. **Update docs**: `README.md`, the relevant `templates/shared/*/README.md`, and `CHANGELOG.md`.
+5. **Bump version** in both `package.json` and `src/index.js` (`VERSION`) following SemVer.
 
----
+## Commands
 
-## 🧩 Component Rules (CRITICAL)
-
-| Rule | Requirement |
-|------|-------------|
-| **Folders** | `kebab-case` only (`user-profile/`, NOT `UserProfile/`) |
-| **Structure** | `component-name/index.tsx` (never standalone `.tsx` files) |
-| **Exports** | `export default function ComponentName` (default export, PascalCase) |
-| **Props** | Interface inside file, before function, named `{Component}Props` |
-
-```
-✅ components/user-card/index.tsx
-❌ components/UserCard.tsx
-❌ components/userCard/index.tsx
+```bash
+npm test                          # Run the full test suite (node --test)
+node bin/cli.js help              # Show CLI help
+node bin/cli.js list              # List available prompts/skills/hooks
+node bin/cli.js install --dry-run # Preview an install (run in a sandbox dir, not this repo)
 ```
 
-📄 **Full details:** `.github/instructions/react-components.instructions.md`
+## Git Conventions
 
----
-
-## ⚛️ React Rules (CRITICAL)
-
-| Rule | Requirement |
-|------|-------------|
-| **Hook Placement** | ALL hooks BEFORE any conditional returns |
-| **useState** | Simple state (1-3 values) |
-| **useReducer** | Complex state (4+ values or complex transitions) |
-| **useActionState** | Server actions with forms (React 19) |
-
-```tsx
-// ✅ CORRECT: Hooks first, then early returns
-export default function Component({ data }: Props) {
-  const [state, setState] = useState(initial);
-  const handleClick = useCallback(() => {}, []);
-
-  if (!data) return null;  // Early return AFTER hooks
-  return <div>...</div>;
-}
-```
-
-📄 **Full details:** `.github/instructions/react-components.instructions.md`
-
----
-
-## 🖥️ Server Actions (CRITICAL)
-
-| Rule | Requirement |
-|------|-------------|
-| **Directive** | Always `"use server"` at top |
-| **Signature** | `(prevState: ActionState, formData: FormData) => Promise<ActionState>` |
-| **Return** | Always `{ success, message, timestamp }` |
-
-📄 **Full details:** `.github/instructions/server-actions.instructions.md`
-
----
-
-## 🧪 Testing Rules
-
-| Rule | Requirement |
-|------|-------------|
-| **Location** | `__tests__/` subfolder in each component/domain |
-| **Naming** | `[component-name].test.tsx` or `[feature].test.ts` |
-| **Coverage** | 100% for reducers, unit tests for actions & utils |
-| **Mocks** | Define mocks BEFORE imports |
-
-```typescript
-// ✅ CORRECT: Mock first, then import
-const mockFn = jest.fn();
-jest.mock('@/lib/api', () => ({ apiClient: mockFn }));
-import { myFunction } from '@/lib/my-module';
-```
-
-📄 **Full details:** `.github/instructions/tests.instructions.md`
-
----
-
-## 📝 Git Conventions
-
-| Type | Format |
-|------|--------|
-| **Commit** | `JIRA-XXX: Brief description` (e.g., `WEB-123: Add user authentication`) |
-| **Types** | `feat` • `fix` • `docs` • `refactor` • `test` • `chore` |
-| **Branch** | `feature/JIRA-XXX-description` • `bugfix/JIRA-XXX-description` |
-
-> ⚠️ **CRITICAL**: Always include the Jira ticket prefix in commits. Never commit without it.
-
----
-
-## 🚦 Pre-commit Quality Gates (MANDATORY)
-
-> **CRITICAL**: Before pushing code or creating a PR to protected branches (`dev`, `staging`, `master`, `main`),
-> you MUST complete ALL quality checks. This prevents failed pipelines and broken builds.
-
-### Required Checks Before Push/PR
-
-| Check | Command | Must Pass |
-|-------|---------|-----------|
-| **TypeScript** | `npm run type-check --if-present` (or `npx tsc --noEmit`) | ✅ Zero errors |
-| **Linting** | `npm run lint --if-present` | ✅ Zero errors |
-| **Unit Tests** | `npm run test --if-present` | ✅ All passing |
-| **Build** | `npm run build --if-present` | ✅ Successful |
-
-### Quality Checklist
-
-```
-Before ANY push to dev/staging/main:
-□ All TypeScript errors resolved
-□ All ESLint warnings addressed
-□ All unit tests passing locally
-□ Build completes without errors
-□ No console.log() left in code
-□ Commit message has Jira prefix (e.g., WEB-123: ...)
-```
-
-### Why This Matters
-
-- ❌ **Without local testing** → Failed CI/CD pipelines → Wasted time & resources
-- ✅ **With local testing** → Clean pipelines → Faster deployments
-
-> If a script is not defined in `package.json`, skip that script check or use the documented fallback command.
-
-📄 **Testing details:** `.github/instructions/tests.instructions.md`
-📄 **Testing patterns:** `.github/skills/testing-patterns/SKILL.md`
-
----
-
-## 🔍 When to Read Instruction Files
-
-| Task | Read This File |
-|------|----------------|
-| Creating/editing components | `react-components.instructions.md` |
-| Writing CSS/Tailwind | `css-styling.instructions.md` |
-| Creating server actions | `server-actions.instructions.md` |
-| Writing tests | `tests.instructions.md` |
-| TypeScript questions | `typescript.instructions.md` |
-| **Before pushing/PR** | `tests.instructions.md` + run quality checks |
+- Commit format: `type: Brief description` (`feat`, `fix`, `docs`, `refactor`, `test`, `chore`).
+- Branches: `feature/<issue#>-brief-description`, `bugfix/...`, `hotfix/...`.
+- One logical change per commit; keep the test suite green before pushing.
