@@ -486,11 +486,35 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 
 - Node.js 18+
 - Git installed and configured
-- **For Jira tracker:** Atlassian MCP configured
-- **For GitHub tracker:** GitHub MCP configured
+- **For Jira tracker:** Atlassian MCP configured (see below)
+- **For GitHub tracker:** GitHub MCP configured (see below)
 - **For GitHub Copilot:** VS Code with GitHub Copilot extension
 - **For Claude Code:** Claude Code CLI or VS Code extension
 - **For Codex:** Codex CLI/session running at project root
+
+### MCP Server Configuration
+
+The Jira and GitHub workflow prompts rely on MCP servers to read/write tickets and pull requests.
+Add a `.mcp.json` file to your project root (or use VS Code's MCP settings) to register the servers:
+
+```json
+{
+  "servers": {
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  }
+}
+```
+
+> You only need to include the server(s) matching your `--tracker` choice.
+> The Atlassian MCP uses OAuth — authenticate once with `npx @atlassian/mcp-server auth` or via the VS Code MCP UI.
+> The GitHub MCP is authenticated automatically when you are signed in to GitHub Copilot.
 
 ## License
 
