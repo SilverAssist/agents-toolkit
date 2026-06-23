@@ -419,6 +419,13 @@ npx @silverassist/agents-toolkit@latest install --hooks-only
 npx @silverassist/agents-toolkit@latest install --hooks-only --global
 ```
 
+> **How hook paths resolve.** Copilot runs a hook `command` from the workspace root, not
+> the hooks directory. Each generated config therefore sets a `cwd` so `scripts/<name>.sh`
+> resolves: `.github/hooks` (relative, portable) for project installs and the absolute hooks
+> path for global installs. Configs also declare the required `version: 1` field. If you
+> installed hooks with an older version and see `scripts/<name>.sh: No such file or directory`,
+> re-run the install with `--force` to regenerate the configs.
+
 ## Agent Instructions Files
 
 ### AGENTS.md (Copilot/Codex Agent)
