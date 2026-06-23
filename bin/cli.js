@@ -59,10 +59,11 @@ const FILE_CATEGORIES = {
     universal: [
       'analyze-ticket', 'work-ticket', 'analyze-github-issue', 'work-github-issue',
       'create-plan', 'create-pr', 'prepare-pr', 'finalize-pr',
+      'create-github-pr', 'finalize-github-pr',
       'review-code', 'fix-issues', 'add-tests', 'prepare-release',
     ],
     jira: ['analyze-ticket', 'work-ticket', 'create-pr', 'finalize-pr'],
-    github: ['analyze-github-issue', 'work-github-issue'],
+    github: ['analyze-github-issue', 'work-github-issue', 'create-github-pr', 'finalize-github-pr'],
   },
   partials: {
     jira: ['jira-integration'],
@@ -894,7 +895,7 @@ function list() {
     .map(f => f.replace('.prompt.md', ''));
 
   log('Workflow Prompts:', 'cyan');
-  const workflowPrompts = ['analyze-ticket', 'create-plan', 'work-ticket', 'prepare-pr', 'create-pr', 'finalize-pr'];
+  const workflowPrompts = ['analyze-ticket', 'create-plan', 'work-ticket', 'prepare-pr', 'create-pr', 'finalize-pr', 'analyze-github-issue', 'work-github-issue', 'create-github-pr', 'finalize-github-pr'];
   workflowPrompts.forEach((p, i) => {
     if (prompts.includes(p)) {
       console.log(`  ${i + 1}. ${p}`);

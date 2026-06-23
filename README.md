@@ -125,9 +125,10 @@ CLAUDE.md                             # Project instructions for Claude Code (pr
 Type `/` in the chat to see all available slash commands:
 
 ```
-/analyze-ticket
-/work-ticket
-/create-pr
+/analyze-github-issue
+/work-github-issue
+/create-github-pr
+/finalize-github-pr
 ```
 
 ### Codex
@@ -220,8 +221,10 @@ The same set of prompts is available for all supported tools.
 | `work-ticket` | Start working on a Jira ticket | `{ticket-id}` | Jira |
 | `work-github-issue` | Start working on a GitHub issue | `{issue-number}` | GitHub |
 | `prepare-pr` | Prepare code for PR | — | All |
-| `create-pr` | Create a pull request | `{ticket-id}` | Jira |
-| `finalize-pr` | Finalize and merge PR | `{ticket-id}` | Jira |
+| `create-pr` | Create a pull request (Jira) | `{ticket-id}` | Jira |
+| `create-github-pr` | Create a pull request (GitHub) | `{issue-number}` | GitHub |
+| `finalize-pr` | Finalize and merge PR (Jira) | `{ticket-id}` | Jira |
+| `finalize-github-pr` | Finalize and merge PR (GitHub) | `{issue-number}` | GitHub |
 
 ### Utility
 
@@ -233,6 +236,7 @@ The same set of prompts is available for all supported tools.
 
 ### Workflow Stages
 
+**Jira workflow:**
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  1. Analyze     │────▶│  2. Plan        │────▶│  3. Work        │
@@ -244,6 +248,20 @@ The same set of prompts is available for all supported tools.
 │  6. Finalize    │◀────│  5. Create PR   │◀────│  4. Prepare     │
 │  finalize-pr    │     │  create-pr      │     │  prepare-pr     │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+**GitHub workflow:**
+```
+┌──────────────────────┐     ┌─────────────────┐     ┌──────────────────────┐
+│  1. Analyze          │────▶│  2. Plan        │────▶│  3. Work             │
+│  analyze-github-issue│     │  create-plan    │     │  work-github-issue   │
+└──────────────────────┘     └─────────────────┘     └──────────────────────┘
+                                                               │
+                                                               ▼
+┌──────────────────────┐     ┌──────────────────────┐  ┌─────────────────┐
+│  6. Finalize         │◀────│  5. Create PR         │◀─│  4. Prepare     │
+│  finalize-github-pr  │     │  create-github-pr     │  │  prepare-pr     │
+└──────────────────────┘     └──────────────────────┘  └─────────────────┘
 ```
 
 ## CLI Reference
