@@ -469,3 +469,147 @@ test('help shows --copy option', () => {
   assert.equal(status, 0);
   assert.match(stdout, /--copy/);
 });
+
+// ─── Lockfile tests ───────────────────────────────────────────────────────────
+
+test('install writes agents-toolkit-lock.json', (t) => {
+  const tempDir = createTempProject(t);
+  const { status } = runCli(['install', '--skills-only'], tempDir);
+
+  assert.equal(status, 0);
+  const lockPath = path.join(tempDir, 'agents-toolkit-lock.json');
+  assert.ok(fs.existsSync(lockPath), 'agents-toolkit-lock.json should be created');
+
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
+  assert.equal(lock.version, 1);
+  assert.ok(typeof lock.packageVersion === 'string', 'packageVersion should be a string');
+  assert.ok(typeof lock.config === 'object', 'config should be present');
+  assert.ok(typeof lock.skills === 'object', 'skills should be present');
+  assert.ok(Object.keys(lock.skills).length > 0, 'at least one skill should be recorded');
+
+  const firstSkill = Object.values(lock.skills)[0];
+  assert.equal(firstSkill.source, '@silverassist/agents-toolkit');
+  assert.ok(typeof firstSkill.computedHash === 'string', 'computedHash should be a string');
+  assert.ok(firstSkill.computedHash.length === 64, 'computedHash should be a 64-char hex SHA-256');
+  assert.ok(Array.isArray(firstSkill.agents), 'agents should be an array');
+});
+
+test('install --dry-run does not write agents-toolkit-lock.json', (t) => {
+  const tempDir = createTempProject(t);
+  runCli(['install', '--skills-only', '--dry-run'], tempDir);
+
+  const lockPath = path.join(tempDir, 'agents-toolkit-lock.json');
+  assert.ok(!fs.existsSync(lockPath), 'agents-toolkit-lock.json should NOT be created during dry-run');
+});
+
+test('install --global does not write agents-toolkit-lock.json', (t) => {
+  const tempDir = createTempProject(t);
+  // Use a fake HOME so global install doesn't touch the real home dir.
+  const fakeHome = path.join(tempDir, 'fake-home');
+  fs.mkdirSync(fakeHome, { recursive: true });
+
+  const result = spawnSync(process.execPath, [CLI_PATH, 'install', '--global', '--skills-only'], {
+    cwd: tempDir,
+    encoding: 'utf-8',
+    env: { ...process.env, HOME: fakeHome },
+  });
+
+  const lockPath = path.join(tempDir, 'agents-toolkit-lock.json');
+  assert.ok(!fs.existsSync(lockPath), 'agents-toolkit-lock.json should NOT be created for global installs');
+});
+
+test('restore recreates skills from lockfile', (t) => {
+  if (!symlinkSupported(os.tmpdir())) {
+    t.skip('symlinks not supported on this platform');
+    return;
+  }
+
+  const tempDir = createTempProject(t);
+
+  // 1. Install to create lockfile and skills.
+  const installResult = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(installResult.status, 0);
+
+  const lockPath = path.join(tempDir, 'agents-toolkit-lock.json');
+  assert.ok(fs.existsSync(lockPath), 'lockfile should exist after install');
+
+  // 2. Delete the canonical skills store (simulating a fresh clone).
+  const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
+  fs.rmSync(agentsSkillsDir, { recursive: true, force: true });
+  assert.ok(!fs.existsSync(agentsSkillsDir), '.agents/skills should be deleted');
+
+  // 3. Restore from lockfile.
+  const restoreResult = runCli(['restore'], tempDir);
+  assert.equal(restoreResult.status, 0, `restore failed:\n${restoreResult.stdout}\n${restoreResult.stderr}`);
+  assert.match(restoreResult.stdout, /Restored/);
+
+  // 4. Skills should be back.
+  assert.ok(fs.existsSync(agentsSkillsDir), '.agents/skills should be recreated after restore');
+});
+
+test('restore exits 1 when lockfile is missing', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['restore'], tempDir);
+
+  assert.equal(status, 1);
+  assert.match(stdout, /agents-toolkit-lock\.json/);
+});
+
+test('status exits 0 when all skills are up-to-date', (t) => {
+  const tempDir = createTempProject(t);
+  runCli(['install', '--skills-only'], tempDir);
+
+  const { status, stdout } = runCli(['status'], tempDir);
+  assert.equal(status, 0, `status should exit 0:\n${stdout}`);
+  assert.match(stdout, /up-to-date/);
+});
+
+test('status exits 1 when a skill is missing', (t) => {
+  const tempDir = createTempProject(t);
+  runCli(['install', '--skills-only'], tempDir);
+
+  // Delete one skill from the canonical store.
+  const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
+  const skills = fs.readdirSync(agentsSkillsDir, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => d.name);
+  assert.ok(skills.length > 0, 'at least one skill should exist');
+  fs.rmSync(path.join(agentsSkillsDir, skills[0]), { recursive: true, force: true });
+
+  const { status, stdout } = runCli(['status'], tempDir);
+  assert.equal(status, 1, 'status should exit 1 when a skill is missing');
+  assert.match(stdout, /missing/);
+});
+
+test('status exits 1 when a skill is modified', (t) => {
+  const tempDir = createTempProject(t);
+  runCli(['install', '--skills-only'], tempDir);
+
+  // Modify one skill's SKILL.md in the canonical store.
+  const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
+  const skills = fs.readdirSync(agentsSkillsDir, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .map(d => d.name);
+  assert.ok(skills.length > 0, 'at least one skill should exist');
+  const skillMdPath = path.join(agentsSkillsDir, skills[0], 'SKILL.md');
+  fs.appendFileSync(skillMdPath, '\n<!-- modified -->');
+
+  const { status, stdout } = runCli(['status'], tempDir);
+  assert.equal(status, 1, 'status should exit 1 when a skill is modified');
+  assert.match(stdout, /modified/);
+});
+
+test('status exits 1 when lockfile is missing', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['status'], tempDir);
+
+  assert.equal(status, 1);
+  assert.match(stdout, /agents-toolkit-lock\.json/);
+});
+
+test('help shows restore and status commands', () => {
+  const { status, stdout } = runCli(['help'], process.cwd());
+  assert.equal(status, 0);
+  assert.match(stdout, /restore/);
+  assert.match(stdout, /status/);
+});

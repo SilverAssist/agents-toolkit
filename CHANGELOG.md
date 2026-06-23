@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Skills lockfile support** ([#21](https://github.com/SilverAssist/agents-toolkit/issues/21)) — `install` now writes `agents-toolkit-lock.json` at the project root after each non-global, non-dry-run install. The lockfile records each skill's SHA-256 hash (same algorithm as `npx skills`) and agent dirs, enabling reproducible restores without committing skill files to the repository
+- **`restore` command** — reads `agents-toolkit-lock.json`, reinstalls all skills + symlinks, and verifies hashes match the lockfile. Designed for post-clone setup and CI pipelines
+- **`status` command** — compares installed skill hashes against the lockfile and prints a `up-to-date / modified / missing` table; exits with code `1` if any skill is out of sync (CI-friendly)
+- **Auto `.gitignore` update** — `install` automatically appends `.agents/skills/`, `.github/skills/`, and `.claude/skills/` to `.gitignore` when those entries are not already present
+- New `bin/cli.js` helpers: `computeSkillHash()`, `writeLockfile()`, `readLockfile()`, `appendSkillsToGitignore()`
+- 10 new tests covering lockfile write, dry-run skip, global install skip, restore, and status (41 tests total)
 - **`npx skills` standard for skills** ([#16](https://github.com/SilverAssist/agents-toolkit/issues/16)) — skills now install once into a canonical `.agents/skills/` store and each agent's skills directory symlinks to it (single source of truth shared across Copilot, Claude Code, and Codex)
 - `--copy` CLI flag — materialize real copies instead of symlinks; symlinks also fall back to copies automatically when unsupported (e.g. Windows without developer mode)
 - New `bin/cli.js` helpers: `getAgentsSkillsDir()`, `linkSkill()`, `installSkillsStandard()`

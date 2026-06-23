@@ -7,7 +7,9 @@
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'url';
+import { VERSION } from '../src/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,6 +194,99 @@ function getAgentsSkillsDir(global = false) {
   return path.join(base, '.agents', 'skills');
 }
 
+/** Path to the project-level lockfile. */
+const LOCKFILE_NAME = 'agents-toolkit-lock.json';
+
+/**
+ * Compute a hex-encoded SHA-256 hash of a skill's SKILL.md content.
+ * Matches the algorithm used by `npx skills` (Vercel).
+ * @param {string} skillDir - Absolute path to the skill directory
+ * @returns {string|null} Hex hash string, or null if SKILL.md is missing
+ */
+function computeSkillHash(skillDir) {
+  const skillMdPath = path.join(skillDir, 'SKILL.md');
+  if (!fs.existsSync(skillMdPath)) return null;
+  const content = fs.readFileSync(skillMdPath, 'utf-8');
+  return crypto.createHash('sha256').update(content).digest('hex');
+}
+
+/**
+ * Read and parse the project lockfile.
+ * @param {string} [cwd] - Directory to look in (defaults to process.cwd())
+ * @returns {Object|null} Parsed lockfile, or null if absent or invalid
+ */
+function readLockfile(cwd = process.cwd()) {
+  const lockPath = path.join(cwd, LOCKFILE_NAME);
+  if (!fs.existsSync(lockPath)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Write the project lockfile.
+ * @param {Object} params
+ * @param {Record<string, {computedHash: string|null, agents: string[]}>} params.skills - Installed skills map
+ * @param {{ stack: string, tracker: string }} params.config - Active install config
+ * @param {string} params.packageVersion - Current package version
+ * @param {string} [params.cwd] - Directory to write to (defaults to process.cwd())
+ */
+function writeLockfile({ skills, config, packageVersion, cwd = process.cwd() }) {
+  const lockPath = path.join(cwd, LOCKFILE_NAME);
+  const skillsEntry = {};
+  for (const [name, meta] of Object.entries(skills)) {
+    skillsEntry[name] = {
+      source: '@silverassist/agents-toolkit',
+      packageVersion,
+      computedHash: meta.computedHash,
+      agents: meta.agents,
+    };
+  }
+  const lockfile = {
+    version: 1,
+    packageVersion,
+    config,
+    skills: skillsEntry,
+  };
+  fs.writeFileSync(lockPath, JSON.stringify(lockfile, null, 2) + '\n', 'utf-8');
+  success(`Wrote ${LOCKFILE_NAME}`);
+}
+
+/**
+ * Append skills-managed entries to .gitignore if not already present.
+ * Never runs during dry-run or global installs.
+ * @param {string} cwd - Project root directory
+ */
+function appendSkillsToGitignore(cwd) {
+  const gitignorePath = path.join(cwd, '.gitignore');
+  const block = [
+    '',
+    '# agents-toolkit managed — regenerate with: npx @silverassist/agents-toolkit restore',
+    '.agents/skills/',
+    '.github/skills/',
+    '.claude/skills/',
+  ].join('\n');
+
+  let existing = '';
+  if (fs.existsSync(gitignorePath)) {
+    existing = fs.readFileSync(gitignorePath, 'utf-8');
+  }
+
+  // Only append if none of the three managed paths are already present.
+  if (
+    existing.includes('.agents/skills/') ||
+    existing.includes('.github/skills/') ||
+    existing.includes('.claude/skills/')
+  ) {
+    return;
+  }
+
+  fs.writeFileSync(gitignorePath, existing + block + '\n', 'utf-8');
+  info('Updated .gitignore with agents-toolkit managed paths');
+}
+
 /**
  * Link a single skill from the canonical store into an agent's skills
  * directory, following the `npx skills` standard (symlink with copy fallback).
@@ -275,10 +370,10 @@ function linkSkill(canonicalSkillDir, agentSkillLinkPath, options = {}) {
  * @param {boolean} [params.dryRun] - Only report planned changes
  * @param {boolean} [params.copy] - Copy instead of symlink
  * @param {(name: string) => boolean} [params.dirFilter] - Skill folder filter
- * @returns {{ written: number, planned: number }} Aggregated change counters
+ * @returns {{ written: number, planned: number, installedSkills: Record<string, { canonicalDir: string }> }} Aggregated change counters and installed skill metadata
  */
 function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun = false, copy = false, dirFilter = null }) {
-  const totals = { written: 0, planned: 0 };
+  const totals = { written: 0, planned: 0, installedSkills: {} };
   const skillsSrc = path.join(TEMPLATES_DIR, 'shared', 'skills');
   const canonicalDir = getAgentsSkillsDir(isGlobal);
 
@@ -302,6 +397,9 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
     const linkResult = linkSkill(canonicalSkillDir, agentSkillLinkPath, { dryRun, force, copy });
     totals.written += linkResult.written;
     totals.planned += linkResult.planned;
+
+    // Track for lockfile even during dry-run (so callers know what would be installed).
+    totals.installedSkills[entry.name] = { canonicalDir: canonicalSkillDir };
   }
 
   return totals;
@@ -642,6 +740,8 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
   const targetDir = getTargetDir(isGlobal);
   const scope = getInstallScope(options);
   let totalChanges = 0;
+  /** @type {Record<string, { canonicalDir: string, agents: string[] }>} */
+  const installedSkillsMap = {};
 
   const makeFilter = (category) => (name) => {
     const basename = name.replace(/\.(prompt\.md|instructions\.md|md)$/, '');
@@ -692,6 +792,13 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
       dirFilter: makeFilter('skills'),
     });
     totalChanges += getChangeCount(result, dryRun);
+    // Merge installed skills for lockfile (agent dir = .github/skills or ~/.copilot/skills).
+    for (const [name, meta] of Object.entries(result.installedSkills)) {
+      if (!installedSkillsMap[name]) {
+        installedSkillsMap[name] = { canonicalDir: meta.canonicalDir, agents: [] };
+      }
+      installedSkillsMap[name].agents.push(path.relative(process.cwd(), path.join(targetDir, 'skills')));
+    }
 
     if (!dryRun && result.written > 0) {
       success(`Installed ${result.written} skill files/links`);
@@ -718,6 +825,19 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
       : path.join(TEMPLATES_DIR, 'agents', 'AGENTS.md');
     const agentsResult = installAgentsFile({ templatePath: agentsTemplatePath, force, append, dryRun });
     totalChanges += getChangeCount(agentsResult, dryRun);
+  }
+
+  // Write lockfile and update .gitignore for project (non-global, non-dry-run) installs.
+  if (!isGlobal && !dryRun && scope.shouldInstallSkills && Object.keys(installedSkillsMap).length > 0) {
+    const skillsForLock = {};
+    for (const [name, meta] of Object.entries(installedSkillsMap)) {
+      skillsForLock[name] = {
+        computedHash: computeSkillHash(meta.canonicalDir),
+        agents: meta.agents,
+      };
+    }
+    writeLockfile({ skills: skillsForLock, config: filters, packageVersion: VERSION });
+    appendSkillsToGitignore(process.cwd());
   }
 
   console.log('');
@@ -773,6 +893,8 @@ function installClaude(options = {}) {
   const claudeDir = getClaudeTargetDir(isGlobal);
   const githubDir = getTargetDir(isGlobal);
   let totalChanges = 0;
+  /** @type {Record<string, { canonicalDir: string, agents: string[] }>} */
+  const installedSkillsMap = {};
 
   const makeFilter = (category) => (name) => {
     const basename = name.replace(/\.(prompt\.md|instructions\.md|md)$/, '');
@@ -826,6 +948,12 @@ function installClaude(options = {}) {
       dirFilter: makeFilter('skills'),
     });
     totalChanges += getChangeCount(result, dryRun);
+    for (const [name, meta] of Object.entries(result.installedSkills)) {
+      if (!installedSkillsMap[name]) {
+        installedSkillsMap[name] = { canonicalDir: meta.canonicalDir, agents: [] };
+      }
+      installedSkillsMap[name].agents.push(path.relative(process.cwd(), path.join(claudeDir, 'skills')));
+    }
 
     if (!dryRun && result.written > 0) {
       success(`Installed ${result.written} skill files/links to .claude/skills/`);
@@ -855,6 +983,19 @@ function installClaude(options = {}) {
   const configResult = ensureConfigFile({ dryRun, global: isGlobal });
   totalChanges += getChangeCount(configResult, dryRun);
 
+  // Write lockfile and update .gitignore for project (non-global, non-dry-run) installs.
+  if (!isGlobal && !dryRun && scope.shouldInstallSkills && Object.keys(installedSkillsMap).length > 0) {
+    const skillsForLock = {};
+    for (const [name, meta] of Object.entries(installedSkillsMap)) {
+      skillsForLock[name] = {
+        computedHash: computeSkillHash(meta.canonicalDir),
+        agents: meta.agents,
+      };
+    }
+    writeLockfile({ skills: skillsForLock, config: filters, packageVersion: VERSION });
+    appendSkillsToGitignore(process.cwd());
+  }
+
   console.log('');
   if (dryRun) {
     info(`Dry run complete. ${totalChanges} files would be installed.`);
@@ -873,6 +1014,158 @@ function installClaude(options = {}) {
     }
   } else {
     warn('No new files installed. Use --force to overwrite existing files.');
+  }
+  console.log('');
+}
+
+/**
+ * Restore skills from the lockfile.
+ * Reads agents-toolkit-lock.json, reinstalls all skills, and verifies hashes.
+ * @param {Object} [options]
+ * @param {boolean} [options.force] - Overwrite existing files
+ * @param {boolean} [options.dryRun] - Only report planned changes
+ * @param {boolean} [options.copy] - Copy instead of symlink
+ */
+function restore(options = {}) {
+  const { force = false, dryRun = false, copy = false } = options;
+  log('\n🔄 Agents Toolkit Restore\n', 'bright');
+
+  const lockfile = readLockfile();
+  if (!lockfile) {
+    error(`No ${LOCKFILE_NAME} found. Run "install" first to generate it.`);
+    process.exit(1);
+  }
+
+  if (lockfile.packageVersion !== VERSION) {
+    warn(`Lockfile was created with v${lockfile.packageVersion}, current package is v${VERSION}.`);
+    warn('Run "update" to refresh the lockfile for the current version.');
+  }
+
+  if (dryRun) {
+    info('Dry run mode - no files will be restored\n');
+  }
+
+  const { stack = 'all', tracker = 'all' } = lockfile.config || {};
+  const filters = { stack, tracker };
+  const makeFilter = (category) => (name) => {
+    const basename = name.replace(/\.(prompt\.md|instructions\.md|md)$/, '');
+    return shouldIncludeFile(basename, category, filters);
+  };
+
+  // Determine which agent dirs were recorded in the lockfile.
+  const agentDirs = new Set();
+  for (const meta of Object.values(lockfile.skills || {})) {
+    for (const agentDir of (meta.agents || [])) {
+      agentDirs.add(agentDir);
+    }
+  }
+
+  // Reinstall into each unique agent skills dir.
+  let totalRestored = 0;
+  for (const agentDir of agentDirs) {
+    const agentSkillsDir = path.join(process.cwd(), agentDir);
+    const result = installSkillsStandard({
+      isGlobal: false,
+      agentSkillsDir,
+      force: force || true, // restore always overwrites
+      dryRun,
+      copy,
+      dirFilter: makeFilter('skills'),
+    });
+    totalRestored += dryRun ? result.planned : result.written;
+  }
+
+  if (dryRun) {
+    info(`Dry run complete. ${totalRestored} files would be restored.`);
+    return;
+  }
+
+  // Verify hashes match the lockfile.
+  const canonicalDir = getAgentsSkillsDir(false);
+  let allMatch = true;
+  for (const [name, meta] of Object.entries(lockfile.skills || {})) {
+    const canonicalSkillDir = path.join(canonicalDir, name);
+    const hash = computeSkillHash(canonicalSkillDir);
+    if (hash !== meta.computedHash) {
+      warn(`Hash mismatch for skill "${name}" — expected ${meta.computedHash?.slice(0, 12)}… got ${hash?.slice(0, 12)}…`);
+      allMatch = false;
+    }
+  }
+
+  console.log('');
+  if (allMatch) {
+    success(`Restored ${Object.keys(lockfile.skills || {}).length} skills successfully.`);
+  } else {
+    warn(`Restored with hash mismatches. Run "update" to refresh the lockfile.`);
+  }
+  console.log('');
+}
+
+/**
+ * Show the status of installed skills relative to the lockfile.
+ * Exits with code 1 if any skill is missing or has a hash mismatch.
+ */
+function status() {
+  log('\n📊 Agents Toolkit Status\n', 'bright');
+
+  const lockfile = readLockfile();
+  if (!lockfile) {
+    error(`No ${LOCKFILE_NAME} found. Run "install" first to generate it.`);
+    process.exit(1);
+  }
+
+  const canonicalDir = getAgentsSkillsDir(false);
+  const skills = lockfile.skills || {};
+  let hasIssues = false;
+
+  if (Object.keys(skills).length === 0) {
+    info('No skills recorded in lockfile.');
+    return;
+  }
+
+  if (lockfile.packageVersion !== VERSION) {
+    warn(`Lockfile package version: v${lockfile.packageVersion} — current: v${VERSION}`);
+  }
+
+  console.log('');
+  const COL_NAME = 28;
+  const COL_STATUS = 14;
+  const header = `${'Skill'.padEnd(COL_NAME)} ${'Status'.padEnd(COL_STATUS)} Hash`;
+  log(header, 'cyan');
+  log('─'.repeat(header.length), 'cyan');
+
+  for (const [name, meta] of Object.entries(skills)) {
+    const canonicalSkillDir = path.join(canonicalDir, name);
+    const hash = computeSkillHash(canonicalSkillDir);
+
+    let statusLabel;
+    let statusColor;
+
+    if (hash === null) {
+      statusLabel = 'missing';
+      statusColor = 'red';
+      hasIssues = true;
+    } else if (hash !== meta.computedHash) {
+      statusLabel = 'modified';
+      statusColor = 'yellow';
+      hasIssues = true;
+    } else {
+      statusLabel = 'up-to-date';
+      statusColor = 'green';
+    }
+
+    const hashDisplay = hash ? hash.slice(0, 12) + '…' : '—';
+    const line = `${name.padEnd(COL_NAME)} ${statusLabel.padEnd(COL_STATUS)} ${hashDisplay}`;
+    log(line, statusColor);
+  }
+
+  console.log('');
+
+  if (hasIssues) {
+    warn('Some skills are out of sync. Run "restore" or "update" to fix.');
+    process.exit(1);
+  } else {
+    success(`All ${Object.keys(skills).length} skills are up-to-date.`);
   }
   console.log('');
 }
@@ -954,8 +1247,10 @@ function showHelp() {
   
   log('Commands:', 'cyan');
   console.log('  install     Install prompts (default target: copilot)');
+  console.log('  restore     Restore skills from agents-toolkit-lock.json');
+  console.log('  status      Check if installed skills match the lockfile');
+  console.log('  update      Update existing prompts and refresh the lockfile');
   console.log('  list        List available prompts');
-  console.log('  update      Update existing prompts (alias for install --force)');
   console.log('  help        Show this help message');
   
   console.log('');
@@ -1195,6 +1490,12 @@ function main() {
       } else {
         install({ ...options, filters });
       }
+      break;
+    case 'restore':
+      restore(options);
+      break;
+    case 'status':
+      status();
       break;
     case 'update':
       if (target === 'claude') {
