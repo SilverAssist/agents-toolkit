@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-06-22
+
+### Fixed
+
+- Hook commands failed at runtime with `/bin/sh: scripts/<name>.sh: No such file or directory` ([#17](https://github.com/SilverAssist/agents-toolkit/issues/17)). Copilot runs a hook `command` from the workspace root, not the hooks directory, so the relative `scripts/<name>.sh` path did not resolve — most visible on global (`~/.copilot/hooks/`) installs
+- `installHooks()` now sets a `cwd` on each hook entry: `.github/hooks` (relative, portable) for project installs and the absolute hooks path for global installs, so the `command` resolves correctly
+- Hook configs now declare the required `version: 1` field
+
+### Note
+
+- Existing installs must be refreshed to pick up the fix: `npx @silverassist/agents-toolkit@latest install --hooks-only --global --force` (or without `--global` for project-level hooks)
+
 ## [2.3.0] - 2026-05-21
 
 ### Added

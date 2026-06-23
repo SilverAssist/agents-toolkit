@@ -311,7 +311,30 @@ test('--global --hooks-only installs hooks to ~/.copilot/hooks/', (t) => {
 
   // Verify the JSON configs use relative command paths (work for both project and global)
   const config = JSON.parse(fs.readFileSync(path.join(hooksDir, 'lint-format.json'), 'utf-8'));
-  const command = config.hooks.PostToolUse[0].command;
-  assert.ok(!command.includes('.github/'), 'command path should not contain .github/ (must work globally)');
-  assert.match(command, /^scripts\//, 'command should use relative path from hooks dir');
+  const entry = config.hooks.PostToolUse[0];
+  assert.ok(!entry.command.includes('.github/'), 'command path should not contain .github/ (must work globally)');
+  assert.match(entry.command, /^scripts\//, 'command should use relative path from hooks dir');
+
+  // Global installs need an absolute cwd (no workspace anchor) + required version field
+  assert.equal(config.version, 1, 'global hook config should declare version 1');
+  assert.equal(entry.cwd, hooksDir, 'global hook cwd should be the absolute hooks directory');
+});
+
+test('--hooks-only sets cwd to .github/hooks for project installs', (t) => {
+  const tempDir = createTempProject(t);
+  const result = spawnSync(process.execPath, [CLI_PATH, 'install', '--hooks-only'], {
+    cwd: tempDir,
+    encoding: 'utf-8',
+  });
+  assert.equal(result.status, 0);
+
+  const config = JSON.parse(fs.readFileSync(path.join(tempDir, '.github', 'hooks', 'lint-format.json'), 'utf-8'));
+  const entry = config.hooks.PostToolUse[0];
+  assert.equal(config.version, 1, 'project hook config should declare version 1');
+  assert.equal(entry.cwd, '.github/hooks', 'project hook cwd should be relative to the workspace root');
+  assert.match(entry.command, /^scripts\//, 'command should resolve against cwd');
+
+  // The command must resolve to a real script from the configured cwd.
+  const resolved = path.join(tempDir, entry.cwd, entry.command);
+  assert.ok(fs.existsSync(resolved), 'cwd + command should point at an installed script');
 });

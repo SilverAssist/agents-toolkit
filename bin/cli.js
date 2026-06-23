@@ -303,7 +303,38 @@ function getChangeCount(result, dryRun) {
   return dryRun ? result.planned : result.written;
 }
 
-function installHooks({ targetDir, force = false, dryRun = false }) {
+/**
+ * Finalize installed hook configs so Copilot can resolve the script command.
+ * Copilot runs a hook `command` from the workspace root by default, not from
+ * the hooks directory, so the relative `scripts/<name>.sh` command needs a
+ * `cwd` pointing at the actual hooks dir. Also ensures the required
+ * `version: 1` field is present.
+ * @param {string} hooksDest - Absolute path to the installed hooks directory
+ * @param {boolean} isGlobal - Whether this is a global (~/.copilot) install
+ */
+function finalizeHookConfigs(hooksDest, isGlobal) {
+  // Global installs have no workspace anchor → use the absolute hooks path.
+  // Project installs use a path relative to the workspace root so the config
+  // stays portable/committable across machines and teammates.
+  const cwd = isGlobal
+    ? hooksDest
+    : path.relative(process.cwd(), hooksDest).split(path.sep).join('/');
+
+  const jsonFiles = fs.readdirSync(hooksDest).filter((f) => f.endsWith('.json'));
+  for (const file of jsonFiles) {
+    const filePath = path.join(hooksDest, file);
+    const config = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    config.version = 1;
+    for (const events of Object.values(config.hooks || {})) {
+      for (const entry of events) {
+        entry.cwd = cwd;
+      }
+    }
+    fs.writeFileSync(filePath, JSON.stringify(config, null, 2) + '\n');
+  }
+}
+
+function installHooks({ targetDir, force = false, dryRun = false, global: isGlobal = false }) {
   const hooksSrc = path.join(TEMPLATES_DIR, 'shared', 'hooks');
   const hooksDest = path.join(targetDir, 'hooks');
 
@@ -315,7 +346,7 @@ function installHooks({ targetDir, force = false, dryRun = false }) {
   // Copy hook JSON configs and scripts
   const result = copyDir(hooksSrc, hooksDest, { force, dryRun });
 
-  // Make scripts executable (non-dry-run only)
+  // Make scripts executable and finalize configs (non-dry-run only)
   if (!dryRun) {
     const scriptsDir = path.join(hooksDest, 'scripts');
     if (fs.existsSync(scriptsDir)) {
@@ -324,6 +355,9 @@ function installHooks({ targetDir, force = false, dryRun = false }) {
         const scriptPath = path.join(scriptsDir, script);
         fs.chmodSync(scriptPath, 0o755);
       }
+    }
+    if (fs.existsSync(hooksDest)) {
+      finalizeHookConfigs(hooksDest, isGlobal);
     }
   }
 
@@ -530,7 +564,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallHooks) {
     info('Installing hooks...');
-    const hooksResult = installHooks({ targetDir, force, dryRun });
+    const hooksResult = installHooks({ targetDir, force, dryRun, global: isGlobal });
     totalChanges += getChangeCount(hooksResult, dryRun);
   }
 
