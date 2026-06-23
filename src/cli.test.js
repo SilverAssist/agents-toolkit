@@ -158,9 +158,13 @@ test('--tracker github excludes Jira prompts', (t) => {
   assert.equal(status, 0);
   assert.match(stdout, /analyze-github-issue\.prompt\.md/);
   assert.match(stdout, /work-github-issue\.prompt\.md/);
+  assert.match(stdout, /create-github-pr\.prompt\.md/);
+  assert.match(stdout, /finalize-github-pr\.prompt\.md/);
   assert.match(stdout, /github-integration\.md/);
   assert.doesNotMatch(stdout, /analyze-ticket\.prompt\.md/);
   assert.doesNotMatch(stdout, /work-ticket\.prompt\.md/);
+  assert.doesNotMatch(stdout, /create-pr\.prompt\.md/);
+  assert.doesNotMatch(stdout, /finalize-pr\.prompt\.md/);
   assert.doesNotMatch(stdout, /jira-integration\.md/);
 });
 
@@ -171,9 +175,13 @@ test('--tracker jira excludes GitHub prompts', (t) => {
   assert.equal(status, 0);
   assert.match(stdout, /analyze-ticket\.prompt\.md/);
   assert.match(stdout, /work-ticket\.prompt\.md/);
+  assert.match(stdout, /create-pr\.prompt\.md/);
+  assert.match(stdout, /finalize-pr\.prompt\.md/);
   assert.match(stdout, /jira-integration\.md/);
   assert.doesNotMatch(stdout, /analyze-github-issue\.prompt\.md/);
   assert.doesNotMatch(stdout, /work-github-issue\.prompt\.md/);
+  assert.doesNotMatch(stdout, /create-github-pr\.prompt\.md/);
+  assert.doesNotMatch(stdout, /finalize-github-pr\.prompt\.md/);
   assert.doesNotMatch(stdout, /github-integration\.md/);
 });
 

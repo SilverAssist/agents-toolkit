@@ -64,17 +64,20 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── analyze-ticket.prompt.md
 │   ├── create-plan.prompt.md
 │   ├── work-ticket.prompt.md
-│   └── ...
+│   └── ...                           # 10 prompts total (depends on --tracker)
 ├── instructions/
 │   ├── typescript.instructions.md
 │   ├── react-components.instructions.md
-│   ├── server-actions.instructions.md
-│   ├── tests.instructions.md
-│   └── css-styling.instructions.md
+│   └── ...                           # filtered by --stack
 └── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
-    ├── component-architecture -> ../../.agents/skills/component-architecture
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    └── testing-patterns       -> ../../.agents/skills/testing-patterns
+    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+    └── ...                           # filtered by --stack
+.agents/
+└── skills/                           # Canonical store (single source of truth)
+    ├── domain-driven-design/
+    ├── testing-patterns/
+    └── ...                           # 9 skills total, filtered by --stack
 ```
 
 > **Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard.** The real skill files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory contains symlinks to it — a single source of truth shared across Copilot, Claude Code, and Codex. Use `--copy` to materialize real copies instead of symlinks (e.g. on Windows without developer mode; symlinks also fall back to copies automatically when unsupported).
@@ -100,20 +103,20 @@ This creates the following structure:
 CLAUDE.md                             # Project instructions for Claude Code (project root)
 .agents/
 └── skills/                           # Canonical skills store (single source of truth)
-    ├── component-architecture/
     ├── domain-driven-design/
-    └── testing-patterns/
+    ├── testing-patterns/
+    └── ...                           # 9 skills total, filtered by --stack
 .claude/
 ├── commands/
 │   ├── _partials/
 │   ├── analyze-ticket.md
 │   ├── create-plan.md
 │   ├── work-ticket.md
-│   └── ...
+│   └── ...                           # 10 commands total (depends on --tracker)
 └── skills/                           # Symlinks → ../../.agents/skills/ (read natively by Claude Code)
-    ├── component-architecture -> ../../.agents/skills/component-architecture
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    └── testing-patterns       -> ../../.agents/skills/testing-patterns
+    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+    └── ...                           # filtered by --stack
 .github/
 └── instructions/                     # Shared with Copilot
 ```
@@ -125,9 +128,10 @@ CLAUDE.md                             # Project instructions for Claude Code (pr
 Type `/` in the chat to see all available slash commands:
 
 ```
-/analyze-ticket
-/work-ticket
-/create-pr
+/analyze-github-issue
+/work-github-issue
+/create-github-pr
+/finalize-github-pr
 ```
 
 ### Codex
@@ -148,17 +152,20 @@ AGENTS.md                             # Project instructions for Codex (project 
 │   ├── analyze-ticket.prompt.md
 │   ├── create-plan.prompt.md
 │   ├── work-ticket.prompt.md
-│   └── ...
+│   └── ...                           # 10 prompts total (depends on --tracker)
 ├── instructions/
 │   ├── typescript.instructions.md
 │   ├── react-components.instructions.md
-│   ├── server-actions.instructions.md
-│   ├── tests.instructions.md
-│   └── css-styling.instructions.md
+│   └── ...                           # filtered by --stack
 └── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
-    ├── component-architecture -> ../../.agents/skills/component-architecture
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    └── testing-patterns       -> ../../.agents/skills/testing-patterns
+    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+    └── ...                           # filtered by --stack
+.agents/
+└── skills/                           # Canonical store (single source of truth)
+    ├── domain-driven-design/
+    ├── testing-patterns/
+    └── ...                           # 9 skills total, filtered by --stack
 ```
 
 ### Global Install (Optional)
@@ -220,8 +227,10 @@ The same set of prompts is available for all supported tools.
 | `work-ticket` | Start working on a Jira ticket | `{ticket-id}` | Jira |
 | `work-github-issue` | Start working on a GitHub issue | `{issue-number}` | GitHub |
 | `prepare-pr` | Prepare code for PR | — | All |
-| `create-pr` | Create a pull request | `{ticket-id}` | Jira |
-| `finalize-pr` | Finalize and merge PR | `{ticket-id}` | Jira |
+| `create-pr` | Create a pull request (Jira) | `{ticket-id}` | Jira |
+| `create-github-pr` | Create a pull request (GitHub) | `{issue-number}` | GitHub |
+| `finalize-pr` | Finalize and merge PR (Jira) | `{ticket-id}` | Jira |
+| `finalize-github-pr` | Finalize and merge PR (GitHub) | `{issue-number}` | GitHub |
 
 ### Utility
 
@@ -233,6 +242,7 @@ The same set of prompts is available for all supported tools.
 
 ### Workflow Stages
 
+**Jira workflow:**
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  1. Analyze     │────▶│  2. Plan        │────▶│  3. Work        │
@@ -244,6 +254,20 @@ The same set of prompts is available for all supported tools.
 │  6. Finalize    │◀────│  5. Create PR   │◀────│  4. Prepare     │
 │  finalize-pr    │     │  create-pr      │     │  prepare-pr     │
 └─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+**GitHub workflow:**
+```
+┌──────────────────────┐     ┌─────────────────┐     ┌──────────────────────┐
+│  1. Analyze          │────▶│  2. Plan        │────▶│  3. Work             │
+│  analyze-github-issue│     │  create-plan    │     │  work-github-issue   │
+└──────────────────────┘     └─────────────────┘     └──────────────────────┘
+                                                               │
+                                                               ▼
+┌──────────────────────┐     ┌──────────────────────┐  ┌─────────────────┐
+│  6. Finalize         │◀────│  5. Create PR         │◀─│  4. Prepare     │
+│  finalize-github-pr  │     │  create-github-pr     │  │  prepare-pr     │
+└──────────────────────┘     └──────────────────────┘  └─────────────────┘
 ```
 
 ## CLI Reference
@@ -462,11 +486,35 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 
 - Node.js 18+
 - Git installed and configured
-- **For Jira tracker:** Atlassian MCP configured
-- **For GitHub tracker:** GitHub MCP configured
+- **For Jira tracker:** Atlassian MCP configured (see below)
+- **For GitHub tracker:** GitHub MCP configured (see below)
 - **For GitHub Copilot:** VS Code with GitHub Copilot extension
 - **For Claude Code:** Claude Code CLI or VS Code extension
 - **For Codex:** Codex CLI/session running at project root
+
+### MCP Server Configuration
+
+The Jira and GitHub workflow prompts rely on MCP servers to read/write tickets and pull requests.
+Add a `.mcp.json` file to your project root (or use VS Code's MCP settings) to register the servers:
+
+```json
+{
+  "servers": {
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    }
+  }
+}
+```
+
+> You only need to include the server(s) matching your `--tracker` choice.
+> The Atlassian MCP uses OAuth — authenticate once with `npx @atlassian/mcp-server auth` or via the VS Code MCP UI.
+> The GitHub MCP is authenticated automatically when you are signed in to GitHub Copilot.
 
 ## License
 

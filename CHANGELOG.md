@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `bin/cli.js` helpers: `getAgentsSkillsDir()`, `linkSkill()`, `installSkillsStandard()`
 - `SKILLS_LAYOUT` export and `CLAUDE_FILES.skillsDir` in `src/index.js`
 - Six new regression tests covering canonical store, per-agent symlinks, shared source of truth, `--copy`, stack filtering, and dry-run (30 tests total)
+- **GitHub-specific PR prompts** — `create-github-pr` and `finalize-github-pr` complete the GitHub workflow pair alongside the existing `analyze-github-issue` / `work-github-issue`, using `{issue-number}` and `gh` CLI instead of Jira ticket IDs
+- `FILE_CATEGORIES.prompts.github` extended with `create-github-pr` and `finalize-github-pr` — `--tracker github` now correctly includes/excludes all four GitHub prompt pairs
+- Developer workflow prompts: `.github/prompts/` (prompts for Copilot/Codex) and `.claude/commands/` (commands for Claude Code) are real files decoupled from `templates/shared/prompts/` — project-specific and adapted for this Node.js ESM CLI repo
+- Developer skills: `.agents/skills/` canonical store (4 Node.js-adapted skills) with `.github/skills/` and `.claude/skills/` symlinks
 
 ### Changed
 

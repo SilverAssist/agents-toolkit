@@ -12,9 +12,9 @@ Copilot, Claude Code, and Codex**. It is a distribution/installer tool — not a
 There is no React, Next.js, or build step here.
 
 > ⚠️ This repo is the *source* of the toolkit. Do **not** run `install` inside this repo
-> (it copies templates onto themselves and leaves stray `.github/`, `.agents/`,
-> `.agents-toolkit.json`, `AGENTS.md` artifacts). The CLI targets the current working
-> directory and ignores positional arguments.
+> — it would overwrite the developer workflow files in `.github/prompts/`, `.claude/commands/`,
+> `.github/skills/`, and `.claude/skills/` with the generic end-user templates. The CLI targets
+> the current working directory and ignores positional arguments.
 
 ## Architecture
 
@@ -25,6 +25,12 @@ There is no React, Next.js, or build step here.
 | `src/cli.test.js` | Tests using the native Node test runner (`node --test`). Spawn the CLI against temp dirs and assert on output/filesystem. |
 | `templates/shared/` | Single source of truth for content: `instructions/`, `prompts/` (+ `_partials/`), `skills/` (folders with `SKILL.md`), `hooks/`. |
 | `templates/agents/` | Agent root files: `AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`. |
+| `.agents/skills/` | Canonical dev skills store — 4 skills adapted for this Node.js ESM CLI: `domain-driven-design` (project layout), `quality-checks`, `release-management`, `testing-patterns`. |
+| `.github/prompts/` | Dev workflow prompts for Copilot/Codex — real files (not symlinks), tailored for this repo. |
+| `.github/skills/` | Symlinks → `.agents/skills/` for Copilot/Codex skill resolution. |
+| `.claude/commands/` | Dev workflow commands for Claude Code — real files matching `.github/prompts/`. |
+| `.claude/skills/` | Symlinks → `.agents/skills/` for Claude Code skill resolution. |
+| `.github/copilot-instructions.md` | Repo-wide Copilot code review checklist (template/export sync, test portability, ESM conventions). |
 
 ### Install targets (where content lands in the end-user project)
 
