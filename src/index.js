@@ -3,7 +3,7 @@
  * @module @silverassist/agents-toolkit
  */
 
-export const VERSION = "2.3.1";
+export const VERSION = "2.4.0";
 
 export const PROMPTS = {
   workflow: [
@@ -42,6 +42,16 @@ export const SKILLS = [
 
 export const HOOKS = ["validate-tsx", "lint-format"];
 
+// Skills follow the `npx skills` standard: a single canonical copy lives in
+// .agents/skills/ and each agent's skills directory symlinks to it.
+export const SKILLS_LAYOUT = {
+  canonicalDir: ".agents/skills",
+  agentDirs: {
+    claude: ".claude/skills",
+    copilot: ".github/skills",
+  },
+};
+
 // Claude Code equivalents
 export const CLAUDE_COMMANDS = [
   "analyze-ticket",
@@ -58,4 +68,5 @@ export const CLAUDE_COMMANDS = [
 export const CLAUDE_FILES = {
   instructions: "CLAUDE.md",
   commandsDir: ".claude/commands",
+  skillsDir: ".claude/skills",
 };

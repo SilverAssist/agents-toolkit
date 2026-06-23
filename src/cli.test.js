@@ -338,3 +338,90 @@ test('--hooks-only sets cwd to .github/hooks for project installs', (t) => {
   const resolved = path.join(tempDir, entry.cwd, entry.command);
   assert.ok(fs.existsSync(resolved), 'cwd + command should point at an installed script');
 });
+
+// --- Skills (npx skills standard) tests ---
+
+test('--skills-only creates canonical .agents/skills and symlinks .github/skills', (t) => {
+  const tempDir = createTempProject(t);
+  const { status } = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(status, 0);
+
+  const canonical = path.join(tempDir, '.agents', 'skills', 'domain-driven-design');
+  assert.ok(fs.existsSync(path.join(canonical, 'SKILL.md')), 'canonical skill should exist in .agents/skills');
+
+  const link = path.join(tempDir, '.github', 'skills', 'domain-driven-design');
+  const stat = fs.lstatSync(link);
+  assert.ok(stat.isSymbolicLink(), '.github/skills entry should be a symlink');
+
+  // Symlink should resolve to the canonical store and be readable through it.
+  assert.ok(fs.existsSync(path.join(link, 'SKILL.md')), 'symlink should resolve to SKILL.md');
+});
+
+test('--claude --skills-only symlinks .claude/skills to the same canonical store', (t) => {
+  const tempDir = createTempProject(t);
+  const { status } = runCli(['install', '--claude', '--skills-only'], tempDir);
+  assert.equal(status, 0);
+
+  const canonical = path.join(tempDir, '.agents', 'skills', 'domain-driven-design');
+  assert.ok(fs.existsSync(path.join(canonical, 'SKILL.md')), 'canonical skill should exist');
+
+  const link = path.join(tempDir, '.claude', 'skills', 'domain-driven-design');
+  const stat = fs.lstatSync(link);
+  assert.ok(stat.isSymbolicLink(), '.claude/skills entry should be a symlink');
+
+  const target = fs.readlinkSync(link);
+  const resolved = path.resolve(path.dirname(link), target);
+  assert.equal(resolved, canonical, '.claude/skills symlink should point to .agents/skills canonical');
+});
+
+test('installing both targets shares a single canonical skills store', (t) => {
+  const tempDir = createTempProject(t);
+  runCli(['install', '--skills-only'], tempDir);
+  runCli(['install', '--claude', '--skills-only'], tempDir);
+
+  // Editing the canonical file is visible through both agent symlinks.
+  const canonicalFile = path.join(tempDir, '.agents', 'skills', 'domain-driven-design', 'SKILL.md');
+  fs.appendFileSync(canonicalFile, '\n<!-- single source of truth marker -->\n');
+
+  const viaGithub = fs.readFileSync(path.join(tempDir, '.github', 'skills', 'domain-driven-design', 'SKILL.md'), 'utf-8');
+  const viaClaude = fs.readFileSync(path.join(tempDir, '.claude', 'skills', 'domain-driven-design', 'SKILL.md'), 'utf-8');
+  assert.match(viaGithub, /single source of truth marker/);
+  assert.match(viaClaude, /single source of truth marker/);
+});
+
+test('--copy produces real copies instead of symlinks', (t) => {
+  const tempDir = createTempProject(t);
+  const { status } = runCli(['install', '--skills-only', '--copy'], tempDir);
+  assert.equal(status, 0);
+
+  const link = path.join(tempDir, '.github', 'skills', 'domain-driven-design');
+  const stat = fs.lstatSync(link);
+  assert.ok(!stat.isSymbolicLink(), '.github/skills entry should be a real directory with --copy');
+  assert.ok(fs.existsSync(path.join(link, 'SKILL.md')), 'copied skill should contain SKILL.md');
+});
+
+test('--skills-only --stack react filters the canonical store', (t) => {
+  const tempDir = createTempProject(t);
+  const { status } = runCli(['install', '--skills-only', '--stack', 'react'], tempDir);
+  assert.equal(status, 0);
+
+  const canonical = path.join(tempDir, '.agents', 'skills');
+  assert.ok(fs.existsSync(path.join(canonical, 'component-architecture')), 'react skill should be present');
+  assert.ok(!fs.existsSync(path.join(canonical, 'plugin-creation')), 'wordpress skill should be excluded');
+});
+
+test('--skills-only --dry-run does not create skills or symlinks', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--skills-only', '--dry-run'], tempDir);
+
+  assert.equal(status, 0);
+  assert.match(stdout, /Dry run complete/);
+  assert.ok(!fs.existsSync(path.join(tempDir, '.agents')), '.agents should not exist in dry-run');
+  assert.ok(!fs.existsSync(path.join(tempDir, '.github', 'skills')), '.github/skills should not exist in dry-run');
+});
+
+test('help shows --copy option', () => {
+  const { status, stdout } = runCli(['help'], process.cwd());
+  assert.equal(status, 0);
+  assert.match(stdout, /--copy/);
+});

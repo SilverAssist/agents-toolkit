@@ -180,6 +180,133 @@ function getClaudeTargetDir(global = false) {
 }
 
 /**
+ * Get the canonical skills directory following the `npx skills` standard.
+ * Skills live here once (single source of truth) and each agent's skills
+ * directory symlinks to it.
+ * @param {boolean} global - Use user-level ~/.agents/skills/
+ * @returns {string} Path to .agents/skills directory
+ */
+function getAgentsSkillsDir(global = false) {
+  const base = global ? getHomeDir() : process.cwd();
+  return path.join(base, '.agents', 'skills');
+}
+
+/**
+ * Link a single skill from the canonical store into an agent's skills
+ * directory, following the `npx skills` standard (symlink with copy fallback).
+ * @param {string} canonicalSkillDir - Absolute path to the canonical skill folder
+ * @param {string} agentSkillLinkPath - Absolute path where the agent expects the skill
+ * @param {Object} options - Link options
+ * @param {boolean} [options.dryRun] - Only report what would happen
+ * @param {boolean} [options.force] - Replace an existing non-matching entry
+ * @param {boolean} [options.copy] - Force a copy instead of a symlink
+ * @returns {{ written: number, planned: number }} Change counters
+ */
+function linkSkill(canonicalSkillDir, agentSkillLinkPath, options = {}) {
+  const { dryRun = false, force = false, copy = false } = options;
+  const totals = { written: 0, planned: 0 };
+
+  const relTarget = path.relative(path.dirname(agentSkillLinkPath), canonicalSkillDir);
+  const rel = (p) => path.relative(process.cwd(), p);
+
+  // Inspect any existing entry at the link path.
+  let existing = null;
+  try {
+    existing = fs.lstatSync(agentSkillLinkPath);
+  } catch {
+    existing = null;
+  }
+
+  if (existing) {
+    // Already a symlink pointing at our canonical store — nothing to do.
+    if (existing.isSymbolicLink()) {
+      const current = fs.readlinkSync(agentSkillLinkPath);
+      const resolved = path.resolve(path.dirname(agentSkillLinkPath), current);
+      if (resolved === path.resolve(canonicalSkillDir) && !copy) {
+        return totals;
+      }
+    }
+    if (!force) {
+      warn(`Skipping existing skill: ${rel(agentSkillLinkPath)}`);
+      return totals;
+    }
+    if (!dryRun) {
+      fs.rmSync(agentSkillLinkPath, { recursive: true, force: true });
+    }
+  }
+
+  totals.planned++;
+
+  if (dryRun) {
+    info(copy ? `Would copy skill: ${rel(agentSkillLinkPath)}` : `Would link: ${rel(agentSkillLinkPath)} -> ${relTarget}`);
+    return totals;
+  }
+
+  fs.mkdirSync(path.dirname(agentSkillLinkPath), { recursive: true });
+
+  const doCopy = () => {
+    copyDir(canonicalSkillDir, agentSkillLinkPath, { force: true });
+  };
+
+  if (copy) {
+    doCopy();
+  } else {
+    try {
+      fs.symlinkSync(relTarget, agentSkillLinkPath, 'dir');
+    } catch {
+      // Symlinks unsupported (e.g. Windows without developer mode) — copy instead.
+      doCopy();
+    }
+  }
+
+  totals.written++;
+  return totals;
+}
+
+/**
+ * Install skills following the `npx skills` standard: copy each skill once
+ * into the canonical .agents/skills store, then symlink the agent's skills
+ * directory entries to that store.
+ * @param {Object} params - Install parameters
+ * @param {boolean} params.isGlobal - Install at user level
+ * @param {string} params.agentSkillsDir - Agent skills dir (.claude/skills or .github/skills)
+ * @param {boolean} [params.force] - Overwrite existing files/links
+ * @param {boolean} [params.dryRun] - Only report planned changes
+ * @param {boolean} [params.copy] - Copy instead of symlink
+ * @param {(name: string) => boolean} [params.dirFilter] - Skill folder filter
+ * @returns {{ written: number, planned: number }} Aggregated change counters
+ */
+function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun = false, copy = false, dirFilter = null }) {
+  const totals = { written: 0, planned: 0 };
+  const skillsSrc = path.join(TEMPLATES_DIR, 'shared', 'skills');
+  const canonicalDir = getAgentsSkillsDir(isGlobal);
+
+  if (!fs.existsSync(skillsSrc)) {
+    return totals;
+  }
+
+  // 1. Populate the canonical store once (filtered by stack).
+  const canonicalResult = copyDir(skillsSrc, canonicalDir, { force, dryRun, dirFilter });
+  totals.written += canonicalResult.written;
+  totals.planned += canonicalResult.planned;
+
+  // 2. Symlink each included skill folder into the agent's skills directory.
+  const entries = fs.readdirSync(skillsSrc, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    if (dirFilter && !dirFilter(entry.name)) continue;
+
+    const canonicalSkillDir = path.join(canonicalDir, entry.name);
+    const agentSkillLinkPath = path.join(agentSkillsDir, entry.name);
+    const linkResult = linkSkill(canonicalSkillDir, agentSkillLinkPath, { dryRun, force, copy });
+    totals.written += linkResult.written;
+    totals.planned += linkResult.planned;
+  }
+
+  return totals;
+}
+
+/**
  * Strip GitHub Copilot frontmatter from a prompt file
  * Removes the ---\nagent: ...\ndescription: ...\n--- block
  * @param {string} content - File content
@@ -506,6 +633,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     force = false,
     append = false,
     dryRun = false,
+    copy = false,
     global: isGlobal = false,
     filters = { stack: 'all', tracker: 'all' },
   } = options;
@@ -553,12 +681,19 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
   }
 
   if (scope.shouldInstallSkills) {
-    info('Installing skills...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(targetDir, 'skills'), { force, dryRun, dirFilter: makeFilter('skills') });
+    info('Installing skills (npx skills standard)...');
+    const result = installSkillsStandard({
+      isGlobal,
+      agentSkillsDir: path.join(targetDir, 'skills'),
+      force,
+      dryRun,
+      copy,
+      dirFilter: makeFilter('skills'),
+    });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
-      success(`Installed ${result.written} skill files`);
+      success(`Installed ${result.written} skill files/links`);
     }
   }
 
@@ -632,7 +767,7 @@ function installCodex(options = {}) {
  * @param {Object} options - Install options
  */
 function installClaude(options = {}) {
-  const { force = false, dryRun = false, global: isGlobal = false, filters = { stack: 'all', tracker: 'all' } } = options;
+  const { force = false, dryRun = false, copy = false, global: isGlobal = false, filters = { stack: 'all', tracker: 'all' } } = options;
   const scope = getInstallScope(options);
   const claudeDir = getClaudeTargetDir(isGlobal);
   const githubDir = getTargetDir(isGlobal);
@@ -680,12 +815,19 @@ function installClaude(options = {}) {
   }
 
   if (scope.shouldInstallSkills) {
-    info('Installing skills...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'skills'), path.join(githubDir, 'skills'), { force, dryRun, dirFilter: makeFilter('skills') });
+    info('Installing skills (npx skills standard)...');
+    const result = installSkillsStandard({
+      isGlobal,
+      agentSkillsDir: path.join(claudeDir, 'skills'),
+      force,
+      dryRun,
+      copy,
+      dirFilter: makeFilter('skills'),
+    });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
-      success(`Installed ${result.written} skill files`);
+      success(`Installed ${result.written} skill files/links to .claude/skills/`);
     }
   }
 
@@ -830,6 +972,7 @@ function showHelp() {
   console.log('  --partials-only     Only install partials');
   console.log('  --skills-only       Only install skills');
   console.log('  --hooks-only        Only install hooks (PostToolUse validation scripts)');
+  console.log('  --copy              Copy skills instead of symlinking to .agents/skills/');
   console.log('  --dry-run           Show what would be installed');
 
   console.log('');
@@ -908,6 +1051,7 @@ function parseArgs() {
     instructionsOnly: flags.includes('--instructions-only'),
     hooksOnly: flags.includes('--hooks-only'),
     dryRun: flags.includes('--dry-run'),
+    copy: flags.includes('--copy'),
     claude: flags.includes('--claude'),
     codex: flags.includes('--codex'),
     append: flags.includes('--append'),

@@ -8,17 +8,26 @@ Skills are markdown files with YAML frontmatter that provide domain-specific gui
 
 ## Structure
 
-Each skill lives in its own folder with a `SKILL.md` file:
+Each skill lives in its own folder with a `SKILL.md` file. Following the
+[`npx skills`](https://github.com/vercel-labs/skills) standard, the real files
+are installed **once** into a canonical `.agents/skills/` store, and each agent's
+skills directory contains symlinks to it (single source of truth):
 
 ```
-.github/skills/
+.agents/skills/                       # canonical store (real files)
 ├── component-architecture/
 │   └── SKILL.md
 ├── domain-driven-design/
 │   └── SKILL.md
 └── testing-patterns/
     └── SKILL.md
+
+.github/skills/   → symlinks to ../../.agents/skills/*   (Copilot, Codex)
+.claude/skills/   → symlinks to ../../.agents/skills/*   (Claude Code, read natively)
 ```
+
+Use `--copy` at install time to materialize real copies instead of symlinks
+(symlinks also fall back to copies automatically on systems that don't support them).
 
 ## Frontmatter Format
 

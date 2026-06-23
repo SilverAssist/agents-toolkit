@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-06-22
+
+### Added
+
+- **`npx skills` standard for skills** ([#16](https://github.com/SilverAssist/agents-toolkit/issues/16)) — skills now install once into a canonical `.agents/skills/` store and each agent's skills directory symlinks to it (single source of truth shared across Copilot, Claude Code, and Codex)
+- `--copy` CLI flag — materialize real copies instead of symlinks; symlinks also fall back to copies automatically when unsupported (e.g. Windows without developer mode)
+- New `bin/cli.js` helpers: `getAgentsSkillsDir()`, `linkSkill()`, `installSkillsStandard()`
+- `SKILLS_LAYOUT` export and `CLAUDE_FILES.skillsDir` in `src/index.js`
+- Six new regression tests covering canonical store, per-agent symlinks, shared source of truth, `--copy`, stack filtering, and dry-run (30 tests total)
+
+### Changed
+
+- **Claude Code skills now install to `.claude/skills/`** (where Claude Code reads them natively) instead of `.github/skills/`
+- README and skills template README document the `npx skills` standard, the `.agents/skills/` canonical store, and the `--copy` flag
+
+### Fixed
+
+- Claude Code users previously received skills in `.github/skills/`, a location Claude Code does not read — skills are now placed where the agent loads them
+
 ## [2.3.1] - 2026-06-22
 
 ### Fixed
@@ -148,6 +167,7 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
 ### Added
 
 #### Claude Code Support
+
 - **`--claude` flag** for `install` and `update` commands — installs for Claude Code instead of GitHub Copilot
   - Prompts are installed as slash commands to `.claude/commands/` (`.prompt.md` → `.md`)
   - Copilot-specific frontmatter (`agent:`, `description:`) is stripped automatically
@@ -160,6 +180,7 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
 - **`CLAUDE_COMMANDS`** and **`CLAUDE_FILES`** exports in `src/index.js`
 
 #### CLI
+
 - `copyDirForClaude()` — recursive copy that strips Copilot frontmatter and adapts paths
 - `installClaude()` — full Claude Code installation flow
 - Help text updated with `--claude` examples
@@ -248,12 +269,14 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
 ### Added
 
 #### Skills System
+
 - **`component-architecture`** skill - React component patterns, folder structure, naming conventions
 - **`domain-driven-design`** skill - DDD principles, domain organization, barrel exports
 - **`testing-patterns`** skill - Jest + RTL patterns for Next.js 15 and Server Actions
 - Skills README with documentation on creating custom skills
 
 #### New Instructions
+
 - **`css-styling.instructions.md`** - Tailwind CSS v4 & shadcn/ui standards
   - Design tokens (semantic colors)
   - `cn()` utility setup and usage
@@ -261,6 +284,7 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
   - shadcn/ui component patterns
 
 #### Copilot Agent Support
+
 - **`AGENTS.md`** - Mandatory instructions for GitHub Copilot Coding Agent
   - 4-phase workflow (Analysis → Planning → Implementation → Documentation)
   - Code conventions (imports, types, naming, structure)
@@ -275,6 +299,7 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
   - Barrel export pattern
 
 #### CLI Improvements
+
 - `--instructions-only` flag - Only install instructions, AGENTS.md, and copilot-instructions.md
 - `--skills-only` flag - Only install skills
 - Simplified installation logic with clearer flag handling
@@ -300,6 +325,7 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
 ### Added
 
 #### Workflow Prompts
+
 - `analyze-ticket.prompt.md` - Analyze Jira tickets without making changes
 - `create-plan.prompt.md` - Create detailed implementation plans
 - `work-ticket.prompt.md` - Start working on tickets with full setup
@@ -308,11 +334,13 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
 - `finalize-pr.prompt.md` - Finalize PRs after approval
 
 #### Utility Prompts
+
 - `review-code.prompt.md` - Quick code review of changes
 - `fix-issues.prompt.md` - Fix lint, type, and test errors
 - `add-tests.prompt.md` - Add tests for components
 
 #### Partials (Reusable Fragments)
+
 - `validations.md` - Code quality validation steps
 - `git-operations.md` - Git workflow operations
 - `jira-integration.md` - Jira/Atlassian MCP operations
@@ -320,12 +348,14 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
 - `pr-template.md` - Pull request templates
 
 #### Instructions
+
 - `typescript.instructions.md` - TypeScript coding standards
 - `react-components.instructions.md` - React component patterns
 - `server-actions.instructions.md` - Next.js server actions
 - `tests.instructions.md` - Testing standards
 
 #### CLI
+
 - `install` command - Install prompts to target project
 - `list` command - List available prompts
 - `update` command - Update existing prompts
@@ -334,4 +364,5 @@ If you have a `.copilot-prompts.json`, rename it to `.agents-toolkit.json`.
 - `--dry-run` flag - Preview installation
 
 #### Configuration
+
 - `.copilot-prompts.json` - Customizable configuration file
