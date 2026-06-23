@@ -345,7 +345,7 @@ npx @silverassist/agents-toolkit@latest update --global
 
 ### update
 
-Update all prompts to the latest version. **Overwrites existing files** (equivalent to `install --force`).
+Update all prompts to the latest version. **Overwrites existing files and refreshes the skills lockfile** (equivalent to `install --force`).
 
 ```bash
 npx @silverassist/agents-toolkit@latest update [options]
@@ -354,6 +354,28 @@ npx @silverassist/agents-toolkit@latest update --codex
 ```
 
 > ⚠️ **Warning:** This will replace any customizations you've made to the installed files.
+
+### restore
+
+Restore skills from the lockfile. Reads `agents-toolkit-lock.json` and reinstalls all skills with the correct symlinks. Designed for post-clone setup and CI pipelines.
+
+```bash
+npx @silverassist/agents-toolkit@latest restore
+npx @silverassist/agents-toolkit@latest restore --force   # overwrite existing files
+npx @silverassist/agents-toolkit@latest restore --dry-run # preview only
+```
+
+> If the lockfile was written by a different package version, `restore` warns but still proceeds.
+
+### status
+
+Check whether installed skills match the lockfile. Useful in CI to detect drift (manually edited skills or stale installs).
+
+```bash
+npx @silverassist/agents-toolkit@latest status
+```
+
+Exits with code `0` if all skills are up-to-date, `1` if any skill is `missing` or `modified`.
 
 ### list
 
@@ -377,6 +399,8 @@ npx @silverassist/agents-toolkit@latest list
 | Get latest version (discard customizations) | `update` |
 | Update specific category only | `update --prompts-only` |
 | Preview what would change | `install --dry-run` |
+| Restore skills after clone / CI | `restore` |
+| Check if skills are in sync | `status` |
 
 ## Partials
 
@@ -424,6 +448,37 @@ Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard
 **Claude Code** — skills are symlinked into `.claude/skills/`, where Claude Code reads them natively, and can be referenced in any prompt or command.
 
 **Codex** — skills are symlinked into `.github/skills/` and can be referenced from `AGENTS.md` and task context.
+
+### Skills Lockfile
+
+When skills are installed, a `agents-toolkit-lock.json` file is written to the project root. This lockfile records each installed skill with its SHA-256 hash (same algorithm used by `npx skills`), allowing teammates and CI pipelines to restore the exact same skill files without committing them to the repository.
+
+**Recommended `.gitignore` entries** (automatically appended by `install`):
+
+```gitignore
+# agents-toolkit managed — regenerate with: npx @silverassist/agents-toolkit restore
+.agents/skills/
+.github/skills/
+.claude/skills/
+```
+
+**Workflow:**
+
+```bash
+# Developer A — installs and commits only the lockfile
+npx @silverassist/agents-toolkit@latest install
+git add agents-toolkit-lock.json
+git commit -m "chore: add agents-toolkit skills"
+
+# Developer B / CI — after cloning, restores skills from the lockfile
+npx @silverassist/agents-toolkit@latest restore
+
+# Check sync status in CI
+npx @silverassist/agents-toolkit@latest status   # exits 1 if any skill is missing/modified
+
+# Update skills to latest package version
+npx @silverassist/agents-toolkit@latest update   # rewrites lockfile with new hashes
+```
 
 ## Hooks
 
