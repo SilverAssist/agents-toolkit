@@ -557,7 +557,8 @@ test('restore exits 1 when lockfile is missing', (t) => {
 
 test('status exits 0 when all skills are up-to-date', (t) => {
   const tempDir = createTempProject(t);
-  runCli(['install', '--skills-only'], tempDir);
+  const installResult = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(installResult.status, 0, `install failed:\n${installResult.stdout}`);
 
   const { status, stdout } = runCli(['status'], tempDir);
   assert.equal(status, 0, `status should exit 0:\n${stdout}`);
@@ -566,7 +567,8 @@ test('status exits 0 when all skills are up-to-date', (t) => {
 
 test('status exits 1 when a skill is missing', (t) => {
   const tempDir = createTempProject(t);
-  runCli(['install', '--skills-only'], tempDir);
+  const installResult = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(installResult.status, 0, `install failed:\n${installResult.stdout}`);
 
   // Delete one skill from the canonical store.
   const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
@@ -583,7 +585,8 @@ test('status exits 1 when a skill is missing', (t) => {
 
 test('status exits 1 when a skill is modified', (t) => {
   const tempDir = createTempProject(t);
-  runCli(['install', '--skills-only'], tempDir);
+  const installResult = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(installResult.status, 0, `install failed:\n${installResult.stdout}`);
 
   // Modify one skill's SKILL.md in the canonical store.
   const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
@@ -612,4 +615,61 @@ test('help shows restore and status commands', () => {
   assert.equal(status, 0);
   assert.match(stdout, /restore/);
   assert.match(stdout, /status/);
+});
+
+test('install appends managed paths to .gitignore', (t) => {
+  const tempDir = createTempProject(t);
+  // Create a minimal .gitignore that does not contain the managed paths.
+  fs.writeFileSync(path.join(tempDir, '.gitignore'), 'node_modules/\n');
+
+  const { status } = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(status, 0);
+
+  const gitignore = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf-8');
+  assert.ok(gitignore.includes('.agents/skills/'), '.gitignore should contain .agents/skills/');
+  assert.ok(gitignore.includes('.github/skills/'), '.gitignore should contain .github/skills/');
+  assert.ok(gitignore.includes('.claude/skills/'), '.gitignore should contain .claude/skills/');
+});
+
+test('install does not duplicate .gitignore entries on re-run', (t) => {
+  const tempDir = createTempProject(t);
+
+  runCli(['install', '--skills-only'], tempDir);
+  runCli(['install', '--skills-only', '--force'], tempDir);
+
+  const gitignore = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf-8');
+  const count = (gitignore.match(/\.agents\/skills\//g) || []).length;
+  assert.equal(count, 1, '.agents/skills/ should appear exactly once in .gitignore');
+});
+
+test('successive installs to multiple targets accumulate lockfile entries', (t) => {
+  if (!symlinkSupported(os.tmpdir())) {
+    t.skip('symlinks not supported on this platform');
+    return;
+  }
+
+  const tempDir = createTempProject(t);
+
+  // First install: copilot target (writes .github/skills entries).
+  const r1 = runCli(['install', '--skills-only'], tempDir);
+  assert.equal(r1.status, 0, `first install failed:\n${r1.stdout}`);
+
+  // Second install: claude target (should merge, not overwrite).
+  const r2 = runCli(['install', '--target', 'claude', '--skills-only'], tempDir);
+  assert.equal(r2.status, 0, `second install failed:\n${r2.stdout}`);
+
+  const lockPath = path.join(tempDir, 'agents-toolkit-lock.json');
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
+
+  // Every skill should have BOTH .github/skills and .claude/skills in its agents array.
+  for (const [name, meta] of Object.entries(lock.skills)) {
+    assert.ok(
+      meta.agents.some(a => a.includes('.github')),
+      `skill "${name}" should have a .github/skills agent entry after copilot install`
+    );
+    assert.ok(
+      meta.agents.some(a => a.includes('.claude')),
+      `skill "${name}" should have a .claude/skills agent entry after claude install`
+    );
+  }
 });
