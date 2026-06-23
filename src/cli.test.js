@@ -513,6 +513,7 @@ test('install --global does not write agents-toolkit-lock.json', (t) => {
     encoding: 'utf-8',
     env: { ...process.env, HOME: fakeHome },
   });
+  assert.equal(result.status, 0, `global install failed:\n${result.stderr}`);
 
   const lockPath = path.join(tempDir, 'agents-toolkit-lock.json');
   assert.ok(!fs.existsSync(lockPath), 'agents-toolkit-lock.json should NOT be created for global installs');

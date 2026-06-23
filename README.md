@@ -243,6 +243,7 @@ The same set of prompts is available for all supported tools.
 ### Workflow Stages
 
 **Jira workflow:**
+
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  1. Analyze     │────▶│  2. Plan        │────▶│  3. Work        │
@@ -257,6 +258,7 @@ The same set of prompts is available for all supported tools.
 ```
 
 **GitHub workflow:**
+
 ```
 ┌──────────────────────┐     ┌─────────────────┐     ┌──────────────────────┐
 │  1. Analyze          │────▶│  2. Plan        │────▶│  3. Work             │
@@ -451,7 +453,7 @@ Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard
 
 ### Skills Lockfile
 
-When skills are installed, a `agents-toolkit-lock.json` file is written to the project root. This lockfile records each installed skill with its SHA-256 hash (same algorithm used by `npx skills`), allowing teammates and CI pipelines to restore the exact same skill files without committing them to the repository.
+When skills are installed, an `agents-toolkit-lock.json` file is written to the project root. This lockfile records each installed skill with its SHA-256 hash (same algorithm used by `npx skills`), allowing teammates and CI pipelines to restore the exact same skill files without committing them to the repository.
 
 **Recommended `.gitignore` entries** (automatically appended by `install`):
 
