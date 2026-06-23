@@ -1,0 +1,1 @@
+../../templates/shared/prompts/analyze-github-issue.prompt.md

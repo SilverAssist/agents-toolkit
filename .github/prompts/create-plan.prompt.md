@@ -1,0 +1,1 @@
+../../templates/shared/prompts/create-plan.prompt.md

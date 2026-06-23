@@ -1,0 +1,1 @@
+../../templates/shared/prompts/work-github-issue.prompt.md

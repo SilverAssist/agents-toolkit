@@ -1,0 +1,1 @@
+../../templates/shared/prompts/add-tests.prompt.md
