@@ -40,11 +40,13 @@ export const PARTIALS = [
 ];
 
 export const INSTRUCTIONS = [
+  "caching",
   "css-styling",
   "documentation-language",
   "github-workflow",
   "php-standards",
   "react-components",
+  "seo-ai-optimization",
   "server-actions",
   "testing-standards",
   "tests",
@@ -57,6 +59,7 @@ export const SKILLS = [
   "component-architecture",
   "create-component",
   "domain-driven-design",
+  "nextjs-caching",
   "plugin-creation",
   "quality-checks",
   "release-management",

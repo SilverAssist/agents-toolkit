@@ -428,6 +428,8 @@ File-type specific guidelines applied automatically by Copilot and available as 
 | `server-actions.instructions.md` | `**/actions/*.ts` | Next.js Server Actions |
 | `tests.instructions.md` | `*.test.ts, *.test.tsx` | Testing patterns |
 | `css-styling.instructions.md` | `*.css, *.tsx` | Tailwind CSS & shadcn/ui standards |
+| `caching.instructions.md` | `next.config.*, src/lib/**, **/route.ts, **/page.tsx` | Next.js caching: read-vs-mutation fetch caching, ISR tiers, CDN invalidation |
+| `seo-ai-optimization.instructions.md` | `*.tsx` | Semantic HTML, accessibility tree, metadata, JSON-LD & E-E-A-T for AI Search |
 
 ## Skills
 
@@ -437,6 +439,7 @@ Specialized knowledge guides for domain-specific patterns:
 |-------|-------------|
 | `component-architecture` | React component patterns, folder structure, naming conventions |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
+| `nextjs-caching` | Next.js caching strategy: read-vs-mutation fetch, ISR tiers, CDN invalidation, diagnosing dynamic-render leaks |
 | `testing-patterns` | Jest + RTL patterns for Next.js 15 and Server Actions |
 
 Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard: the real files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory symlinks to it (single source of truth, easy updates). Pass `--copy` to materialize real copies instead.
