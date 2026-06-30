@@ -44,3 +44,17 @@ When adding a new CLI flag:
 - Add it to the `help` command output.
 - Add a corresponding test asserting `help shows --flag-name option`.
 - Honor `force`, `dryRun`, and `global` flags in the new code path.
+
+## 6. Version Sync (CRITICAL)
+
+This package declares its version in **two** places that MUST always match:
+
+- `package.json` → `"version"`
+- `src/index.js` → `export const VERSION`
+
+`bin/cli.js` stamps the exported `VERSION` into the generated `agents-toolkit-lock.json`
+(`packageVersion`), and `restore` / `status` compare against it to warn on drift — so a mismatch
+records the wrong version in users' lockfiles and emits misleading sync warnings. On any
+release/version-bump PR (or any diff that touches either value), confirm both are identical and equal
+to the new version. Flag a bump that updates one but not the other. See the **Release Flow** section
+in `CLAUDE.md` / `AGENTS.md`.
