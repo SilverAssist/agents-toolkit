@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`AGENTS.md` template** — documentation index now lists `caching` and `seo-ai-optimization`; added a "Caching Rules (CRITICAL)" quick-reference block and "When to Read" rows so every project gets the caching/SEO context at the agent-onboarding level.
 - **Prompts enriched with caching context** — `review-code` gained a "Caching & Data Fetching" review section (catches the POST-read-uncached regression), `create-plan` gained a "Caching Impact" planning subsection, and the shared `validations` partial gained a caching checklist item.
 - **`prepare-release` → `prepare-github-release`** ([#27](https://github.com/SilverAssist/agents-toolkit/issues/27)) — **breaking (command renamed)**. The prompt is now **project-agnostic**: it auto-detects WordPress plugin vs Node/npm package (loading the matching `release-*` partial) and **analyzes the repo's GitHub Actions workflows** to decide whether a bare tag or a full GitHub Release is required — fixing the wrong "push the tag and it publishes" guidance for `on: release:`-triggered workflows. Renamed in `PROMPTS.workflow`; old `prepare-release` removed with no alias.
+- **Documented our own release flow for agents** — added a "Release Flow" section to the repo-level `CLAUDE.md` and `AGENTS.md` and a "Version Sync (CRITICAL)" review check (#6) to `.github/copilot-instructions.md`, so all three agent-context surfaces (Claude, Copilot, generic) enforce the `package.json` ↔ `src/index.js` `VERSION` match and the "publish needs a GitHub Release, not a bare tag" rule.
+
+### Fixed
+
+- **`src/index.js` `VERSION` now matches `package.json`** — the exported `VERSION` (stamped into `agents-toolkit-lock.json` and used by `restore`/`status` drift checks) had diverged from the published package version during version bumps; bumped to `2.5.0` and added the guardrail above to prevent recurrence.
 
 ## [2.4.0] - 2026-06-22
 

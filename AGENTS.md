@@ -60,7 +60,29 @@ When adding a feature or fixing a bug:
 2. **Add or update tests** in `src/cli.test.js` (spawn CLI against a temp dir, assert filesystem + output).
 3. **Run the suite**: `npm test` — must stay green.
 4. **Update docs**: `README.md`, the relevant `templates/shared/*/README.md`, and `CHANGELOG.md`.
-5. **Bump version** in both `package.json` and `src/index.js` (`VERSION`) following SemVer.
+5. **Bump version** in both `package.json` and `src/index.js` (`VERSION`) following SemVer — see **Release Flow**.
+
+## Release Flow
+
+Releasing `@silverassist/agents-toolkit` (a Node/npm package published from GitHub):
+
+1. **Bump the version in BOTH places — they MUST match** (⚠️ CRITICAL): `package.json` `"version"`
+   **and** `src/index.js` `export const VERSION`. Run `npm version X.Y.Z --no-git-tag-version` to keep
+   `package.json` + `package-lock.json` in sync, then set `src/index.js` `VERSION` to the same value.
+   `bin/cli.js` stamps `VERSION` into the `agents-toolkit-lock.json` lockfile (`packageVersion`) and
+   `restore`/`status` compare against it, so a mismatch writes the wrong version into users' lockfiles
+   and triggers false drift warnings. (Enforced by check #6 in `.github/copilot-instructions.md`.)
+2. **Promote the CHANGELOG** `[Unreleased]` section to `## [X.Y.Z] - YYYY-MM-DD`.
+3. **Open a `release/vX.Y.Z` branch + PR** and merge it.
+4. **Publish = a GitHub Release, not just a tag** (⚠️ CRITICAL): `.github/workflows/publish.yml`
+   triggers on `on: release: [created]`, so pushing a bare tag does **not** publish to npm. After merge:
+
+   ```bash
+   git checkout main && git pull
+   gh release create vX.Y.Z --generate-notes   # fires publish.yml → npm publish
+   ```
+
+   Tags are immutable — never reuse a tag; bump again if it already exists.
 
 ## Commands
 
