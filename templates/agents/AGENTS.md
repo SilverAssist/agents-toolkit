@@ -13,13 +13,13 @@
 
 ```
 [Instructions]|root:.github/instructions
-|caching.instructions.md           → Next.js caching: read-vs-mutation fetch, ISR tiers, CDN invalidation
-|css-styling.instructions.md       → CSS/Tailwind patterns, cn() utility, responsive design
-|react-components.instructions.md  → Component structure, exports, props, early returns
+|caching.instructions.md             → Next.js caching: read-vs-mutation fetch, ISR tiers, CDN invalidation
+|css-styling.instructions.md         → CSS/Tailwind patterns, cn() utility, responsive design
+|react-components.instructions.md    → Component structure, exports, props, early returns
 |seo-ai-optimization.instructions.md → Semantic HTML, a11y tree, metadata, JSON-LD for AI Search
-|server-actions.instructions.md    → Server action patterns, validation, error handling
-|tests.instructions.md             → Test structure, mocking, assertions
-|typescript.instructions.md        → Type safety, destructuring, JSDoc
+|server-actions.instructions.md      → Server action patterns, validation, error handling
+|tests.instructions.md               → Test structure, mocking, assertions
+|typescript.instructions.md          → Type safety, destructuring, JSDoc
 
 [Prompts]|root:.github/prompts
 |add-tests,analyze-ticket,create-plan,create-pr,finalize-pr,fix-issues,prepare-pr,review-code,work-ticket
