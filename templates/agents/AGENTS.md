@@ -13,11 +13,13 @@
 
 ```
 [Instructions]|root:.github/instructions
-|css-styling.instructions.md       → CSS/Tailwind patterns, cn() utility, responsive design
-|react-components.instructions.md  → Component structure, exports, props, early returns
-|server-actions.instructions.md    → Server action patterns, validation, error handling
-|tests.instructions.md             → Test structure, mocking, assertions
-|typescript.instructions.md        → Type safety, destructuring, JSDoc
+|caching.instructions.md             → Next.js caching: read-vs-mutation fetch, ISR tiers, CDN invalidation
+|css-styling.instructions.md         → CSS/Tailwind patterns, cn() utility, responsive design
+|react-components.instructions.md    → Component structure, exports, props, early returns
+|seo-ai-optimization.instructions.md → Semantic HTML, a11y tree, metadata, JSON-LD for AI Search
+|server-actions.instructions.md      → Server action patterns, validation, error handling
+|tests.instructions.md               → Test structure, mocking, assertions
+|typescript.instructions.md          → Type safety, destructuring, JSDoc
 
 [Prompts]|root:.github/prompts
 |add-tests,analyze-ticket,create-plan,create-pr,finalize-pr,fix-issues,prepare-pr,review-code,work-ticket
@@ -133,6 +135,30 @@ import { myFunction } from '@/lib/my-module';
 
 ---
 
+## 🗄️ Caching Rules (CRITICAL)
+
+| Rule | Requirement |
+|------|-------------|
+| **Cache by intent** | Cache reads, never mutations — decide on intent, NOT the HTTP method |
+| **POST reads** | A `POST` read (e.g. filter/`geo-search`) MUST set `next: { revalidate, tags }` to cache |
+| **Mutations** | `submit`/lead/`PUT`/`DELETE` → `cache: "no-store"` (flag with `mutation: true`) |
+| **ISR** | Every cacheable route exports `revalidate`; never on form/personalized routes |
+| **Invalidation** | `/api/revalidate` calls `revalidateTag`/`revalidatePath` AND the CDN invalidation |
+
+```ts
+// ❌ WRONG: leaves POST reads uncached → route turns dynamic (private, no-store)
+next: method === "GET" ? { revalidate, tags } : { revalidate: 0 }
+
+// ✅ CORRECT: reads cache regardless of method; mutations opt out
+const isMutation = mutation || method === "PUT" || method === "DELETE";
+...(isMutation ? { cache: "no-store" } : { next: { revalidate, tags } })
+```
+
+📄 **Full details:** `.github/instructions/caching.instructions.md`
+📄 **Project-specific context (if present):** `docs/CACHING.md`
+
+---
+
 ## 📝 Git Conventions
 
 | Type | Format |
@@ -190,6 +216,8 @@ Before ANY push to dev/staging/main:
 | Creating/editing components | `react-components.instructions.md` |
 | Writing CSS/Tailwind | `css-styling.instructions.md` |
 | Creating server actions | `server-actions.instructions.md` |
+| Data fetching / `next.config` / routes / ISR / revalidate | `caching.instructions.md` |
+| Pages, metadata, JSON-LD, accessibility/SEO | `seo-ai-optimization.instructions.md` |
 | Writing tests | `tests.instructions.md` |
 | TypeScript questions | `typescript.instructions.md` |
 | **Before pushing/PR** | `tests.instructions.md` + run quality checks |

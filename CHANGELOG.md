@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`caching.instructions.md`** — Next.js (App Router) caching standards for Silver Side frontends: cache by read-vs-mutation intent (not HTTP method) so POST reads such as CCDS `geo-search` cache cross-request, `revalidate` + `tags` requirements, ISR tiers, dual Next.js/CloudFront on-demand invalidation, and image/asset-proxy TTLs. Registered in `INSTRUCTIONS` and categorized under the `react` stack.
+- **`seo-ai-optimization.instructions.md`** — SEO & AI optimization patterns for Next.js: semantic HTML, accessibility tree quality for browser agents, `generateMetadata`, JSON-LD schema by page type, CLS prevention, and server-rendered content for AI Search visibility. Completes the AI-SEO set alongside the existing `ai-seo-optimization` skill and `audit-ai-seo` prompt. Registered in `INSTRUCTIONS` and categorized under the `react` stack.
+- **`nextjs-caching` skill** — deep caching reference and decision guide: the five caching layers, the read-vs-mutation rule, why a `POST` read caches with `next: { revalidate, tags }` (Next 16 `patch-fetch` behavior + body-keyed cache), canonical client, ISR tiers, dual Next.js/CloudFront invalidation, anti-patterns, and a "page is not cached" diagnosis flow. Registered in `SKILLS` under the `react` stack.
+
+### Changed
+
+- **`AGENTS.md` template** — documentation index now lists `caching` and `seo-ai-optimization`; added a "Caching Rules (CRITICAL)" quick-reference block and "When to Read" rows so every project gets the caching/SEO context at the agent-onboarding level.
+- **Prompts enriched with caching context** — `review-code` gained a "Caching & Data Fetching" review section (catches the POST-read-uncached regression), `create-plan` gained a "Caching Impact" planning subsection, and the shared `validations` partial gained a caching checklist item.
+
 ## [2.4.0] - 2026-06-22
 
 ### Added

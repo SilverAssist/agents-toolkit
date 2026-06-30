@@ -55,6 +55,14 @@ High-level description of the solution.
 ### API Changes
 If applicable, document any API changes.
 
+### Caching Impact (Next.js)
+If the feature touches data fetching, routes, or `next.config`, state the caching plan:
+- Reads vs. mutations (mutations never cached; reads cache regardless of GET/POST)
+- `revalidate` tier + cache `tags` for any new fetches
+- Whether new routes export `revalidate`, and any on-demand invalidation (Next.js + CDN) needed
+
+See `.github/instructions/caching.instructions.md`.
+
 ## Risk Assessment
 
 | Risk | Probability | Impact | Mitigation |

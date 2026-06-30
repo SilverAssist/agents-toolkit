@@ -85,3 +85,4 @@ npm run build --if-present
 - [ ] No sensitive data exposed (API keys, secrets)
 - [ ] No `any` types introduced
 - [ ] JSDoc comments on new functions
+- [ ] If data fetching / routes / `next.config` changed: caching follows `caching.instructions.md` (reads cache regardless of method, mutations `no-store`, cacheable routes export `revalidate`)

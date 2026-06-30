@@ -56,6 +56,18 @@ For each changed file:
 - [ ] Efficient data structures
 - [ ] No memory leaks potential
 
+### 5. Caching & Data Fetching (Next.js)
+
+> See `.github/instructions/caching.instructions.md`. Caching is decided by **read-vs-mutation**, not the HTTP method.
+
+- [ ] Reads cache regardless of method — a `POST` read (e.g. `geo-search`) sets `next: { revalidate, tags }` (NOT `revalidate: 0`)
+- [ ] No `next: method === "GET" ? {...} : { revalidate: 0 }` gating (leaves POST reads uncached → route turns dynamic, `private, no-store`)
+- [ ] Mutations (`submit`/lead/`PUT`/`DELETE`) use `cache: "no-store"` and are never cached
+- [ ] `tags` always paired with a `revalidate` duration (no bare `next: { tags }`)
+- [ ] Cacheable routes export `revalidate`; not added to form/personalized routes
+- [ ] `React.cache()` not used as a substitute for cross-request caching
+- [ ] On-demand revalidation invalidates both Next.js (`revalidateTag`/`revalidatePath`) and the CDN
+
 ## Output
 
 ### Review Summary

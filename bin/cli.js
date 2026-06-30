@@ -51,7 +51,7 @@ const DEFAULT_CONFIG = {
  */
 const FILE_CATEGORIES = {
   instructions: {
-    react: ['css-styling', 'react-components', 'server-actions', 'tests', 'typescript'],
+    react: ['caching', 'css-styling', 'react-components', 'seo-ai-optimization', 'server-actions', 'tests', 'typescript'],
     wordpress: ['php-standards', 'wordpress-plugin-architecture', 'testing-standards'],
     universal: ['documentation-language', 'github-workflow'],
   },
@@ -73,7 +73,7 @@ const FILE_CATEGORIES = {
     universal: ['git-operations', 'pr-template', 'validations', 'documentation'],
   },
   skills: {
-    react: ['component-architecture', 'testing-patterns'],
+    react: ['component-architecture', 'nextjs-caching', 'testing-patterns'],
     wordpress: ['create-component', 'plugin-creation', 'quality-checks', 'testing'],
     universal: ['domain-driven-design', 'release-management'],
   },
