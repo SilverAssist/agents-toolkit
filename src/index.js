@@ -14,8 +14,8 @@ export const PROMPTS = {
     "create-pr",
     "finalize-github-pr",
     "finalize-pr",
+    "prepare-github-release",
     "prepare-pr",
-    "prepare-release",
     "work-github-issue",
     "work-ticket",
   ],
@@ -36,6 +36,8 @@ export const PARTIALS = [
   "github-integration",
   "jira-integration",
   "pr-template",
+  "release-node",
+  "release-wordpress",
   "validations",
 ];
 
