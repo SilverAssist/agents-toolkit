@@ -231,6 +231,7 @@ The same set of prompts is available for all supported tools.
 | `create-github-pr` | Create a pull request (GitHub) | `{issue-number}` | GitHub |
 | `finalize-pr` | Finalize and merge PR (Jira) | `{ticket-id}` | Jira |
 | `finalize-github-pr` | Finalize and merge PR (GitHub) | `{issue-number}` | GitHub |
+| `prepare-github-release` | Prepare a GitHub release (auto-detects WordPress vs Node, tag vs Release) | — | GitHub |
 
 ### Utility
 
@@ -416,6 +417,8 @@ Reusable prompt fragments shared between tools:
 | `github-integration.md` | GitHub issue operations (MCP) |
 | `documentation.md` | Documentation standards |
 | `pr-template.md` | Pull request templates (GitHub Issues + Jira) |
+| `release-node.md` | Node/npm release bump & quality checks (used by `prepare-github-release`) |
+| `release-wordpress.md` | WordPress plugin release bump & quality checks (used by `prepare-github-release`) |
 
 ## Instructions
 
