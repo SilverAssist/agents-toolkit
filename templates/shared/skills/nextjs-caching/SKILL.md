@@ -73,9 +73,10 @@ sufficient** to make the page CDN-cacheable. You must additionally pick a render
 Pick one (ordered by risk, lowest first):
 
 1. **CDN edge override (current, lowest risk).** `src/proxy.ts` matches the city/community paths and
-   sets `Cache-Control: public, s-maxage=43200, stale-while-revalidate=3600`. The origin stays
-   dynamic; the CDN caches the deterministic-per-URL response. Per-repo regex, no build-time risk —
-   this is what WEB-1069 shipped.
+   sets `Cache-Control: public, s-maxage=2592000, stale-while-revalidate=2592000` — the **same**
+   header the ISR pages emit (see `expireTime` under ISR tiers), so the CDN policy is uniform across
+   static and dynamic routes. The origin stays dynamic; the CDN caches the deterministic-per-URL
+   response. Per-repo regex, no build-time risk — this is what WEB-1069 shipped.
 2. **`export const dynamic = "force-static"` (interim).** Forces the POST read to `force-cache` and
    prerenders the route as real ISR (confirmed via `prerender-manifest.json`). Removed in WEB-1058
    because a CCDS failure at build time cached a **blank page**; safer now that reads throw on 5xx at
@@ -153,9 +154,15 @@ is intentionally **long** (WEB-1069):
 | CCDS reads (client default) | `2592000` (30d) |
 | WordPress GraphQL reads (`WP_CACHE_DURATIONS`) | `2592000` (30d) |
 | Listing / detail / city / community / state / landing / WP catch-all | `2592000` (30d) |
+| `next.config` `expireTime` (CDN stale window) | `5184000` (60d) → emits `s-maxage=2592000, stale-while-revalidate=2592000` |
 | `next.config` image `minimumCacheTTL` | `31536000` (1y) — optimized images are content-hashed, never change |
 
 - Every cacheable route exports `revalidate`. Do **not** add it to form/personalized routes.
+- **`expireTime` sets the CDN stale window.** Next emits `s-maxage=<revalidate>,
+  stale-while-revalidate=<expireTime − revalidate>` for ISR pages, so `expireTime` **must be ≥ the
+  largest `revalidate`** or the stale window is invalid (the WEB-1069 bug: `expireTime: 86400` under a
+  30d revalidate). Set it to `5184000` (60d) so a 30d page yields the same header the proxy sets on
+  dynamic pages: `s-maxage=2592000, stale-while-revalidate=2592000`.
 - The long default is safe because a missed webhook still self-heals within 30d; use `tags` for
   immediate surgical invalidation. Shorter tiers (24h/7d) are fine per-route if a source is volatile.
 - Default to `export const revalidate` over `dynamic = "force-static"`: a failed ISR revalidation then

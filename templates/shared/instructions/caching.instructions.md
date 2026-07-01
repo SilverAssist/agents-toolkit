@@ -34,8 +34,9 @@ the others.
 
 2b. **Make a POST-read page cacheable at the rendering/edge layer.** Pick one (lowest risk first):
    - **CDN edge override (current/default):** `src/proxy.ts` matches city/community paths and sets
-     `Cache-Control: public, s-maxage=43200, stale-while-revalidate=3600`. Origin stays dynamic; the
-     CDN caches the deterministic-per-URL response. No build-time risk. This is what WEB-1069 shipped.
+     `Cache-Control: public, s-maxage=2592000, stale-while-revalidate=2592000` — the same header ISR
+     pages emit (see rule 7 `expireTime`), so the CDN policy is uniform. Origin stays dynamic; the CDN
+     caches the deterministic-per-URL response. No build-time risk. This is what WEB-1069 shipped.
    - **`export const dynamic = "force-static"` (interim):** prerenders the route as real ISR, but a
      bad CCDS record/response at build time caches a blank page (the WEB-1058 regression) — use only
      when the page is fully null-safe and reads throw on 5xx at runtime. Validate per repo.
@@ -61,9 +62,14 @@ the others.
    `revalidatePath` **and** the CDN invalidation (e.g. `invalidateCloudFrontPaths`) in the same
    request, otherwise the CDN keeps serving stale until its own TTL.
 
-7. **Image config** in `next.config`: set `minimumCacheTTL: 31536000` (1y — optimized images are
-   content-hashed and never change), `qualities`, and `formats: ["image/avif", "image/webp"]`. No
-   malformed `remotePatterns` hostnames.
+7. **`next.config` cache config.** `expireTime` sets the CDN stale window: Next emits
+   `s-maxage=<revalidate>, stale-while-revalidate=<expireTime − revalidate>` for ISR pages, so
+   `expireTime` **must be ≥ the largest page `revalidate`**. Set `expireTime: 5184000` (60d) so a 30d
+   page yields `s-maxage=2592000, stale-while-revalidate=2592000` — the same header the proxy sets on
+   dynamic pages (rule 2b). (WEB-1069 bug: `expireTime: 86400` under a 30d revalidate = invalid stale
+   window.) Also set image `minimumCacheTTL: 31536000` (1y — optimized images are content-hashed and
+   never change), `qualities`, and `formats: ["image/avif", "image/webp"]`. No malformed
+   `remotePatterns` hostnames.
 
 8. **Asset proxy TTLs** are type-keyed (image/css/font) at `365d + SWR 30d`.
 
