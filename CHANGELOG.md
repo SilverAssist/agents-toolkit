@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-07-01
+
+### Fixed
+
+- **`caching.instructions.md` / `nextjs-caching` skill — corrected the POST-read caching claim** (WEB-1069). The previous guidance implied `next: { revalidate, tags }` alone was sufficient to make a POST-read page (e.g. CCDS `geo-search`, which powers city/community pages) CDN-cacheable. Production testing showed the **data** fetch caches with those options, but the **route** still renders dynamically (`cache-control: private, no-store`) — the two are independent. Both documents now separate the data-fetch cache fact from the route-rendering fact and document the three fixes: CDN edge override (`proxy.ts`, shipped default), `dynamic = "force-static"` (interim, requires null-safety + throw-on-5xx), and `cacheComponents` + `use cache` (strategic).
+- **Revalidate tiers raised to 30 days; image `minimumCacheTTL` to 1 year** in both documents — CCDS/WP data changes rarely and is refreshed on-demand via webhooks + tags, so the previous 24h/30d defaults were unnecessarily short.
+- **Documented the `expireTime` / CDN stale-window rule** — Next emits `s-maxage=<revalidate>, stale-while-revalidate=<expireTime - revalidate>` for ISR pages, so `expireTime` must be ≥ the largest page `revalidate` or the stale window is invalid. Added the correct value (`5184000`, 60d) and the matching proxy override value (`s-maxage=2592000, stale-while-revalidate=2592000`) so ISR and edge-overridden dynamic pages present one consistent CDN policy.
+
 ## [2.5.0] - 2026-06-30
 
 ### Added
