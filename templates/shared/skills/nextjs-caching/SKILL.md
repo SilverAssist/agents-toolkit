@@ -18,8 +18,14 @@ route — and when diagnosing "why isn't this page cached / why is it serving st
 ## Core principle
 
 **Cache by intent (read vs. mutation), never by the HTTP method.** Some reads must use `POST` because
-they take a body (e.g. CCDS `geo-search`). They still have to cache like a `GET`. Mutations must never
-cache. Getting this wrong silently turns a static page into a per-request dynamic render.
+they take a body (e.g. CCDS `geo-search`). Their *data* still has to cache like a `GET` — send
+`next: { revalidate, tags }`, never `no-store`. Mutations must never cache.
+
+**But caching the data is not the same as making the page static.** A POST read caches its response
+cross-request, yet Next.js still renders the *route* dynamically (`private, no-store`). The data-fetch
+cache (layer 2) and the route's static/dynamic classification (layers 1/5) are **independent** — see
+the two sections below. This is the WEB-1069 gotcha and the reason city/community pages needed an edge
+override even though their fetches were already cached.
 
 ---
 
@@ -41,20 +47,43 @@ whole route into **dynamic rendering**, which emits `cache-control: private, no-
 
 ---
 
-## How Next.js 16 actually decides (the rule behind the rule)
+## POST reads: the data caches, but the route stays dynamic (the key gotcha)
 
-From `next/dist/server/lib/patch-fetch.js`:
+Two independent facts, both true:
 
-- `fetch` is **not cached by default**. A non-`GET` method is "uncacheable" **only when no explicit
-  cache config is provided**. Concretely, a POST is auto-no-cached only when it has no `next`/`cache`
-  options *and* the segment `revalidate` is `0`.
-- Therefore **a `POST` IS cached cross-request when you pass an explicit `next: { revalidate }`** (and
-  the segment isn't `revalidate: 0`). This is why the WordPress GraphQL POST caches fine.
-- The **request body is part of the cache key** (`incremental-cache` → `generateCacheKey` hashes
-  `init.body`), so different filter bodies cache independently and never collide.
+1. **The data fetch caches.** From `next/dist/server/lib/patch-fetch.js`: a `fetch` is uncacheable
+   only when it has no `next`/`cache` options *and* the segment `revalidate` is `0`. So a POST **with**
+   `next: { revalidate }` IS cached cross-request — the **request body is part of the cache key**
+   (`generateCacheKey` hashes `init.body`), so different filter bodies cache independently. This is
+   real and bounds origin/CCDS load; it is why the WordPress GraphQL POST caches fine.
 
-**Implication:** you do **not** need `unstable_cache` or a proxy header override to cache POST reads.
-Just send `next: { revalidate, tags }`.
+2. **The route still renders dynamically.** Empirically (WEB-1069, Next 16), a page whose data comes
+   from a POST read prerenders as `ƒ` (Dynamic) and serves `cache-control: private, no-store` — **even
+   with** `next: { revalidate, tags }` on the fetch. Next treats the POST as request-time data for
+   prerendering, so ISR (layer 1) never engages. GET reads do not have this problem — they ISR
+   natively (`s-maxage`, `x-nextjs-cache: HIT`).
+
+**Implication:** `next: { revalidate, tags }` on a POST read is **necessary** (data cache) but **not
+sufficient** to make the page CDN-cacheable. You must additionally pick a rendering/edge strategy
+(next section). `revalidate` + `tags` alone will NOT flip a POST-read page from `private, no-store` to
+`public`.
+
+## Making a POST-read page cacheable (rendering / edge layer)
+
+Pick one (ordered by risk, lowest first):
+
+1. **CDN edge override (current, lowest risk).** `src/proxy.ts` matches the city/community paths and
+   sets `Cache-Control: public, s-maxage=43200, stale-while-revalidate=3600`. The origin stays
+   dynamic; the CDN caches the deterministic-per-URL response. Per-repo regex, no build-time risk —
+   this is what WEB-1069 shipped.
+2. **`export const dynamic = "force-static"` (interim).** Forces the POST read to `force-cache` and
+   prerenders the route as real ISR (confirmed via `prerender-manifest.json`). Removed in WEB-1058
+   because a CCDS failure at build time cached a **blank page**; safer now that reads throw on 5xx at
+   runtime (a failed revalidation keeps the last good cache), but full prerender is sensitive to
+   null/bad records — keep the page fully null-safe and validate per repo before adopting.
+3. **`cacheComponents: true` + `use cache` (strategic).** Wrap the POST read in `use cache` so its data
+   lands in the static shell (PPR). Next-recommended long term; larger migration — do **not** mix ad
+   hoc with route-segment `export const revalidate`.
 
 ---
 
@@ -76,7 +105,7 @@ export async function fetchData<T>({
   method = "GET",
   body = null,
   revalidateTag,
-  revalidate = 86400, // 24h time-based fallback; pair with tags for surgical invalidation
+  revalidate = 2592000, // 30d time-based fallback; pair with tags for surgical invalidation
   mutation = false,
 }: FetchOptions): Promise<T | null> {
   const isMutation = mutation || method === "PUT" || method === "DELETE";
@@ -116,18 +145,25 @@ await fetch(WP_API_URL, {
 
 ## ISR revalidate tiers
 
-| Route type | `export const revalidate` |
-|------------|---------------------------|
-| Listing / index | `2592000` (30d) — webhook handles freshness |
-| Detail / city / community (`[slug]`) | `86400` (24h) |
-| State / advisor landing | `604800` (7d) |
-| WP catch-all (`[[...uri]]`) | `604800` (7d) |
+CCDS/WP data changes rarely and is refreshed on-demand via webhooks + tags, so the time-based default
+is intentionally **long** (WEB-1069):
+
+| Route / config | Value |
+|----------------|-------|
+| CCDS reads (client default) | `2592000` (30d) |
+| WordPress GraphQL reads (`WP_CACHE_DURATIONS`) | `2592000` (30d) |
+| Listing / detail / city / community / state / landing / WP catch-all | `2592000` (30d) |
+| `next.config` image `minimumCacheTTL` | `31536000` (1y) — optimized images are content-hashed, never change |
 
 - Every cacheable route exports `revalidate`. Do **not** add it to form/personalized routes.
-- Prefer `export const revalidate` over `dynamic = "force-static"`: a failed ISR revalidation then
+- The long default is safe because a missed webhook still self-heals within 30d; use `tags` for
+  immediate surgical invalidation. Shorter tiers (24h/7d) are fine per-route if a source is volatile.
+- Default to `export const revalidate` over `dynamic = "force-static"`: a failed ISR revalidation then
   preserves the last good cache instead of overwriting it with a broken page. Pair with a client that
   **throws on 5xx at runtime** (so ISR keeps the previous version) but returns an error during the
-  build phase (so `generateStaticParams` can skip a bad entry without failing the build).
+  build phase (so `generateStaticParams` can skip a bad entry without failing the build). `force-static`
+  is still a valid POST-read option (see "Making a POST-read page cacheable") **once** the page is
+  fully null-safe and the throw-on-5xx guard is in place.
 
 ---
 
@@ -146,13 +182,16 @@ if (invalidateCDN) await invalidateCloudFrontPaths([path]);
 
 ## Anti-patterns
 
-- ❌ `next: method === "GET" ? {...} : { revalidate: 0 }` — leaves POST reads uncached → the route
-  renders dynamically (`private, no-store`). This is the exact regression that broke city pages.
+- ❌ `next: method === "GET" ? {...} : { revalidate: 0 }` — leaves POST reads uncached (origin hit
+  every render). Note: even a *correctly* cached POST read still renders the route dynamically — that
+  needs an edge override, not just `next` options (see "Making a POST-read page cacheable").
 - ❌ Bare `fetch(url, { method: "POST", body })` for a read — refetched from origin every render.
 - ❌ `next: { tags }` with no `revalidate` — holds stale data or doesn't cache at runtime.
 - ❌ Caching a mutation (`submit`, lead, `PUT`/`DELETE`/`PATCH`).
 - ❌ Treating `React.cache()` as cross-request caching (it's request-scoped dedup only).
-- ❌ `dynamic = "force-static"` on a page whose revalidation can fail (caches a broken page).
+- ❌ `dynamic = "force-static"` on a page that is **not** fully null-safe or lacks throw-on-5xx — a bad
+  CCDS record/response at build time caches a broken/blank page (the WEB-1058 regression). It is a
+  valid option only once those guards exist.
 - ❌ Mixing `cacheComponents: true` (`"use cache"`) with route-segment `export const revalidate` —
   that is a separate, deliberate migration; do not introduce it ad hoc.
 
