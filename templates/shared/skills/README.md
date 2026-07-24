@@ -23,6 +23,8 @@ skills directory contains symlinks to it (single source of truth):
 │   └── SKILL.md
 ├── domain-driven-design/
 │   └── SKILL.md
+├── github-review-management/
+│   └── SKILL.md
 ├── plugin-creation/
 │   └── SKILL.md
 ├── quality-checks/
@@ -31,7 +33,9 @@ skills directory contains symlinks to it (single source of truth):
 │   └── SKILL.md
 ├── testing/
 │   └── SKILL.md
-└── testing-patterns/
+├── testing-patterns/
+│   └── SKILL.md
+└── tsdoc-standards/
     └── SKILL.md
 
 .github/skills/   → symlinks to ../../.agents/skills/*   (Copilot, Codex)
@@ -56,7 +60,9 @@ description: When to use this skill. Agents use this to decide relevance.
 |-------|-------------|
 | `component-architecture` | React component patterns, folder structure, naming conventions |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
+| `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL |
 | `testing-patterns` | Jest + RTL patterns for Next.js 15 and Server Actions |
+| `tsdoc-standards` | Write & enforce TSDoc (not JSDoc): allowed tags, forbidden JSDoc patterns, templates |
 
 ## Usage
 

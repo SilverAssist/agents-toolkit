@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **`tsdoc-standards.instructions.md`** ([#31](https://github.com/SilverAssist/agents-toolkit/issues/31)) — TSDoc (not JSDoc) documentation standard for TypeScript, `applyTo: "**/*.{ts,tsx}"`: core rules (no `{type}` braces in `@param`/`@returns`, `@typeParam` over `@template`, `@packageDocumentation` over `@module`, inline interface-member docs), the allowed-tags table, comment templates (Server Action, React component, utility, file header), and forbidden JSDoc patterns. Ported from the canonical ruleset maintained in the Next.js repos. Registered in `INSTRUCTIONS` and categorized under the `react` stack (next to `typescript`).
+- **`tsdoc-standards` skill** ([#31](https://github.com/SilverAssist/agents-toolkit/issues/31)) — on-demand deep reference for the instruction: the *why* (types belong in code, not comments), rationale per rule, generic (`@typeParam`) templates, a forbidden→fix table, and a review checklist. Registered in `SKILLS` under the `react` stack.
+- **`resolve-github-reviews.prompt.md`** ([#31](https://github.com/SilverAssist/agents-toolkit/issues/31)) — prompt to **fetch → address → reply → resolve → verify `0` unresolved** GitHub PR review threads (Copilot or human) with exact `gh`/GraphQL commands: `reviewThreads` query filtered on `isResolved == false`, per-thread REST replies (with the `in_reply_to` fallback and PR-level acknowledgement for Copilot suppressed notes), and the GraphQL `resolveReviewThread` mutation (REST cannot resolve threads). Registered in `PROMPTS.utility` and `FILE_CATEGORIES.prompts` under `universal` + `github`.
+- **`github-review-management` skill** ([#31](https://github.com/SilverAssist/agents-toolkit/issues/31)) — reference knowledge backing the prompt: the review submission vs review comment vs review thread data model, which API does what (REST lists/replies, GraphQL resolves), copy-paste `resolveReviewThread`/verification snippets, Copilot-specific handling (suppressed notes, `isOutdated` threads, per-commit rounds), and a common-failures table. Registered in `SKILLS` and categorized under `github` + `universal` (excluded for `--tracker jira`).
+
+### Changed
+
+- **`FILE_CATEGORIES` (`bin/cli.js`)** — added `tsdoc-standards` to `instructions.react` and `skills.react`; added `resolve-github-reviews` to `prompts.universal` + `prompts.github`; added a new `skills.github` tracker key (`github-review-management`, also in `skills.universal`) so `--tracker github` includes and `--tracker jira` excludes it.
+- **Docs indexes** — `README.md` (instructions, skills, workflow-prompts tables + skill counts), `templates/shared/prompts/README.md`, `templates/shared/skills/README.md`, and the `templates/agents/AGENTS.md` curated asset map now list the new assets.
+
 ## [2.5.1] - 2026-07-01
 
 ### Fixed

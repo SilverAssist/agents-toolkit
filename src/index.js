@@ -26,6 +26,7 @@ export const PROMPTS = {
     "new-wp-component",
     "new-wp-plugin",
     "quality-check",
+    "resolve-github-reviews",
     "review-code",
   ],
 };
@@ -52,6 +53,7 @@ export const INSTRUCTIONS = [
   "server-actions",
   "testing-standards",
   "tests",
+  "tsdoc-standards",
   "typescript",
   "wordpress-plugin-architecture",
 ];
@@ -61,12 +63,14 @@ export const SKILLS = [
   "component-architecture",
   "create-component",
   "domain-driven-design",
+  "github-review-management",
   "nextjs-caching",
   "plugin-creation",
   "quality-checks",
   "release-management",
   "testing",
   "testing-patterns",
+  "tsdoc-standards",
 ];
 
 export const HOOKS = ["validate-tsx", "lint-format"];

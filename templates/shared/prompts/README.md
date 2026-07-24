@@ -32,9 +32,10 @@ prompts/
 ├── finalize-pr.prompt.md       # 6. Finalize and merge PR
 │
 ├── # Utility Prompts
-├── review-code.prompt.md       # Quick code review
-├── fix-issues.prompt.md        # Fix lint/type/test errors
-└── add-tests.prompt.md         # Add tests for components
+├── review-code.prompt.md            # Quick code review
+├── fix-issues.prompt.md             # Fix lint/type/test errors
+├── add-tests.prompt.md              # Add tests for components
+└── resolve-github-reviews.prompt.md # Fetch/reply/resolve GitHub PR review threads
 ```
 
 ## Workflow Stages

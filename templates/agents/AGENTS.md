@@ -19,15 +19,18 @@
 |seo-ai-optimization.instructions.md → Semantic HTML, a11y tree, metadata, JSON-LD for AI Search
 |server-actions.instructions.md      → Server action patterns, validation, error handling
 |tests.instructions.md               → Test structure, mocking, assertions
-|typescript.instructions.md          → Type safety, destructuring, JSDoc
+|tsdoc-standards.instructions.md     → TSDoc doc comments (not JSDoc): allowed tags, forbidden patterns, templates
+|typescript.instructions.md          → Type safety, destructuring, doc comments
 
 [Prompts]|root:.github/prompts
 |add-tests,analyze-ticket,create-plan,create-pr,finalize-pr,fix-issues,prepare-pr,review-code,work-ticket
 
 [Skills]|root:.github/skills
-|component-architecture/SKILL.md → Component design patterns
-|domain-driven-design/SKILL.md   → DDD principles and structure
-|testing-patterns/SKILL.md       → Testing strategies and patterns
+|component-architecture/SKILL.md   → Component design patterns
+|domain-driven-design/SKILL.md     → DDD principles and structure
+|github-review-management/SKILL.md → Resolve GitHub PR review threads (gh + GraphQL)
+|testing-patterns/SKILL.md         → Testing strategies and patterns
+|tsdoc-standards/SKILL.md          → TSDoc doc comments (not JSDoc)
 ```
 
 ---
