@@ -61,6 +61,7 @@ export const INSTRUCTIONS = [
 export const SKILLS = [
   "ai-seo-optimization",
   "component-architecture",
+  "core-review",
   "create-component",
   "domain-driven-design",
   "github-review-management",

@@ -46,6 +46,12 @@ gh pr review --request-changes --body "..." | cat
 gh pr review --approve | cat
 ```
 
+> **Before pushing any fix commit**, run a **whole-repo core review** (not just the changed
+> files) using the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) as a dedicated
+> read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code). Apply everything
+> it flags first — pushing an adjacent, unfixed issue only starts a fresh Copilot round. For the
+> full fetch → reply → resolve loop, use the `resolve-github-reviews` prompt.
+
 ### 3. Sync with Base Branch
 
 ```bash
@@ -124,6 +130,6 @@ gh issue close {issue-number} --comment "Completed in PR #<pr-number>." | cat
 
 ### 8. Clean Up
 
-- [ ] Delete temporary planning docs from `docs/` (if applicable)
+- [ ] Planning docs were removed at **PR creation** (see `create-github-pr`) — verify none linger in `docs/`
 - [ ] Ensure final documentation is complete
 - [ ] Verify commit history is clean

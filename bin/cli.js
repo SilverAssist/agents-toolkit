@@ -77,8 +77,8 @@ const FILE_CATEGORIES = {
   skills: {
     react: ['component-architecture', 'nextjs-caching', 'testing-patterns', 'tsdoc-standards'],
     wordpress: ['create-component', 'plugin-creation', 'quality-checks', 'testing'],
-    github: ['github-review-management'],
-    universal: ['domain-driven-design', 'release-management', 'github-review-management'],
+    github: ['github-review-management', 'core-review'],
+    universal: ['domain-driven-design', 'release-management', 'github-review-management', 'core-review'],
   },
 };
 

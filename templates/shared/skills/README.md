@@ -19,11 +19,15 @@ skills directory contains symlinks to it (single source of truth):
 │   └── SKILL.md
 ├── component-architecture/
 │   └── SKILL.md
+├── core-review/
+│   └── SKILL.md
 ├── create-component/
 │   └── SKILL.md
 ├── domain-driven-design/
 │   └── SKILL.md
 ├── github-review-management/
+│   └── SKILL.md
+├── nextjs-caching/
 │   └── SKILL.md
 ├── plugin-creation/
 │   └── SKILL.md
@@ -60,6 +64,7 @@ description: When to use this skill. Agents use this to decide relevance.
 |-------|-------------|
 | `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T signals |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
+| `core-review` | Whole-repo pre-review (before a PR / before pushing review fixes) run as a read-only pass — inline on Copilot/Codex, optionally a subagent on Claude Code — to preempt Copilot iterations |
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface pattern) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL |

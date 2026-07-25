@@ -139,10 +139,22 @@ For every unresolved thread from Step 2:
    npm run test --if-present
    ```
 
+**Then — once per batch, not per thread** — after **all** the per-thread fixes above are applied,
+run a single **whole-repo** consistency pass (the *core review*) before committing the batch. Use
+the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) as a dedicated read-only pass
+(inline on Copilot/Codex; optionally a subagent on Claude Code). A fix often leaves or introduces
+an adjacent issue (a now-stale doc line, a broken link, a table missing the new asset) that would
+trigger yet another Copilot round. Apply everything the pass flags, re-run the checks above, and
+only then proceed to Step 4. Running this once over the completed batch — rather than per thread —
+keeps the (whole-repo) review cost bounded.
+
 ### 4. Commit and push fixes (before replying)
 
 Reply bodies reference the fixing commit SHA, so **commit and push first** — otherwise the SHA
 does not exist on the remote branch yet and the reply link is dead.
+
+> Run the whole-repo **core review** from Step 3 *before* this commit — pushing an adjacent,
+> unfixed issue starts a fresh Copilot round and defeats the purpose of resolving in batches.
 
 ```bash
 # Stage only the files you changed for these fixes. Avoid `git add -A` — Step 1 does not
