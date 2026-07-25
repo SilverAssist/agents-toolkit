@@ -51,7 +51,7 @@ const DEFAULT_CONFIG = {
  */
 const FILE_CATEGORIES = {
   instructions: {
-    react: ['caching', 'css-styling', 'react-components', 'seo-ai-optimization', 'server-actions', 'tests', 'typescript'],
+    react: ['caching', 'css-styling', 'react-components', 'seo-ai-optimization', 'server-actions', 'tests', 'tsdoc-standards', 'typescript'],
     wordpress: ['php-standards', 'wordpress-plugin-architecture', 'testing-standards'],
     universal: ['documentation-language', 'github-workflow'],
   },
@@ -61,11 +61,11 @@ const FILE_CATEGORIES = {
     universal: [
       'analyze-ticket', 'work-ticket', 'analyze-github-issue', 'work-github-issue',
       'create-plan', 'create-pr', 'prepare-pr', 'finalize-pr',
-      'create-github-pr', 'finalize-github-pr',
+      'create-github-pr', 'finalize-github-pr', 'resolve-github-reviews',
       'review-code', 'fix-issues', 'add-tests', 'prepare-github-release',
     ],
     jira: ['analyze-ticket', 'work-ticket', 'create-pr', 'finalize-pr'],
-    github: ['analyze-github-issue', 'work-github-issue', 'create-github-pr', 'finalize-github-pr'],
+    github: ['analyze-github-issue', 'work-github-issue', 'create-github-pr', 'finalize-github-pr', 'resolve-github-reviews'],
   },
   partials: {
     react: ['release-node'],
@@ -75,9 +75,10 @@ const FILE_CATEGORIES = {
     universal: ['git-operations', 'pr-template', 'validations', 'documentation'],
   },
   skills: {
-    react: ['component-architecture', 'nextjs-caching', 'testing-patterns'],
+    react: ['component-architecture', 'nextjs-caching', 'testing-patterns', 'tsdoc-standards'],
     wordpress: ['create-component', 'plugin-creation', 'quality-checks', 'testing'],
-    universal: ['domain-driven-design', 'release-management'],
+    github: ['github-review-management'],
+    universal: ['domain-driven-design', 'release-management', 'github-review-management'],
   },
 };
 

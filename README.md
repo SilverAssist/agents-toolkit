@@ -77,7 +77,7 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 9 skills total, filtered by --stack
+    └── ...                           # 12 skills total, filtered by --stack
 ```
 
 > **Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard.** The real skill files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory contains symlinks to it — a single source of truth shared across Copilot, Claude Code, and Codex. Use `--copy` to materialize real copies instead of symlinks (e.g. on Windows without developer mode; symlinks also fall back to copies automatically when unsupported).
@@ -105,7 +105,7 @@ CLAUDE.md                             # Project instructions for Claude Code (pr
 └── skills/                           # Canonical skills store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 9 skills total, filtered by --stack
+    └── ...                           # 12 skills total, filtered by --stack
 .claude/
 ├── commands/
 │   ├── _partials/
@@ -165,7 +165,7 @@ AGENTS.md                             # Project instructions for Codex (project 
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 9 skills total, filtered by --stack
+    └── ...                           # 12 skills total, filtered by --stack
 ```
 
 ### Global Install (Optional)
@@ -240,6 +240,11 @@ The same set of prompts is available for all supported tools.
 | `review-code` | Quick code review | — |
 | `fix-issues` | Fix lint/type/test errors | — |
 | `add-tests` | Add tests for components | `{target-file}` |
+| `audit-ai-seo` | Audit a page for AI Search / agent-friendliness (E-E-A-T, semantic HTML, JSON-LD) | `{target-url}` |
+| `new-wp-component` | Scaffold a new component in a Silver Assist WordPress plugin | `{component-name}` |
+| `new-wp-plugin` | Scaffold a new Silver Assist WordPress plugin from scratch | `{plugin-name}` |
+| `quality-check` | Run the full quality pipeline (PHPCS, PHPStan level 8, PHPUnit) for a WP plugin | — |
+| `resolve-github-reviews` | Fetch, reply to, resolve & close PR review threads (Copilot/human) | `{pr-number}`, `{repo}` |
 
 ### Workflow Stages
 
@@ -427,12 +432,18 @@ File-type specific guidelines applied automatically by Copilot and available as 
 | Instruction | Applies To | Description |
 |-------------|------------|-------------|
 | `typescript.instructions.md` | `*.ts, *.tsx` | TypeScript best practices |
+| `tsdoc-standards.instructions.md` | `*.ts, *.tsx` | TSDoc (not JSDoc) doc-comment standard: allowed tags, forbidden JSDoc patterns, templates |
 | `react-components.instructions.md` | `*.tsx` | React component patterns |
 | `server-actions.instructions.md` | `**/actions/*.ts` | Next.js Server Actions |
 | `tests.instructions.md` | `*.test.ts, *.test.tsx` | Testing patterns |
+| `testing-standards.instructions.md` | `tests/**/*.php` | PHPUnit testing standards for Silver Assist WordPress plugins |
 | `css-styling.instructions.md` | `*.css, *.tsx` | Tailwind CSS & shadcn/ui standards |
 | `caching.instructions.md` | `next.config.*, src/proxy.ts, src/lib/**, **/route.ts, **/page.tsx` | Next.js caching: read-vs-mutation fetch caching, ISR tiers, CDN invalidation |
 | `seo-ai-optimization.instructions.md` | `*.tsx` | Semantic HTML, accessibility tree, metadata, JSON-LD & E-E-A-T for AI Search |
+| `documentation-language.instructions.md` | `**` | English-only technical content, documentation, commit and PR conventions |
+| `github-workflow.instructions.md` | `**` | GitHub workflow: branch management, PRs, issues, releases, `gh` CLI |
+| `php-standards.instructions.md` | `*.php` | PHP coding standards, WordPress conventions, security, type safety, i18n |
+| `wordpress-plugin-architecture.instructions.md` | `*.php` | WordPress plugin architecture: LoadableInterface, PSR-4, MVC, singleton |
 
 ## Skills
 
@@ -440,10 +451,18 @@ Specialized knowledge guides for domain-specific patterns:
 
 | Skill | Description |
 |-------|-------------|
+| `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
+| `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
+| `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |
 | `nextjs-caching` | Next.js caching strategy: read-vs-mutation fetch, ISR tiers, CDN invalidation, diagnosing dynamic-render leaks |
+| `plugin-creation` | Scaffold a new Silver Assist WordPress plugin from scratch (PSR-4, LoadableInterface, CI/CD) |
+| `quality-checks` | Run PHPCS, PHPStan (level 8), and PHPUnit for Silver Assist WordPress plugins |
+| `release-management` | Create and manage releases for Silver Assist WordPress plugins (unified build + GH Actions) |
+| `testing` | Write and run PHPUnit tests for Silver Assist WordPress plugins (`WP_UnitTestCase`) |
 | `testing-patterns` | Jest + RTL patterns for Next.js 15 and Server Actions |
+| `tsdoc-standards` | Write & enforce TSDoc (not JSDoc): allowed tags, forbidden JSDoc patterns, templates, review checklist |
 
 Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard: the real files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory symlinks to it (single source of truth, easy updates). Pass `--copy` to materialize real copies instead.
 

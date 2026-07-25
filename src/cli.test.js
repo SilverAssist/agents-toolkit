@@ -677,3 +677,46 @@ test('successive installs to multiple targets accumulate lockfile entries', (t) 
     );
   }
 });
+
+// ─── #31: TSDoc standards + GitHub review management ───────────────────────────
+
+test('tsdoc-standards instruction + skill install for react stack, not wordpress', (t) => {
+  const tempDir = createTempProject(t);
+
+  const react = runCli(['install', '--dry-run', '--stack', 'react'], tempDir);
+  assert.equal(react.status, 0, react.stderr);
+  assert.match(react.stdout, /tsdoc-standards\.instructions\.md/);
+  // Assert the skill's canonical SKILL.md explicitly — /tsdoc-standards/ alone
+  // is already satisfied by the instruction file, so it would pass even if the
+  // skill were not installed.
+  assert.match(react.stdout, /tsdoc-standards[\\/]SKILL\.md/);
+
+  const wordpress = runCli(['install', '--dry-run', '--stack', 'wordpress'], tempDir);
+  assert.equal(wordpress.status, 0, wordpress.stderr);
+  assert.doesNotMatch(wordpress.stdout, /tsdoc-standards\.instructions\.md/);
+  assert.doesNotMatch(wordpress.stdout, /tsdoc-standards[\\/]SKILL\.md/);
+});
+
+test('resolve-github-reviews prompt is included for --tracker github, excluded for --tracker jira', (t) => {
+  const tempDir = createTempProject(t);
+
+  const github = runCli(['install', '--dry-run', '--tracker', 'github'], tempDir);
+  assert.equal(github.status, 0, github.stderr);
+  assert.match(github.stdout, /resolve-github-reviews\.prompt\.md/);
+
+  const jira = runCli(['install', '--dry-run', '--tracker', 'jira'], tempDir);
+  assert.equal(jira.status, 0, jira.stderr);
+  assert.doesNotMatch(jira.stdout, /resolve-github-reviews\.prompt\.md/);
+});
+
+test('github-review-management skill is included for --tracker github, excluded for --tracker jira', (t) => {
+  const tempDir = createTempProject(t);
+
+  const github = runCli(['install', '--dry-run', '--tracker', 'github'], tempDir);
+  assert.equal(github.status, 0, github.stderr);
+  assert.match(github.stdout, /github-review-management/);
+
+  const jira = runCli(['install', '--dry-run', '--tracker', 'jira'], tempDir);
+  assert.equal(jira.status, 0, jira.stderr);
+  assert.doesNotMatch(jira.stdout, /github-review-management/);
+});
