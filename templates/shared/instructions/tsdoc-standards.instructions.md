@@ -121,7 +121,9 @@ export async function submitContactForm(formData: FormData): Promise<void> {}
  * <CommunityCard community={community} className="mt-4" />
  * ```
  */
-export function CommunityCard({ community, className }: CommunityCardProps) {}
+export function CommunityCard({ community, className }: CommunityCardProps) {
+  return <article className={className}>{community.name}</article>;
+}
 ````
 
 ### Utility Function

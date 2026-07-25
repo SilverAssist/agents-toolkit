@@ -145,7 +145,9 @@ Reply bodies reference the fixing commit SHA, so **commit and push first** — o
 does not exist on the remote branch yet and the reply link is dead.
 
 ```bash
-git add -A
+# Stage only the files you changed for these fixes. Avoid `git add -A` — Step 1 does not
+# require a clean worktree, so it could sweep in unrelated pre-existing changes.
+git add <files you edited>
 git commit -m "fix: Address PR #$PR review comments"
 if ! git push; then
   echo "ERROR: git push failed. Do not proceed to Step 5 — \$SHA is not on the remote yet." >&2
