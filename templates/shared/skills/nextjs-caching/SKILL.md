@@ -77,8 +77,11 @@ Pick one (ordered by risk, lowest first):
    header the ISR pages emit (see `expireTime` under ISR tiers), so the CDN policy is uniform across
    static and dynamic routes. The origin stays dynamic; the CDN caches the deterministic-per-URL
    response. Per-repo regex, no build-time risk — this is what WEB-1069 shipped. **Requires:** a
-   per-repo path regex in `src/proxy.ts` that matches exactly the routes you want cached; no other
-   preconditions.
+   per-repo path regex in `src/proxy.ts` that matches exactly the routes you want cached **and**
+   those routes must be **public and deterministic per URL** — no auth-, cookie-, or session-
+   dependent output. A `public` edge cache serves one stored response to *every* visitor, so a
+   personalized route matched here would leak one user's content to others. Never match
+   authenticated or personalized paths.
 2. **`export const dynamic = "force-static"` (interim).** Forces the POST read to `force-cache` and
    prerenders the route as real ISR (confirmed via `prerender-manifest.json`). Removed in WEB-1058
    because a CCDS failure at build time cached a **blank page**; safer now that reads throw on 5xx at
@@ -237,8 +240,11 @@ curl -sI https://<host>/<care-type>/<state>/<city> | grep -i cache-control
 
 In the build output, `●` (or "Static"/"ISR") means prerendered; `ƒ` ("Dynamic") means it renders per
 request. Which one to expect depends on the strategy chosen in "Making a POST-read page cacheable":
-strategies **2** (`force-static`) and **3** (`use cache` / PPR) should show `●`; strategy **1** (CDN
-edge override) intentionally leaves the route as `ƒ` — the page is CDN-cached at the edge even
-though Next classifies it as dynamic, so verify with the `curl -sI … | grep -i cache-control` check
-above rather than the build-output symbol. `next.config` `logging.fetches.fullUrl: true` shows
-per-fetch cache decisions in dev.
+strategy **2** (`force-static`) prerenders fully, so it shows `●`; strategy **3** (`use cache` / PPR)
+shows `●` only when the whole route is static — if dynamic holes remain it renders as a **partial
+prerender** and Next marks it `◐` (partial), which is still correct output, so do not reject it.
+Strategy **1** (CDN edge override) intentionally leaves the route as `ƒ` — the page is CDN-cached at
+the edge even though Next classifies it as dynamic. Because the symbol alone is ambiguous across
+strategies, verify with the `curl -sI … | grep -i cache-control` check above and defer to the
+installed Next.js version's build-output legend rather than the symbol. `next.config`
+`logging.fetches.fullUrl: true` shows per-fetch cache decisions in dev.

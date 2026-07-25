@@ -80,11 +80,15 @@ git push origin v1.3.6
 
 ### Step 1: Update All Versions
 
-Select the version script using this rule:
+**Selection is driven by which script the plugin ships — each plugin ships exactly one variant**,
+and `release.yml` auto-detects the same way (it runs `update-version.sh` if present, else
+`update-version-simple.sh`). Manual runs and CI therefore stay consistent *because only one script
+exists per plugin*; never ship both, or CI's preference for `update-version.sh` would silently
+diverge from a manual `update-version-simple.sh` run.
 
-- If the plugin is `acf-clone-fields`, `silver-assist-post-revalidate`, or `silver-assist-security`, use `update-version.sh`.
-- Otherwise (including `contact-form-to-api`, `leadgen-app-form`, `nextjs-graphql-hooks`), use `update-version-simple.sh`.
-- For a new plugin, default to `update-version-simple.sh` unless the full variant is explicitly requested.
+- Full variant (`update-version.sh`): `acf-clone-fields`, `silver-assist-post-revalidate`, `silver-assist-security`.
+- Simple variant (`update-version-simple.sh`): `contact-form-to-api`, `leadgen-app-form`, `nextjs-graphql-hooks`.
+- New plugin: ship **only** `update-version-simple.sh` unless it genuinely needs the full variant.
 
 ```bash
 # Full variant (acf-clone-fields, silver-assist-post-revalidate, silver-assist-security)

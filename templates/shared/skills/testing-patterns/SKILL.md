@@ -80,9 +80,15 @@ jest.mock('stripe', () => ({
 Server Actions that call `redirect()` or use routing helpers require `next/navigation` to be mocked, since it is not available in the Jest test environment.
 
 ```typescript
-// Mock next/navigation BEFORE imports
+// Mock next/navigation BEFORE imports.
+// redirect() must THROW like the real implementation — Next signals a redirect by throwing
+// NEXT_REDIRECT to terminate the action's control flow. A plain `jest.fn()` no-op would let
+// code after redirect() keep running, producing outcomes impossible in production. Throw a
+// sentinel and assert on it (e.g. `await expect(action()).rejects.toThrow(/NEXT_REDIRECT/)`).
 jest.mock('next/navigation', () => ({
-  redirect: jest.fn(),
+  redirect: jest.fn((url) => {
+    throw new Error(`NEXT_REDIRECT: ${url}`);
+  }),
   useRouter: jest.fn(() => ({ push: jest.fn() })),
 }));
 ```

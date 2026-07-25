@@ -239,7 +239,7 @@ src/
 
 ### Shared TypeScript Types
 
-- If a type is used by **3 or more domains**, place it in `src/lib/types/` (or a dedicated shared types file such as `src/types/common.ts`).
+- If a type is used by **3 or more domains**, place it in `src/lib/types/` — the shared-types exception lives under the allowed `src/lib/` scope, **not** a generic `src/types/` root (which the anti-pattern above forbids).
 - Otherwise, **colocate the type with its primary domain** (e.g., `src/lib/payment/types.ts`, `src/components/auth/types.ts`).
 - Re-export shared types through the owning domain's barrel when other domains need them.
 
