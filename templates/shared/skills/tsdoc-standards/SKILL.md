@@ -174,7 +174,9 @@ export function CommunityCard({ community, className }: CommunityCardProps) {}
  * formatDate("2025-01-15"); // "January 15, 2025"
  * ```
  */
-export function formatDate(dateString: string): string {}
+export function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("en-US", { dateStyle: "long" });
+}
 ````
 
 ### Generic Utility (`@typeParam`)
@@ -188,7 +190,9 @@ export function formatDate(dateString: string): string {}
  * @param predicate - Returns `true` for the desired element
  * @returns The first matching element, or `undefined` if none match
  */
-export function findFirst<T>(items: T[], predicate: (item: T) => boolean): T | undefined {}
+export function findFirst<T>(items: T[], predicate: (item: T) => boolean): T | undefined {
+  return items.find(predicate);
+}
 ````
 
 ## Forbidden Patterns → Fixes

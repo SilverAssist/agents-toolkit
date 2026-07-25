@@ -138,7 +138,9 @@ export function CommunityCard({ community, className }: CommunityCardProps) {}
  * formatDate("2025-01-15"); // "January 15, 2025"
  * ```
  */
-export function formatDate(dateString: string): string {}
+export function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("en-US", { dateStyle: "long" });
+}
 ````
 
 ### File Header
