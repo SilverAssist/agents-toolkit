@@ -23,7 +23,7 @@
 |typescript.instructions.md          → Type safety, destructuring, doc comments
 
 [Prompts]|root:.github/prompts
-|add-tests,analyze-ticket,create-plan,create-pr,finalize-pr,fix-issues,prepare-pr,review-code,work-ticket
+|add-tests,analyze-ticket,create-plan,create-pr,finalize-pr,fix-issues,prepare-pr,resolve-github-reviews,review-code,work-ticket
 
 [Skills]|root:.github/skills
 |component-architecture/SKILL.md   → Component design patterns

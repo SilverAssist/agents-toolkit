@@ -686,12 +686,15 @@ test('tsdoc-standards instruction + skill install for react stack, not wordpress
   const react = runCli(['install', '--dry-run', '--stack', 'react'], tempDir);
   assert.equal(react.status, 0);
   assert.match(react.stdout, /tsdoc-standards\.instructions\.md/);
-  assert.match(react.stdout, /tsdoc-standards/);
+  // Assert the skill's canonical SKILL.md explicitly — /tsdoc-standards/ alone
+  // is already satisfied by the instruction file, so it would pass even if the
+  // skill were not installed.
+  assert.match(react.stdout, /tsdoc-standards\/SKILL\.md/);
 
   const wordpress = runCli(['install', '--dry-run', '--stack', 'wordpress'], tempDir);
   assert.equal(wordpress.status, 0);
   assert.doesNotMatch(wordpress.stdout, /tsdoc-standards\.instructions\.md/);
-  assert.doesNotMatch(wordpress.stdout, /tsdoc-standards/);
+  assert.doesNotMatch(wordpress.stdout, /tsdoc-standards\/SKILL\.md/);
 });
 
 test('resolve-github-reviews prompt is included for --tracker github, excluded for --tracker jira', (t) => {

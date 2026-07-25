@@ -23,19 +23,30 @@ prompts/
 │   ├── documentation.md        # Documentation standards
 │   └── pr-template.md          # Pull request templates
 │
-├── # Workflow Prompts (Main Flow)
-├── analyze-ticket.prompt.md    # 1. Analyze a Jira ticket
-├── create-plan.prompt.md       # 2. Create implementation plan
-├── work-ticket.prompt.md       # 3. Start working on a ticket
-├── prepare-pr.prompt.md        # 4. Prepare code for PR
-├── create-pr.prompt.md         # 5. Create a pull request
-├── finalize-pr.prompt.md       # 6. Finalize and merge PR
+├── # Workflow Prompts
+├── analyze-ticket.prompt.md         # Analyze a Jira ticket
+├── analyze-github-issue.prompt.md   # Analyze a GitHub issue
+├── create-plan.prompt.md            # Create implementation plan
+├── work-ticket.prompt.md            # Start working on a Jira ticket
+├── work-github-issue.prompt.md      # Start working on a GitHub issue
+├── prepare-pr.prompt.md             # Prepare code for PR
+├── create-pr.prompt.md              # Create a pull request (Jira)
+├── create-github-pr.prompt.md       # Create a pull request (GitHub)
+├── finalize-pr.prompt.md            # Finalize and merge PR (Jira)
+├── finalize-github-pr.prompt.md     # Finalize and merge PR (GitHub)
+├── prepare-github-release.prompt.md # Prepare a GitHub release
 │
 ├── # Utility Prompts
 ├── review-code.prompt.md            # Quick code review
 ├── fix-issues.prompt.md             # Fix lint/type/test errors
 ├── add-tests.prompt.md              # Add tests for components
-└── resolve-github-reviews.prompt.md # Fetch/reply/resolve GitHub PR review threads
+├── audit-ai-seo.prompt.md           # Audit a page for AI Search / agent-friendliness
+├── resolve-github-reviews.prompt.md # Fetch/reply/resolve GitHub PR review threads
+│
+└── # WordPress Prompts
+    ├── new-wp-component.prompt.md    # Scaffold a WordPress plugin component
+    ├── new-wp-plugin.prompt.md       # Scaffold a WordPress plugin
+    └── quality-check.prompt.md       # Run PHPCS / PHPStan / PHPUnit
 ```
 
 ## Workflow Stages

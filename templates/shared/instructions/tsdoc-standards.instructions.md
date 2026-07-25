@@ -102,7 +102,6 @@ interface Community {
  * Validates server-side, creates a DB record, dispatches email.
  *
  * @param formData - Submitted form data from the contact page
- * @returns Redirect response to the thank-you page
  *
  * @throws When the email service is unavailable
  */
@@ -115,9 +114,6 @@ export async function submitContactForm(formData: FormData): Promise<void> {}
 /**
  * Renders a responsive community card with name and location.
  *
- * @param props - Component props
- * @param props.community - The community data to display
- * @param props.className - Optional additional CSS classes
  * @returns The community card JSX element
  *
  * @example
