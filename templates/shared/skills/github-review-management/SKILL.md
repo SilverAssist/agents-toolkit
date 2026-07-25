@@ -59,9 +59,11 @@ connection with `pageInfo { endCursor hasNextPage }` and collect every node befo
 > /tmp/review-threads.jsonl
 CURSOR=null
 while : ; do
-  # On the first page, $CURSOR is the literal string "null", which GraphQL rejects as a
-  # `String` value. Omit the `after` argument entirely on that pass, then pass the real
-  # cursor on subsequent iterations.
+  # First page: there is no cursor yet ($CURSOR is the string "null"). Passing it as
+  # `-f after="null"` would send the literal string "null" — an invalid cursor, not a
+  # "start from the beginning" signal. Omit `after` on this pass so the query starts at the
+  # beginning; pass the real endCursor afterward. (gh's typed `-F after=null` instead sends
+  # a real GraphQL null.)
   if [ "$CURSOR" = "null" ]; then
     AFTER_ARGS=()
   else
