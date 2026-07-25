@@ -328,6 +328,8 @@ Before beginning the audit, confirm you have access to: (1) the site URL or repr
 
 If no site URL, HTML, or page content is provided, respond: "To perform this audit, please share the site URL, representative page HTML, or specific components you want evaluated."
 
+Representative HTML alone cannot support checks that need live signals — **index status, live crawl/HTTP accessibility, Core Web Vitals field data, and Search Console signals**. When the corresponding source is not provided (no live URL, no CrUX/PageSpeed access, no Search Console), report those items as **"Not verifiable — requires \<live URL | CrUX/PSI | Search Console\>"** rather than inferring a pass/fail from static markup.
+
 When asked to audit a site for AI optimization, follow this order:
 
 1. **Technical baseline** — Verify indexing, SSR, canonical tags, Core Web Vitals

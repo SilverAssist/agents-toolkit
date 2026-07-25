@@ -239,9 +239,8 @@ src/
 
 ### Shared TypeScript Types
 
-- If a type is used by **3 or more domains**, place it in `src/lib/types/` — the shared-types exception lives under the allowed `src/lib/` scope, **not** a generic `src/types/` root (which the anti-pattern above forbids).
-- Otherwise, **colocate the type with its primary domain** (e.g., `src/lib/payment/types.ts`, `src/components/auth/types.ts`).
-- Re-export shared types through the owning domain's barrel when other domains need them.
+- If a type is used by **3 or more domains**, place it in `src/lib/types/` — the shared-types exception lives under the allowed `src/lib/` scope, **not** a generic `src/types/` root (which the anti-pattern above forbids). Export it from that folder's own barrel (`src/lib/types/index.ts`) and import it as `@/lib/types`. A centrally shared primitive has **no owning domain**, so do not route it through a domain barrel — that would invert the intended dependency direction (domains → shared, never shared → a domain).
+- Otherwise, **colocate the type with its primary domain** (e.g., `src/lib/payment/types.ts`, `src/components/auth/types.ts`) and re-export it through that domain's barrel when other domains need it.
 
 ### ✅ Domain-Oriented Structure
 
