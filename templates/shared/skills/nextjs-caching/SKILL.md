@@ -86,8 +86,11 @@ Pick one (ordered by risk, lowest first):
    prerenders the route as real ISR (confirmed via `prerender-manifest.json`). Removed in WEB-1058
    because a CCDS failure at build time cached a **blank page**; safer now that reads throw on 5xx at
    runtime (a failed revalidation keeps the last good cache), but full prerender is sensitive to
-   null/bad records. **Requires:** the page is fully null-safe (every field access guarded) AND the
-   client throws on 5xx at runtime (so ISR keeps the previous version instead of caching an error).
+   null/bad records. **Requires:** the page is fully null-safe (every field access guarded); the read
+   throws on failure **at build/prerender time too** (not only during runtime revalidation) so a failed
+   read aborts generation instead of prerendering a cacheable blank/error page — the exact WEB-1058
+   regression; AND the client throws on 5xx at runtime (so ISR keeps the previous version instead of
+   caching an error). Re-validate this per repository before adopting the strategy.
 3. **`cacheComponents: true` + `use cache` (strategic).** Wrap the POST read in `use cache` so its data
    lands in the static shell (PPR). Next-recommended long term; larger migration. **Requires:** a
    deliberate PPR migration for the whole route segment; do **not** mix ad hoc with route-segment

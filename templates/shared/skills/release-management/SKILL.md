@@ -173,7 +173,7 @@ gh run watch <run-id> --exit-status
 
 ## Unified Build Script (`scripts/build-release.sh`)
 
-This script is **identical** across all Silver Assist plugins. When setting up a new plugin, copy it verbatim.
+This script is **structurally identical** across all Silver Assist plugins. When setting up a new plugin, copy it and change only the dependency-specific asset-validation checks a plugin does not need — the single allowed per-plugin variation, documented below (see the Silver Assist package-asset table and [Key Principles](#key-principles)). Everything else must remain identical; copying it verbatim for a plugin that lacks one of those dependencies would leave an invalid validation check that fails its release build.
 
 ### What It Does
 
