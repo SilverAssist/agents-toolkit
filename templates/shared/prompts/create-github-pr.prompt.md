@@ -62,13 +62,31 @@ npm run build --if-present
 
 Fix any issues before proceeding.
 
-### 5. Push Branch
+### 5. Pre-PR core review (whole repo)
+
+Before pushing, run a **whole-repo** consistency review to catch the doc↔code drift, invalid
+code examples, broken links, and stale indexes that otherwise trigger multi-round Copilot
+reviews. Review the whole repo — not just the diff — because Copilot re-reviews entire files.
+
+Use the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`), ideally as a read-only
+reviewer **subagent**:
+
+- **Claude Code** — spawn a subagent (`Explore` / `general-purpose`) with a read-only brief:
+  "Review this whole repository against the core-review checklist; report findings as
+  `severity | file:line | problem | suggested fix`; do not edit files."
+- **Copilot / Codex** — run the checklist inline as a distinct pass over the changed files
+  **and** their neighbors, producing the same prioritized findings list.
+
+Apply every `critical` and `warning` finding, re-run the checks from Step 4, and **re-review
+until the pass reports zero findings** before continuing. See the skill for the full checklist.
+
+### 6. Push Branch
 
 ```bash
 git push -u origin $(git branch --show-current)
 ```
 
-### 6. Create Pull Request
+### 7. Create Pull Request
 
 #### PR Title
 ```
@@ -133,7 +151,7 @@ EOF
 - **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
 - **Reviewers**: Based on changed files
 
-### 7. Comment on GitHub Issue
+### 8. Comment on GitHub Issue
 
 Add a comment linking to the PR:
 

@@ -77,7 +77,7 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 12 skills total, filtered by --stack
+    └── ...                           # 13 skills total, filtered by --stack
 ```
 
 > **Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard.** The real skill files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory contains symlinks to it — a single source of truth shared across Copilot, Claude Code, and Codex. Use `--copy` to materialize real copies instead of symlinks (e.g. on Windows without developer mode; symlinks also fall back to copies automatically when unsupported).
@@ -105,7 +105,7 @@ CLAUDE.md                             # Project instructions for Claude Code (pr
 └── skills/                           # Canonical skills store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 12 skills total, filtered by --stack
+    └── ...                           # 13 skills total, filtered by --stack
 .claude/
 ├── commands/
 │   ├── _partials/
@@ -165,7 +165,7 @@ AGENTS.md                             # Project instructions for Codex (project 
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 12 skills total, filtered by --stack
+    └── ...                           # 13 skills total, filtered by --stack
 ```
 
 ### Global Install (Optional)
@@ -453,6 +453,7 @@ Specialized knowledge guides for domain-specific patterns:
 |-------|-------------|
 | `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
+| `core-review` | Whole-repo pre-review (before a PR / before pushing review fixes) as a read-only subagent to preempt Copilot iterations |
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |

@@ -720,3 +720,19 @@ test('github-review-management skill is included for --tracker github, excluded 
   assert.equal(jira.status, 0, jira.stderr);
   assert.doesNotMatch(jira.stdout, /github-review-management/);
 });
+
+// ─── #35: Pre-review core-review skill ─────────────────────────────────────────
+
+test('core-review skill is included for --tracker github, excluded for --tracker jira', (t) => {
+  const tempDir = createTempProject(t);
+
+  const github = runCli(['install', '--dry-run', '--tracker', 'github'], tempDir);
+  assert.equal(github.status, 0, github.stderr);
+  // Assert the skill's canonical SKILL.md explicitly (Windows-safe separator) so the match
+  // cannot be satisfied by an unrelated path that merely contains "core-review".
+  assert.match(github.stdout, /core-review[\\/]SKILL\.md/);
+
+  const jira = runCli(['install', '--dry-run', '--tracker', 'jira'], tempDir);
+  assert.equal(jira.status, 0, jira.stderr);
+  assert.doesNotMatch(jira.stdout, /core-review[\\/]SKILL\.md/);
+});
