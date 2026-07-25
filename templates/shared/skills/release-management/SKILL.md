@@ -437,10 +437,13 @@ on:
         description: 'Version to release (e.g. 1.2.0). Leave empty to use plugin file version.'
         required: false
 
-# Note: Use `workflow_dispatch` only when triggering a release *without* pushing a tag
-# (e.g., testing the pipeline). Do NOT use it after pushing a tag for the same version:
-# the "Update version" step will modify files inside the CI checkout without committing
-# them back, so the released ZIP would differ from the tagged source in the repository.
+# Note: `workflow_dispatch` still performs a REAL release — the "Create GitHub Release"
+# step below publishes the release and creates the `v<version>` tag if it does not
+# already exist. It is NOT a dry run. Use it only to release a version whose source is
+# already committed on the checked-out ref: the "Update version" step edits files inside
+# the CI checkout without committing them back, so an uncommitted bump would ship a ZIP
+# that differs from the repository. For a true dry run, run the build steps in a separate
+# non-publishing workflow that omits the "Create GitHub Release" step.
 
 permissions:
   contents: write

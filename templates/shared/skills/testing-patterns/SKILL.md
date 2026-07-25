@@ -145,7 +145,9 @@ describe('submitWizardToSalesforce', () => {
       formData
     );
 
-    // Assert the error path — Server Actions return failure state, not throw
+    // Assert the error path for THIS action: it catches the API failure and returns a
+    // failure state. Match the action's own contract — actions that instead throw (e.g.
+    // via redirect(), see the mock above) must be asserted with `rejects.toThrow(...)`.
     expect(result.success).toBe(false);
     expect(result.message).toContain('error');
   });
