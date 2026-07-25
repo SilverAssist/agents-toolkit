@@ -17,8 +17,9 @@ Works for both **Copilot** and **human** reviews.
 - `{pr-number}` *(optional)* — target PR. Defaults to the PR for the current branch.
 - `{repo}` *(optional)* — `owner/repo` for cross-repo review (adds `--repo` / fills the GraphQL vars).
 
-> **Key fact:** the REST API **cannot** mark a review thread resolved. Only the GraphQL
-> `resolveReviewThread` mutation can. REST is used to *list* and *reply*; GraphQL is used to *resolve*.
+> **Key fact:** the REST API **cannot** mark a review thread resolved — only the GraphQL
+> `resolveReviewThread` mutation can. **GraphQL** both *lists* threads (`reviewThreads`, Step 2) and
+> *resolves* them (Step 5.4); **REST** is used only to post *replies* (Steps 5.2–5.3).
 
 ## Steps
 
@@ -202,9 +203,11 @@ gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
 
 Do **not** run 5.3 unless 5.2 failed with 404; running both duplicates the reply.
 
-#### 5.4 — Always: resolve the thread via the GraphQL mutation (REST cannot)
+#### 5.4 — Resolve the thread via the GraphQL mutation (REST cannot)
 
-Run this **for every thread**, regardless of whether the reply came from 5.1, 5.2, or 5.3:
+If you address threads one at a time, resolve each one here after replying (from 5.1, 5.2, or 5.3).
+Prefer to resolve them all at once? Skip this per-thread call and use the batch loop in 5.5 instead —
+use **either** 5.4 **or** 5.5, never both, or every mutation runs twice.
 
 ```bash
 gh api graphql -f id="$THREAD_ID" -f query='
@@ -215,12 +218,12 @@ gh api graphql -f id="$THREAD_ID" -f query='
   }'
 ```
 
-#### 5.5 — Batch loop: apply 5.4 to every unresolved thread
+#### 5.5 — Alternative: batch-resolve every addressed thread at once
 
-Once each finding is addressed, loop over every `threadId` from Step 2 and resolve it. Check the
-mutation response inside the loop — a missing `repo` scope on the token succeeds at listing but
-fails at resolving, and without this check the failure is silent and Step 6 reports leftover
-threads with no explanation.
+Instead of the per-thread call in 5.4, resolve everything in one loop once all replies are posted
+(use **either** 5.4 per thread **or** this batch loop, not both). Check the mutation response inside
+the loop — a missing `repo` scope on the token succeeds at listing but fails at resolving, and
+without this check the failure is silent and Step 6 reports leftover threads with no explanation.
 
 ```bash
 jq -r 'select(.isResolved == false) | .id' /tmp/review-threads.jsonl | while read -r THREAD_ID; do

@@ -191,8 +191,9 @@ fi
 ## Copilot-specific handling
 
 - **Suppressed / low-confidence notes** — Copilot posts some findings without an inline comment
-  (`databaseId` is `null`), so there is no thread to reply to or resolve. Acknowledge them with a
-  single PR-level comment (`gh pr comment`).
+  (`databaseId` is `null`), so there is **no inline comment to reply to**. The thread itself still
+  has an `id` and is resolvable — acknowledge the note with a single PR-level comment
+  (`gh pr comment`), then resolve the thread by its `id` like any other.
 - **`isOutdated` threads** — when the underlying code moves, the thread is flagged `isOutdated`
   but remains **unresolved**. It never clears itself; resolve it explicitly once handled.
 - **Per-commit review rounds** — Copilot re-reviews after each push, potentially opening new
