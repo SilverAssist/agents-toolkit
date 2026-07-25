@@ -73,13 +73,25 @@ read-only review pass. It works on every agent — only the mechanism differs (s
 Claude-Code-only optimization, not a requirement):
 
 - **GitHub Copilot / Codex** — no subagents; run the checklist **inline as a distinct pass** over
-  the changed files **and** their neighbors, producing the prioritized findings list.
+  the **whole repository** (not just the diff), producing the prioritized findings list.
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`)
   with the brief "review the whole repo against the core-review checklist; report
   `severity | file:line | problem | suggested fix`; do not edit files."
 
-Apply every `critical` and `warning` finding, re-run the checks from Step 4, and **re-review
-until the pass reports zero findings** before continuing. See the skill for the full checklist.
+Apply every `critical` and `warning` finding, re-run the checks from Step 4, then **commit the
+fixes and confirm a clean worktree** (`git status`) so they are included in the push — Step 1
+required a clean tree, and any fix made here is uncommitted until you do. **Re-review until the
+pass reports zero findings** before continuing. See the skill for the full checklist.
+
+Finally, **remove the planning document** created by `work-github-issue` (e.g.
+`docs/{feature-name}-plan.md`) — it has served its purpose. Deleting it now, **at PR creation
+(not at finalization)**, keeps it out of the base branch instead of accumulating in `docs/`
+after the merge. Stage the removal together with any review fixes so a clean tree is pushed:
+
+```bash
+git rm docs/{feature-name}-plan.md 2>/dev/null || true
+git commit -m "docs: Remove planning doc for #{issue-number} ahead of PR" || true
+```
 
 ### 6. Push Branch
 

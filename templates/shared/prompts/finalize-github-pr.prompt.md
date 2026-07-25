@@ -130,6 +130,6 @@ gh issue close {issue-number} --comment "Completed in PR #<pr-number>." | cat
 
 ### 8. Clean Up
 
-- [ ] Delete temporary planning docs from `docs/` (if applicable)
+- [ ] Planning docs were removed at **PR creation** (see `create-github-pr`) — verify none linger in `docs/`
 - [ ] Ensure final documentation is complete
 - [ ] Verify commit history is clean

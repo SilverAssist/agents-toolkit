@@ -29,7 +29,8 @@ Copilot re-reviews **entire files**, not just your hunks — and each push opens
 In recent work the rounds went `18 → 2 → 3 → 1 → 9 → 3 → 1 → 1 …`: every push surfaced new,
 mostly *valid* findings in code the diff only brushed against (a doc line that no longer matches
 the changed code, a table missing the asset you just added, a link that now resolves elsewhere).
-A review scoped to the whole repo — or at least every file the change *touches the meaning of* —
+A review scoped to the whole repo — or at least every file that imports, re-exports, documents,
+or enumerates the changed symbol or asset, plus every index/README that lists its siblings —
 catches those before the reviewer does. Reviewing only the diff reproduces exactly the slow loop
 this flow exists to avoid.
 
@@ -42,11 +43,11 @@ and **Claude Code**; only the *mechanism* differs, and **subagents are a Claude-
 optimization, never a requirement**:
 
 - **GitHub Copilot** — no subagents; run the checklist **inline as a distinct pass** before
-  pushing (not folded into the edit under review). Read the changed files **and** their
-  neighbors, then emit the prioritized findings list. Copilot's built-in code review can help on
-  the diff, but only the checklist pass covers the whole repo.
-- **Codex** — no subagents either; the same **inline distinct pass** over the changed files and
-  their neighbors, producing the same findings list.
+  pushing (not folded into the edit under review), over the **whole repository — not just the
+  diff**. Copilot's built-in code review can help on the diff, but only this whole-repo pass
+  covers the drift that triggers new review rounds.
+- **Codex** — no subagents either; the same **inline whole-repo pass**, producing the same
+  prioritized findings list.
 - **Claude Code** — *optionally* delegate the pass to a read-only **subagent** (`Explore` or
   `general-purpose`) with the brief: "Review this whole repository against the core-review
   checklist; report findings as `severity | file:line | problem | suggested fix`; do not edit any
@@ -164,9 +165,14 @@ Empty output ("no findings") is a valid, good result — say so explicitly rathe
 
 ## Acting on findings & convergence
 
-1. Apply every `critical` and `warning`; apply `nit`s unless there is a reason not to.
-2. Re-run the project's checks (`lint`, `type-check`, `tsc --noEmit`, `test`, `build` — whichever exist).
-3. Re-run the review over the whole repo. **Loop until the pass reports zero findings**, *then* push.
+These steps are performed by the **caller** (the agent flow that invoked this skill), not by the
+read-only review pass itself — the pass only inspects and reports.
+
+1. The caller applies every `critical` and `warning`; applies `nit`s unless there is a reason not to.
+2. The caller re-runs the project's checks (`lint`, `type-check`, `tsc --noEmit`, `test`, `build` — whichever exist).
+3. The caller re-runs the review over the whole repo. **Loop until the pass reports zero findings
+   *within the change's blast radius***, *then* push. Pre-existing issues outside that scope are
+   noted (see "What NOT to flag" below) but do not block convergence.
 
 Because these repos guide agents, an inaccurate doc induces downstream errors — so it is worth
 iterating N times to reach an optimal, consistent result rather than stopping at the first
