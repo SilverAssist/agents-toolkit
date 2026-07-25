@@ -148,18 +148,26 @@ does not exist on the remote branch yet and the reply link is dead.
 # Stage only the files you changed for these fixes. Avoid `git add -A` — Step 1 does not
 # require a clean worktree, so it could sweep in unrelated pre-existing changes.
 git add <files you edited>
-git commit -m "fix: Address PR #$PR review comments"
-if ! git push; then
-  echo "ERROR: git push failed. Do not proceed to Step 5 — \$SHA is not on the remote yet." >&2
-  echo "Diagnose the failure before retrying:" >&2
-  echo "  - Non-fast-forward: run 'git pull --rebase' then 'git push' again." >&2
-  echo "  - Branch protection / required status checks: fix locally and re-run this step," >&2
-  echo "    or contact a repo admin if the branch is protected against your role." >&2
-  echo "  - Auth: run 'gh auth status' and re-authenticate with 'repo' scope if needed." >&2
-  exit 1
+if git diff --cached --quiet; then
+  # Nothing staged — every finding was a false positive. A bare `git commit` would fail,
+  # and `$SHA` would wrongly point at an unrelated existing HEAD. Leave `$SHA` empty and
+  # reply to those threads in Step 5 with reasoning only (never "Fixed in <sha>").
+  SHA=""
+  echo "No staged changes — skipping the fix commit; Step 5 replies with rationale only."
+else
+  git commit -m "fix: Address PR #$PR review comments"
+  if ! git push; then
+    echo "ERROR: git push failed. Do not proceed to Step 5 — \$SHA is not on the remote yet." >&2
+    echo "Diagnose the failure before retrying:" >&2
+    echo "  - Non-fast-forward: run 'git pull --rebase' then 'git push' again." >&2
+    echo "  - Branch protection / required status checks: fix locally and re-run this step," >&2
+    echo "    or contact a repo admin if the branch is protected against your role." >&2
+    echo "  - Auth: run 'gh auth status' and re-authenticate with 'repo' scope if needed." >&2
+    exit 1
+  fi
+  SHA=$(git rev-parse HEAD)
+  echo "Fix commit: $SHA"
 fi
-SHA=$(git rev-parse HEAD)
-echo "Fix commit: $SHA"
 ```
 
 If a single commit already covers all fixes, capture that SHA and skip the commit step; the point
@@ -186,6 +194,10 @@ fi
 ```
 
 #### 5.2 — Otherwise: attempt the direct replies endpoint
+
+If the finding was a **false positive** (no fix commit — `$SHA` is empty), reply with your
+reasoning instead of a SHA, e.g. `-f body="Not applicable — <why>."`. Otherwise reference the
+fix commit:
 
 ```bash
 gh api "repos/$OWNER/$REPO/pulls/$PR/comments/$COMMENT_ID/replies" \
