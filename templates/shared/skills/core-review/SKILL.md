@@ -148,6 +148,68 @@ fi
 - CI matrix / workflow config sanity (a `workflow_run` trigger names a workflow whose `name:`
   actually exists; `on:` events match intent; least-privilege `permissions:`).
 
+## Highest-recall patterns (from real review rounds)
+
+A few patterns account for **most** reviewer findings — and they are exactly the ones a
+diff-focused read misses, because the defect lives in a file the change only touches the
+*meaning* of. **Check these first.** (Percentages below are from an actual review round of this
+skill's own PR, where a reviewer found 10 issues the initial self-review missed.)
+
+### P1 — Propagate a reframe to *every* description of the concept (highest yield)
+
+When you rename or reframe anything (a term, a default, a capability), the change must reach
+**every surface that describes it** — not only the canonical/body text, but each one-line
+description: README tables, per-agent asset maps (`AGENTS.md`, `AGENTS.codex.md`), directory
+trees, and the CHANGELOG summary. **A concept described two ways is a guaranteed finding** — half
+the findings in the reference round were this single class (the body was reframed; the index rows
+still advertised the old wording).
+
+**Technique — the reframe sweep:** after any rename/reframe, grep the whole repo for the *old*
+term and each synonym, then reconcile every hit.
+
+```bash
+# e.g. after reframing "subagent" → "read-only pass", hunt every lingering description
+grep -rn "subagent" . --include="*.md"
+```
+
+### P2 — Keep the *mechanism* branch-specific, never the *scope/contract*
+
+When guidance branches per agent / platform / environment, only the **mechanism** may differ; the
+**scope or contract** must stay identical across every branch.
+
+```text
+❌ "Copilot runs it inline over the changed files and their neighbors."   (silently narrowed scope)
+✅ "Copilot runs it inline over the whole repository."                     (mechanism differs, scope constant)
+```
+
+### P3 — "We updated X" must match the diff
+
+Every CHANGELOG / PR / summary claim that an artifact was changed must correspond to a file
+**actually in the diff**, and the named target must be a place that could plausibly hold that
+content.
+
+```text
+❌ CHANGELOG: "the prompts README now lists the new skill"  (that file is not in the diff, and a
+   prompts index would not list skills anyway)
+✅ Record only the indexes actually updated (here: the skills README + the asset maps).
+```
+
+### P4 — When you touch an inventory, cross-check *every* sibling
+
+Editing a tree/table to add your entry re-presents the whole inventory as complete — so a
+**pre-existing** omission now reads as your bug. Enumerate what exists on disk and reconcile.
+
+```bash
+# every directory here must appear in the README tree AND the skills table
+ls -1 templates/shared/skills
+```
+
+### P5 — A generated procedure that makes fixes must commit before it pushes
+
+Any documented step that can create fixes and then pushes must **explicitly commit** them and
+confirm a clean worktree (`git status`) first — otherwise the fixes are silently omitted from the
+push, and a referenced `$SHA` points at the wrong commit.
+
 ## Output contract
 
 Report findings as a **prioritized list**, most severe first, one row each:
