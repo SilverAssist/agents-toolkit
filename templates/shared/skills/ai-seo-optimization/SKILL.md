@@ -7,8 +7,11 @@ description: Optimize websites for Google's generative AI features and browser a
 
 Comprehensive guide for optimizing Next.js sites for Google's generative AI features (AI Overviews, AI Mode) and emerging browser agent interactions.
 
-> **Source**: [Google AI Optimization Guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide) (May 2026)
-> **Companion**: [Build Agent-Friendly Websites](https://web.dev/articles/ai-agent-site-ux) (April 2026)
+> **Framework note**: Although examples use Next.js conventions (e.g., `generateMetadata`), all checklist items apply to any web framework. For non-Next.js sites, substitute framework-equivalent SSR and metadata APIs.
+
+> **Source**: [Google AI Optimization Guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
+> **Companion**: [Build Agent-Friendly Websites](https://web.dev/articles/ai-agent-site-ux)
+> **Verify current guidance**: These references reflect guidance as of the skill's authoring date. Always verify current Google documentation before advising clients.
 
 ---
 
@@ -320,6 +323,10 @@ These are explicitly confirmed as **unnecessary or harmful** by Google:
 ---
 
 ## 9. Audit Workflow
+
+Before beginning the audit, confirm you have access to: (1) the site URL or representative page HTML, (2) Google Search Console data if available, and (3) the page types to audit (home, landing, blog, etc.).
+
+If no site URL, HTML, or page content is provided, respond: "To perform this audit, please share the site URL, representative page HTML, or specific components you want evaluated."
 
 When asked to audit a site for AI optimization, follow this order:
 

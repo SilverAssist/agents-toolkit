@@ -41,7 +41,7 @@ plugin-slug/
 
 ### Key Principles
 
-1. **Unified scripts** — `build-release.sh` and `release.yml` are identical across all 6 plugins.
+1. **Unified scripts** — `build-release.sh` and `release.yml` are structurally identical across all 6 plugins. The only permitted per-plugin variation is the Silver Assist package validation block at the end of `build-release.sh` (see [Validation Checks](#validation-checks)), which may omit checks for packages the plugin does not depend on.
 2. **Selective copy** — Only runtime files go into the ZIP (no tests, docs, dev configs).
 3. **Auto-detection** — The build script finds the main plugin file, slug, and version automatically.
 4. **Checksums** — Every ZIP gets MD5 and SHA-256 checksums.
@@ -80,13 +80,17 @@ git push origin v1.3.6
 
 ### Step 1: Update All Versions
 
-Use whichever version script the plugin has:
+Select the version script using this rule:
+
+- If the plugin is `acf-clone-fields`, `silver-assist-post-revalidate`, or `silver-assist-security`, use `update-version.sh`.
+- Otherwise (including `contact-form-to-api`, `leadgen-app-form`, `nextjs-graphql-hooks`), use `update-version-simple.sh`.
+- For a new plugin, default to `update-version-simple.sh` unless the full variant is explicitly requested.
 
 ```bash
 # Full variant (acf-clone-fields, silver-assist-post-revalidate, silver-assist-security)
 ./scripts/update-version.sh 1.2.0 --no-confirm --force
 
-# Simple variant (contact-form-to-api, leadgen-app-form, nextjs-graphql-hooks)
+# Simple variant (contact-form-to-api, leadgen-app-form, nextjs-graphql-hooks, new plugins by default)
 ./scripts/update-version-simple.sh 1.2.0 --no-confirm --force
 ```
 
@@ -406,7 +410,7 @@ The build script validates these Silver Assist package assets exist in the final
 | Settings Hub CSS | `vendor/silverassist/wp-settings-hub/assets/css/settings-hub.css` |
 | GitHub Updater JS | `vendor/silverassist/wp-github-updater/assets/js/check-updates.js` |
 
-If the plugin does NOT use these packages, remove the corresponding validation checks.
+If the plugin does NOT depend on one of these packages, omit only that package's validation check when creating the plugin's `build-release.sh`. This is the single allowed per-plugin variation of the script (see [Key Principles](#key-principles)); everything else must remain identical to the template above.
 
 ---
 
@@ -428,6 +432,11 @@ on:
       version:
         description: 'Version to release (e.g. 1.2.0). Leave empty to use plugin file version.'
         required: false
+
+# Note: Use `workflow_dispatch` only when triggering a release *without* pushing a tag
+# (e.g., testing the pipeline). Do NOT use it after pushing a tag for the same version:
+# the "Update version" step will modify files inside the CI checkout without committing
+# them back, so the released ZIP would differ from the tagged source in the repository.
 
 permissions:
   contents: write
@@ -456,6 +465,10 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION=$(grep -o 'Version: [0-9]\+\.[0-9]\+\.[0-9]\+' *.php 2>/dev/null | head -1 | cut -d' ' -f2)
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not detect version: no tag, no manual input, and no Version: header found in root PHP files."
+            exit 1
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "🏷️ Version: $VERSION"

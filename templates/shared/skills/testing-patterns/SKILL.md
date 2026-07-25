@@ -75,6 +75,18 @@ jest.mock('stripe', () => ({
 
 ## Server Action Testing Pattern
 
+### Mocking `next/navigation`
+
+Server Actions that call `redirect()` or use routing helpers require `next/navigation` to be mocked, since it is not available in the Jest test environment.
+
+```typescript
+// Mock next/navigation BEFORE imports
+jest.mock('next/navigation', () => ({
+  redirect: jest.fn(),
+  useRouter: jest.fn(() => ({ push: jest.fn() })),
+}));
+```
+
 ### Basic Server Action Test
 
 ```typescript
@@ -112,6 +124,24 @@ describe('submitWizardToSalesforce', () => {
     // 5. Assert
     expect(result.success).toBe(true);
     expect(result.leadId).toBeDefined();
+  });
+
+  it('should return failure state when the API rejects', async () => {
+    // Simulate an error thrown by the mocked dependency
+    mockCreateLead.mockRejectedValue(new Error('API error'));
+
+    const formData = new FormData();
+    formData.append('email', 'test@example.com');
+    formData.append('firstName', 'John');
+
+    const result = await submitWizardToSalesforce(
+      { success: false, message: '', timestamp: 0 },
+      formData
+    );
+
+    // Assert the error path — Server Actions return failure state, not throw
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('error');
   });
 });
 ```
