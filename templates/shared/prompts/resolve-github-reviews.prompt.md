@@ -56,6 +56,13 @@ fi
 
 echo "Reviewing $OWNER/$REPO PR #$PR"
 gh pr view "${GH_REPO_FLAG[@]}" "$PR" --json title,state,reviewDecision,url | cat
+
+# Make the fixes in Steps 3–4 land on the PR under review — not whatever branch happens
+# to be checked out. Check out the PR's head branch before editing anything:
+gh pr checkout "$PR" "${GH_REPO_FLAG[@]}"
+echo "On branch: $(git branch --show-current)"
+# Cross-repo ({repo} set): run this prompt from a local clone of that repo — editing,
+# committing, and pushing need the target repo's working tree, not just API access.
 ```
 
 ### 2. Fetch unresolved review threads (paginated)
@@ -87,6 +94,12 @@ while : ; do
         }
       }
     }')
+  # Fail fast: an API/auth/network error must not be mistaken for "no threads".
+  if ! echo "$PAGE" | jq -e '.data.repository.pullRequest.reviewThreads' >/dev/null 2>&1; then
+    echo "ERROR: GraphQL request failed or returned an unexpected shape:" >&2
+    echo "$PAGE" >&2
+    exit 1
+  fi
   echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads.jsonl
   HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
   CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
@@ -242,6 +255,12 @@ while : ; do
         }
       }
     }')
+  # Fail fast: an API/auth/network error must not be mistaken for "0 remaining".
+  if ! echo "$PAGE" | jq -e '.data.repository.pullRequest.reviewThreads' >/dev/null 2>&1; then
+    echo "ERROR: GraphQL request failed or returned an unexpected shape:" >&2
+    echo "$PAGE" >&2
+    exit 1
+  fi
   echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads-remaining.jsonl
   HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
   CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')

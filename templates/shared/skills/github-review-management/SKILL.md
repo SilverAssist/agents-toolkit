@@ -85,6 +85,12 @@ while : ; do
         }
       }
     }')
+  # Fail fast: a GraphQL/auth/network error must not be mistaken for "no threads".
+  if ! echo "$PAGE" | jq -e '.data.repository.pullRequest.reviewThreads' >/dev/null 2>&1; then
+    echo "ERROR: GraphQL request failed or returned an unexpected shape:" >&2
+    echo "$PAGE" >&2
+    exit 1
+  fi
   echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads.jsonl
   HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
   CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
@@ -156,6 +162,12 @@ while : ; do
         }
       }
     }')
+  # Fail fast: a GraphQL/auth/network error must not be mistaken for "0 remaining".
+  if ! echo "$PAGE" | jq -e '.data.repository.pullRequest.reviewThreads' >/dev/null 2>&1; then
+    echo "ERROR: GraphQL request failed or returned an unexpected shape:" >&2
+    echo "$PAGE" >&2
+    exit 1
+  fi
   echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads-remaining.jsonl
   HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
   CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
