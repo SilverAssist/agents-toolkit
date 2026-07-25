@@ -71,7 +71,11 @@ the merge. Do this **before** the review below, so the pass covers the *final* b
 catches any now-stale reference to the removed file (links, indexes, mentions):
 
 ```bash
-git rm docs/{feature-name}-plan.md 2>/dev/null || true
+# Remove it only if it exists — a missing file is fine, but a real `git rm` error
+# (permissions, path typo) must surface, so do not blanket-mask with `|| true`.
+if [ -f docs/{feature-name}-plan.md ]; then
+  git rm docs/{feature-name}-plan.md
+fi
 ```
 
 Now run a **whole-repo** consistency review to catch the doc↔code drift, invalid code examples,
@@ -94,7 +98,12 @@ confirm a clean worktree** (`git status`) so they are included in the push. **Re
 pass reports zero findings** before continuing. See the skill for the full checklist.
 
 ```bash
+# No `|| true`: a failed commit (hooks, signing, identity) must stop the flow, not be masked —
+# otherwise Step 6 would push without the planning-doc removal or the review fixes.
 git commit -m "docs: Remove planning doc for #{issue-number} ahead of PR (+ review fixes)"
+
+# The worktree must be clean before pushing — this must print nothing.
+git status --porcelain
 ```
 
 ### 6. Push Branch

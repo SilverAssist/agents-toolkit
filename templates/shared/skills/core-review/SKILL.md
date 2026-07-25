@@ -200,8 +200,9 @@ Editing a tree/table to add your entry re-presents the whole inventory as comple
 **pre-existing** omission now reads as your bug. Enumerate what exists on disk and reconcile.
 
 ```bash
-# every directory here must appear in the README tree AND the skills table
-ls -1 templates/shared/skills
+# every skill directory here must appear in the README tree AND the skills table
+# (list directories only — a plain `ls` would also print the skills README.md)
+ls -d templates/shared/skills/*/
 ```
 
 ### P5 — A generated procedure that makes fixes must commit before it pushes
