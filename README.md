@@ -231,7 +231,6 @@ The same set of prompts is available for all supported tools.
 | `create-github-pr` | Create a pull request (GitHub) | `{issue-number}` | GitHub |
 | `finalize-pr` | Finalize and merge PR (Jira) | `{ticket-id}` | Jira |
 | `finalize-github-pr` | Finalize and merge PR (GitHub) | `{issue-number}` | GitHub |
-| `resolve-github-reviews` | Fetch, reply to, resolve & close PR review threads (Copilot/human) | `{pr-number}` | GitHub |
 | `prepare-github-release` | Prepare a GitHub release (auto-detects WordPress vs Node, tag vs Release) | — | GitHub |
 
 ### Utility
@@ -241,6 +240,11 @@ The same set of prompts is available for all supported tools.
 | `review-code` | Quick code review | — |
 | `fix-issues` | Fix lint/type/test errors | — |
 | `add-tests` | Add tests for components | `{target-file}` |
+| `audit-ai-seo` | Audit a page for AI Search / agent-friendliness (E-E-A-T, semantic HTML, JSON-LD) | `{target-url}` |
+| `new-wp-component` | Scaffold a new component in a Silver Assist WordPress plugin | `{component-name}` |
+| `new-wp-plugin` | Scaffold a new Silver Assist WordPress plugin from scratch | `{plugin-name}` |
+| `quality-check` | Run the full quality pipeline (PHPCS, PHPStan level 8, PHPUnit) for a WP plugin | — |
+| `resolve-github-reviews` | Fetch, reply to, resolve & close PR review threads (Copilot/human) | `{pr-number}` |
 
 ### Workflow Stages
 
@@ -432,9 +436,14 @@ File-type specific guidelines applied automatically by Copilot and available as 
 | `react-components.instructions.md` | `*.tsx` | React component patterns |
 | `server-actions.instructions.md` | `**/actions/*.ts` | Next.js Server Actions |
 | `tests.instructions.md` | `*.test.ts, *.test.tsx` | Testing patterns |
+| `testing-standards.instructions.md` | `tests/**/*.php` | PHPUnit testing standards for Silver Assist WordPress plugins |
 | `css-styling.instructions.md` | `*.css, *.tsx` | Tailwind CSS & shadcn/ui standards |
 | `caching.instructions.md` | `next.config.*, src/proxy.ts, src/lib/**, **/route.ts, **/page.tsx` | Next.js caching: read-vs-mutation fetch caching, ISR tiers, CDN invalidation |
 | `seo-ai-optimization.instructions.md` | `*.tsx` | Semantic HTML, accessibility tree, metadata, JSON-LD & E-E-A-T for AI Search |
+| `documentation-language.instructions.md` | `**` | English-only technical content, documentation, commit and PR conventions |
+| `github-workflow.instructions.md` | `**` | GitHub workflow: branch management, PRs, issues, releases, `gh` CLI |
+| `php-standards.instructions.md` | `*.php` | PHP coding standards, WordPress conventions, security, type safety, i18n |
+| `wordpress-plugin-architecture.instructions.md` | `*.php` | WordPress plugin architecture: LoadableInterface, PSR-4, MVC, singleton |
 
 ## Skills
 
@@ -442,10 +451,16 @@ Specialized knowledge guides for domain-specific patterns:
 
 | Skill | Description |
 |-------|-------------|
+| `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
+| `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |
 | `nextjs-caching` | Next.js caching strategy: read-vs-mutation fetch, ISR tiers, CDN invalidation, diagnosing dynamic-render leaks |
+| `plugin-creation` | Scaffold a new Silver Assist WordPress plugin from scratch (PSR-4, LoadableInterface, CI/CD) |
+| `quality-checks` | Run PHPCS, PHPStan (level 8), and PHPUnit for Silver Assist WordPress plugins |
+| `release-management` | Create and manage releases for Silver Assist WordPress plugins (unified build + GH Actions) |
+| `testing` | Write and run PHPUnit tests for Silver Assist WordPress plugins (`WP_UnitTestCase`) |
 | `testing-patterns` | Jest + RTL patterns for Next.js 15 and Server Actions |
 | `tsdoc-standards` | Write & enforce TSDoc (not JSDoc): allowed tags, forbidden JSDoc patterns, templates, review checklist |
 

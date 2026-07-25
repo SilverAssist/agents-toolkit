@@ -50,29 +50,51 @@ OWNER=${REPO_SLUG%/*}; REPO=${REPO_SLUG#*/}
 PR=$(gh pr view --json number -q .number)                          # current branch's PR
 ```
 
-## 1. List unresolved threads
+## 1. List unresolved threads (paginated)
+
+A PR can have more than 100 threads, so a single `first:100` page is not enough. Walk the
+connection with `pageInfo { endCursor hasNextPage }` and collect every node before filtering.
 
 ```bash
-gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -f query='
-  query($owner:String!, $repo:String!, $pr:Int!) {
-    repository(owner:$owner, name:$repo) {
-      pullRequest(number:$pr) {
-        reviewThreads(first:100) {
-          nodes {
-            id
-            isResolved
-            isOutdated
-            path
-            line
-            comments(first:1) { nodes { databaseId body author { login } } }
+> /tmp/review-threads.jsonl
+CURSOR=null
+while : ; do
+  # On the first page, $CURSOR is the literal string "null", which GraphQL rejects as a
+  # `String` value. Omit the `after` argument entirely on that pass, then pass the real
+  # cursor on subsequent iterations.
+  if [ "$CURSOR" = "null" ]; then
+    AFTER_ARGS=()
+  else
+    AFTER_ARGS=(-f after="$CURSOR")
+  fi
+  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" "${AFTER_ARGS[@]}" -f query='
+    query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
+      repository(owner:$owner, name:$repo) {
+        pullRequest(number:$pr) {
+          reviewThreads(first:100, after:$after) {
+            pageInfo { endCursor hasNextPage }
+            nodes {
+              id
+              isResolved
+              isOutdated
+              path
+              line
+              comments(first:1) { nodes { databaseId body author { login } } }
+            }
           }
         }
       }
-    }
-  }' \
-| jq -r '.data.repository.pullRequest.reviewThreads.nodes[]
-         | select(.isResolved == false)
-         | "\(.id)\t\(.comments.nodes[0].databaseId)\t\(.path):\(.line)"'
+    }')
+  echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads.jsonl
+  HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+  CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
+  [ "$HAS_NEXT" = "true" ] || break
+done
+
+jq -r '
+  select(.isResolved == false)
+  | "\(.id)\t\(.comments.nodes[0].databaseId)\t\(.path):\(.line)"
+' /tmp/review-threads.jsonl
 ```
 
 Each row gives `threadId` (to resolve) and `commentId` = `databaseId` (to reply). A `null`
@@ -115,15 +137,44 @@ done
 ## 4. Verify 0 unresolved (the close-the-loop check)
 
 ```bash
-REMAINING=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -f query='
-  query($owner:String!, $repo:String!, $pr:Int!) {
-    repository(owner:$owner, name:$repo) {
-      pullRequest(number:$pr) { reviewThreads(first:100){ nodes{ isResolved } } }
-    }
-  }' | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length')
+> /tmp/review-threads-remaining.jsonl
+CURSOR=null
+while : ; do
+  if [ "$CURSOR" = "null" ]; then
+    AFTER_ARGS=()
+  else
+    AFTER_ARGS=(-f after="$CURSOR")
+  fi
+  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" "${AFTER_ARGS[@]}" -f query='
+    query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
+      repository(owner:$owner, name:$repo) {
+        pullRequest(number:$pr) {
+          reviewThreads(first:100, after:$after) {
+            pageInfo { endCursor hasNextPage }
+            nodes { isResolved }
+          }
+        }
+      }
+    }')
+  echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads-remaining.jsonl
+  HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+  CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
+  [ "$HAS_NEXT" = "true" ] || break
+done
 
-test "$REMAINING" -eq 0 && echo "✅ all resolved" || echo "❌ $REMAINING remaining"
+REMAINING=$(jq -s '[.[] | select(.isResolved == false)] | length' /tmp/review-threads-remaining.jsonl)
+if [ "$REMAINING" -eq 0 ]; then
+  echo "✅ all resolved"
+else
+  echo "❌ $REMAINING remaining"
+  exit 1
+fi
 ```
+
+> If `isResolved` remains `false` immediately after a successful `resolveReviewThread`
+> mutation, wait 2–3 seconds and re-query — GitHub's GraphQL API can exhibit brief
+> consistency lag after bulk resolves, so a thread already resolved server-side may
+> still report as open on the next read.
 
 ## Copilot-specific handling
 
@@ -134,7 +185,9 @@ test "$REMAINING" -eq 0 && echo "✅ all resolved" || echo "❌ $REMAINING remai
   but remains **unresolved**. It never clears itself; resolve it explicitly once handled.
 - **Per-commit review rounds** — Copilot re-reviews after each push, potentially opening new
   threads. Re-run list → reply → resolve → verify until the count is `0`. Trigger a fresh pass
-  with `gh pr comment "$PR" --body "@copilot review"`.
+  with `gh pr comment $PR --body "@copilot review"` (unquoted `$PR` — it is the integer PR
+  number set earlier via `gh pr view --json number -q .number`, and `gh pr comment` takes
+  it as a positional argument, not a string flag value).
 
 ## Common failures
 

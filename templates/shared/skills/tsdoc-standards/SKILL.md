@@ -80,6 +80,33 @@ interface Community {
 }
 ```
 
+### 5. Overloaded functions — document each overload signature
+
+For overloaded functions, place the TSDoc comment on **each overload signature individually**.
+Do **not** place it on the implementation signature — tooling (editors, `tsc`, API extractors)
+will not surface it to consumers, who only see the overload signatures.
+
+```typescript
+// ✅ TSDoc on each overload; implementation signature is undocumented
+/**
+ * Fetches a community by its slug.
+ *
+ * @param slug - The community slug
+ * @returns The matching community, or `undefined`
+ */
+export function getCommunity(slug: string): Community | undefined;
+/**
+ * Fetches a community by its numeric ID.
+ *
+ * @param id - The community ID
+ * @returns The matching community, or `undefined`
+ */
+export function getCommunity(id: number): Community | undefined;
+export function getCommunity(key: string | number): Community | undefined {
+  // implementation
+}
+```
+
 ## Allowed Tags — quick reference
 
 | Tag | Format | Notes |
@@ -111,7 +138,6 @@ interface Community {
  * Validates server-side, creates a DB record, dispatches email.
  *
  * @param formData - Submitted form data from the contact page
- * @returns Redirect response to the thank-you page
  *
  * @throws When the email service is unavailable
  */
@@ -124,9 +150,6 @@ export async function submitContactForm(formData: FormData): Promise<void> {}
 /**
  * Renders a responsive community card with name and location.
  *
- * @param props - Component props
- * @param props.community - The community data to display
- * @param props.className - Optional additional CSS classes
  * @returns The community card JSX element
  *
  * @example

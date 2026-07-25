@@ -24,52 +24,78 @@ Works for both **Copilot** and **human** reviews.
 
 ### 1. Locate the PR
 
+> `{repo}` and `{pr-number}` are prompt-template placeholders substituted by the prompt engine
+> **before the script runs**. When the user does not supply them, they stay as the literal strings
+> `{repo}` / `{pr-number}`, so the guards below compare against those literals to detect the
+> "not provided" case. Capture each into a shell variable once and check it with `-n` plus the
+> literal-placeholder guard.
+
 ```bash
-# Resolve owner/repo and PR number into shell vars reused by every later step.
-REPO_SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner)   # e.g. SilverAssist/agents-toolkit
+# Copy the (possibly substituted) template values into shell vars.
+REPO_INPUT="{repo}"
+PR_INPUT="{pr-number}"
+
+# Resolve owner/repo — use REPO_INPUT for cross-repo review, else fall back to the current repo.
+if [ -n "$REPO_INPUT" ] && [ "$REPO_INPUT" != "{repo}" ]; then
+  REPO_SLUG="$REPO_INPUT"                                        # cross-repo, e.g. owner/name
+else
+  REPO_SLUG=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+fi
 OWNER=${REPO_SLUG%/*}
 REPO=${REPO_SLUG#*/}
 
+# `gh` global flag reused by every later `gh pr` command so cross-repo works transparently.
+GH_REPO_FLAG=(--repo "$REPO_SLUG")
+
 # Current branch's PR (or pass an explicit number as {pr-number}).
-PR=$(gh pr view --json number -q .number)
-# PR={pr-number}                        # explicit target
-# add --repo "{repo}" to gh pr/gh api commands for a cross-repo review
+if [ -n "$PR_INPUT" ] && [ "$PR_INPUT" != "{pr-number}" ]; then
+  PR="$PR_INPUT"
+else
+  PR=$(gh pr view "${GH_REPO_FLAG[@]}" --json number -q .number)
+fi
 
 echo "Reviewing $OWNER/$REPO PR #$PR"
-gh pr view "$PR" --json title,state,reviewDecision,url | cat
+gh pr view "${GH_REPO_FLAG[@]}" "$PR" --json title,state,reviewDecision,url | cat
 ```
 
-### 2. Fetch unresolved review threads
+### 2. Fetch unresolved review threads (paginated)
 
-Query the GraphQL `reviewThreads` connection and keep only `isResolved == false`. Capture each
+Walk the GraphQL `reviewThreads` connection with `pageInfo { endCursor hasNextPage }` — a PR
+can have more than 100 threads, so a single `first:100` page is not enough. Capture each
 thread's `id` (needed to resolve it) and its first comment's `databaseId`, `path`, and `line`
 (needed to reply).
 
 ```bash
-gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -f query='
-  query($owner:String!, $repo:String!, $pr:Int!) {
-    repository(owner:$owner, name:$repo) {
-      pullRequest(number:$pr) {
-        reviewThreads(first:100) {
-          nodes {
-            id
-            isResolved
-            isOutdated
-            path
-            line
-            comments(first:1) {
-              nodes { databaseId body author { login } }
+> /tmp/review-threads.jsonl
+CURSOR=null
+while : ; do
+  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -F after="$CURSOR" -f query='
+    query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
+      repository(owner:$owner, name:$repo) {
+        pullRequest(number:$pr) {
+          reviewThreads(first:100, after:$after) {
+            pageInfo { endCursor hasNextPage }
+            nodes {
+              id
+              isResolved
+              isOutdated
+              path
+              line
+              comments(first:1) { nodes { databaseId body author { login } } }
             }
           }
         }
       }
-    }
-  }' > /tmp/review-threads.json
+    }')
+  echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads.jsonl
+  HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+  CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
+  [ "$HAS_NEXT" = "true" ] || break
+done
 
 # Unresolved threads only, one compact record per line.
 jq -r '
-  .data.repository.pullRequest.reviewThreads.nodes[]
-  | select(.isResolved == false)
+  select(.isResolved == false)
   | {
       threadId: .id,
       commentId: .comments.nodes[0].databaseId,
@@ -78,18 +104,18 @@ jq -r '
       outdated: .isOutdated,
       author: .comments.nodes[0].author.login,
       body: (.comments.nodes[0].body | gsub("\n"; " ") | .[0:120])
-    }' /tmp/review-threads.json
+    }' /tmp/review-threads.jsonl
 
-# Count what is left to do (drives the final assertion in Step 5).
-UNRESOLVED=$(jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length' /tmp/review-threads.json)
+# Count what is left to do (drives the final assertion in Step 6).
+UNRESOLVED=$(jq -s '[.[] | select(.isResolved == false)] | length' /tmp/review-threads.jsonl)
 echo "Unresolved threads: $UNRESOLVED"
 ```
 
-### 3. Address each finding, then reply on its thread
+### 3. Apply each fix and run checks
 
-For every unresolved thread:
+For every unresolved thread from Step 2:
 
-1. **Apply the fix** in code (or decide it is a false positive and note why).
+1. **Apply the fix** in code (or decide it is a false positive — record the reasoning for Step 4).
 2. **Run the project's checks** so the reply reflects a verified change:
 
    ```bash
@@ -99,33 +125,73 @@ For every unresolved thread:
    npm run test --if-present
    ```
 
-3. **Reply on the thread** using the first comment's `databaseId` (`$COMMENT_ID`):
+### 4. Commit and push fixes (before replying)
 
-   ```bash
-   gh api "repos/$OWNER/$REPO/pulls/$PR/comments/$COMMENT_ID/replies" \
-     -f body="Fixed in <commit-sha>: <what changed>. Thanks!"
-   ```
+Reply bodies reference the fixing commit SHA, so **commit and push first** — otherwise the SHA
+does not exist on the remote branch yet and the reply link is dead.
 
-   **Fallback — replies endpoint returns 404** (can happen for some threads): create the reply
-   as a new review comment linked to the original via `in_reply_to`:
+```bash
+git add -A
+git commit -m "fix: Address PR #$PR review comments"
+if ! git push; then
+  echo "ERROR: git push failed. Do not proceed to Step 5 — \$SHA is not on the remote yet." >&2
+  echo "Diagnose the failure before retrying:" >&2
+  echo "  - Non-fast-forward: run 'git pull --rebase' then 'git push' again." >&2
+  echo "  - Branch protection / required status checks: fix locally and re-run this step," >&2
+  echo "    or contact a repo admin if the branch is protected against your role." >&2
+  echo "  - Auth: run 'gh auth status' and re-authenticate with 'repo' scope if needed." >&2
+  exit 1
+fi
+SHA=$(git rev-parse HEAD)
+echo "Fix commit: $SHA"
+```
 
-   ```bash
-   gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
-     -f body="Fixed in <commit-sha>: <what changed>." \
-     -F in_reply_to="$COMMENT_ID"
-   ```
+If a single commit already covers all fixes, capture that SHA and skip the commit step; the point
+is that `$SHA` must be **pushed** before Step 5 references it. **Do not advance to Step 5 unless
+the push succeeded** — every reply body links to `$SHA` on the remote.
 
-   **Copilot low-confidence / suppressed notes** have **no inline comment id** (`databaseId` is
-   `null`), so they cannot be replied to per-thread. Acknowledge them with a single PR-level comment:
+### 5. Reply and resolve each thread
 
-   ```bash
-   gh pr comment "$PR" --body "Addressed Copilot's low-confidence suggestions: <summary>."
-   ```
+For each unresolved thread from Step 2, run the following sub-procedure **in order**. `$COMMENT_ID`
+is the first comment's `databaseId`; `$THREAD_ID` is the thread `id`. Steps 5.1–5.3 pick exactly
+one reply path; Step 5.4 **always** runs afterward regardless of which reply path was taken.
 
-### 4. Resolve the thread
+#### 5.1 — If `$COMMENT_ID` is null: PR-level acknowledgement, then go to 5.4
 
-Mark each addressed thread resolved with the GraphQL mutation (REST cannot do this). Use the
-thread's `id` (`$THREAD_ID`):
+Copilot low-confidence / suppressed notes have no inline comment id (`databaseId` is `null`) and
+cannot be replied to per-thread. Acknowledge them once with a PR-level comment, then skip to 5.4
+to resolve the thread:
+
+```bash
+if [ -z "$COMMENT_ID" ] || [ "$COMMENT_ID" = "null" ]; then
+  gh pr comment "${GH_REPO_FLAG[@]}" "$PR" --body "Addressed Copilot's low-confidence suggestions: <summary>."
+  # Skip 5.2 and 5.3; proceed directly to 5.4 for this thread.
+fi
+```
+
+#### 5.2 — Otherwise: attempt the direct replies endpoint
+
+```bash
+gh api "repos/$OWNER/$REPO/pulls/$PR/comments/$COMMENT_ID/replies" \
+  -f body="Fixed in $SHA: <what changed>. Thanks!"
+```
+
+#### 5.3 — Only if 5.2 returned HTTP 404: fall back to `in_reply_to`
+
+Some threads reject the direct replies endpoint (404). Only in that case, post a new review
+comment linked to the original via `in_reply_to`:
+
+```bash
+gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
+  -f body="Fixed in $SHA: <what changed>." \
+  -F in_reply_to="$COMMENT_ID"
+```
+
+Do **not** run 5.3 unless 5.2 failed with 404; running both duplicates the reply.
+
+#### 5.4 — Always: resolve the thread via the GraphQL mutation (REST cannot)
+
+Run this **for every thread**, regardless of whether the reply came from 5.1, 5.2, or 5.3:
 
 ```bash
 gh api graphql -f id="$THREAD_ID" -f query='
@@ -136,35 +202,60 @@ gh api graphql -f id="$THREAD_ID" -f query='
   }'
 ```
 
-Loop over every `threadId` from Step 2 once its finding is addressed:
+#### 5.5 — Batch loop: apply 5.4 to every unresolved thread
+
+Once each finding is addressed, loop over every `threadId` from Step 2 and resolve it. Check the
+mutation response inside the loop — a missing `repo` scope on the token succeeds at listing but
+fails at resolving, and without this check the failure is silent and Step 6 reports leftover
+threads with no explanation.
 
 ```bash
-for THREAD_ID in $(jq -r '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .id' /tmp/review-threads.json); do
-  gh api graphql -f id="$THREAD_ID" -f query='mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { isResolved } } }'
+jq -r 'select(.isResolved == false) | .id' /tmp/review-threads.jsonl | while read -r THREAD_ID; do
+  RESULT=$(gh api graphql -f id="$THREAD_ID" -f query='mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { isResolved } } }')
+  if [ "$(echo "$RESULT" | jq -r '.data.resolveReviewThread.thread.isResolved')" != "true" ]; then
+    echo "ERROR: failed to resolve $THREAD_ID: $RESULT" >&2
+    exit 1
+  fi
 done
 ```
 
 > **`isOutdated` threads** — a thread whose code moved is marked `isOutdated` but stays
 > **unresolved**. Resolve it the same way once the concern is handled; it will not clear itself.
 
-### 5. Close the loop
+### 6. Close the loop
 
-Commit and push the fixes, then re-query and assert **zero** unresolved threads:
+Re-query with the same pagination pattern and assert **zero** unresolved threads. Exit non-zero
+when threads remain so this step can gate CI or a script.
 
 ```bash
-git add -A && git commit -m "fix: Address PR #$PR review comments" && git push
-
-REMAINING=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -f query='
-  query($owner:String!, $repo:String!, $pr:Int!) {
-    repository(owner:$owner, name:$repo) {
-      pullRequest(number:$pr) {
-        reviewThreads(first:100) { nodes { isResolved } }
+> /tmp/review-threads-remaining.jsonl
+CURSOR=null
+while : ; do
+  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -F after="$CURSOR" -f query='
+    query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
+      repository(owner:$owner, name:$repo) {
+        pullRequest(number:$pr) {
+          reviewThreads(first:100, after:$after) {
+            pageInfo { endCursor hasNextPage }
+            nodes { isResolved }
+          }
+        }
       }
-    }
-  }' | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length')
+    }')
+  echo "$PAGE" | jq -c '.data.repository.pullRequest.reviewThreads.nodes[]' >> /tmp/review-threads-remaining.jsonl
+  HAS_NEXT=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+  CURSOR=$(echo "$PAGE" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor')
+  [ "$HAS_NEXT" = "true" ] || break
+done
 
+REMAINING=$(jq -s '[.[] | select(.isResolved == false)] | length' /tmp/review-threads-remaining.jsonl)
 echo "Remaining unresolved threads: $REMAINING"
-test "$REMAINING" -eq 0 && echo "✅ All review threads resolved" || echo "❌ $REMAINING thread(s) still open"
+if [ "$REMAINING" -eq 0 ]; then
+  echo "✅ All review threads resolved"
+else
+  echo "❌ $REMAINING thread(s) still open"
+  exit 1
+fi
 ```
 
 Then summarize:
@@ -175,8 +266,8 @@ Then summarize:
 ## Notes & edge cases
 
 - **Per-commit review rounds** — Copilot re-reviews after each push. New threads can appear;
-  re-run Steps 2–5 until Step 5 reports `0`. Request a fresh review if needed:
-  `gh pr comment "$PR" --body "@copilot review"` (or re-request a human reviewer).
+  re-run Steps 2–6 until Step 6 reports `0`. Request a fresh review if needed:
+  `gh pr comment "${GH_REPO_FLAG[@]}" "$PR" --body "@copilot review"` (or re-request a human reviewer).
 - **Review submissions vs comments vs threads** — a *review* (`gh pr review`) is the top-level
   approval/verdict; *review comments* are inline; a *review thread* groups an inline comment with
   its replies and carries the `isResolved` flag. Only threads are resolvable.
