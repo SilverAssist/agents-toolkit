@@ -68,14 +68,15 @@ Before pushing, run a **whole-repo** consistency review to catch the doc↔code 
 code examples, broken links, and stale indexes that otherwise trigger multi-round Copilot
 reviews. Review the whole repo — not just the diff — because Copilot re-reviews entire files.
 
-Use the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`), ideally as a read-only
-reviewer **subagent**:
+Run the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) as a dedicated,
+read-only review pass. It works on every agent — only the mechanism differs (subagents are a
+Claude-Code-only optimization, not a requirement):
 
-- **Claude Code** — spawn a subagent (`Explore` / `general-purpose`) with a read-only brief:
-  "Review this whole repository against the core-review checklist; report findings as
+- **GitHub Copilot / Codex** — no subagents; run the checklist **inline as a distinct pass** over
+  the changed files **and** their neighbors, producing the prioritized findings list.
+- **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`)
+  with the brief "review the whole repo against the core-review checklist; report
   `severity | file:line | problem | suggested fix`; do not edit files."
-- **Copilot / Codex** — run the checklist inline as a distinct pass over the changed files
-  **and** their neighbors, producing the same prioritized findings list.
 
 Apply every `critical` and `warning` finding, re-run the checks from Step 4, and **re-review
 until the pass reports zero findings** before continuing. See the skill for the full checklist.

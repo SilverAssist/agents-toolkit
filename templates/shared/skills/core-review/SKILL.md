@@ -1,6 +1,6 @@
 ---
 name: core-review
-description: Run a thorough, whole-repo consistency review before opening a PR or before pushing fixes in response to a reviewer — ideally as a read-only subagent — to preempt Copilot/reviewer iterations. Use when about to push a branch for review or to push a batch of review fixes.
+description: Run a thorough, whole-repo consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Use when about to push a branch for review or to push a batch of review fixes.
 ---
 
 # Silver Assist — Core Review (Pre-Review)
@@ -10,7 +10,7 @@ human) ever sees the branch. It catches the classes of issues that trigger multi
 loops — doc↔code drift, invalid code examples, broken links, stale indexes — so they are fixed
 in the first push instead of round 5.
 
-This skill is the reviewer's knowledge; the **action** (spawn the review, apply the findings) is
+This skill is the reviewer's knowledge; the **action** (run the review, apply the findings) is
 invoked as a step from `create-github-pr`, `resolve-github-reviews`, and `finalize-github-pr`.
 
 ## When to Use
@@ -33,21 +33,27 @@ A review scoped to the whole repo — or at least every file the change *touches
 catches those before the reviewer does. Reviewing only the diff reproduces exactly the slow loop
 this flow exists to avoid.
 
-## How to run it (as a read-only subagent)
+## How to run it (portable across agents)
 
-Run the review as a **dedicated, read-only pass** — it inspects and reports; it does **not** edit.
-The caller applies the fixes, so the reviewer stays unbiased by the intent behind the change.
+Run the review as a **dedicated, read-only pass**: it inspects and reports; it does **not** edit.
+The caller applies the fixes, so the review stays unbiased by the intent behind the change. The
+pass works the same on every agent — **Copilot** (the primary reviewer to preempt), **Codex**,
+and **Claude Code**; only the *mechanism* differs, and **subagents are a Claude-Code-only
+optimization, never a requirement**:
 
-- **Claude Code** — spawn a subagent (e.g. the `Explore` or `general-purpose` agent) with a
-  read-only brief: "Review this whole repository against the core-review checklist. Report a
-  prioritized list of findings as `severity | file:line | problem | suggested fix`. Do not edit
-  any files." Relay its findings back to the main flow, which applies them.
-- **Copilot / Codex / other tools** — run the checklist inline as a **distinct pass** over the
-  repo before pushing (not folded into the edit that is being reviewed): read the changed files
-  **and** their neighbors, then produce the same prioritized findings list.
+- **GitHub Copilot** — no subagents; run the checklist **inline as a distinct pass** before
+  pushing (not folded into the edit under review). Read the changed files **and** their
+  neighbors, then emit the prioritized findings list. Copilot's built-in code review can help on
+  the diff, but only the checklist pass covers the whole repo.
+- **Codex** — no subagents either; the same **inline distinct pass** over the changed files and
+  their neighbors, producing the same findings list.
+- **Claude Code** — *optionally* delegate the pass to a read-only **subagent** (`Explore` or
+  `general-purpose`) with the brief: "Review this whole repository against the core-review
+  checklist; report findings as `severity | file:line | problem | suggested fix`; do not edit any
+  files." Relay its findings back to the main flow. Running it inline works too.
 
-Either way the contract is identical: **read-only in, prioritized findings out**, then the caller
-fixes and re-runs until clean.
+Whichever agent, the contract is identical: **read-only in, prioritized findings out**, then the
+caller fixes and re-runs until clean.
 
 ## The review checklist
 
@@ -164,7 +170,7 @@ Empty output ("no findings") is a valid, good result — say so explicitly rathe
 
 Because these repos guide agents, an inaccurate doc induces downstream errors — so it is worth
 iterating N times to reach an optimal, consistent result rather than stopping at the first
-"good enough" pass. Convergence here means the reviewer subagent finds nothing new, not merely
+"good enough" pass. Convergence here means the review pass finds nothing new, not merely
 that CI is green.
 
 ## What NOT to flag (avoid false positives)

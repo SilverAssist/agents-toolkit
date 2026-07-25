@@ -47,10 +47,10 @@ gh pr review --approve | cat
 ```
 
 > **Before pushing any fix commit**, run a **whole-repo core review** (not just the changed
-> files) using the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`), ideally as a
-> read-only reviewer subagent. Apply everything it flags first — pushing an adjacent, unfixed
-> issue only starts a fresh Copilot round. For the full fetch → reply → resolve loop, use the
-> `resolve-github-reviews` prompt.
+> files) using the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) as a dedicated
+> read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code). Apply everything
+> it flags first — pushing an adjacent, unfixed issue only starts a fresh Copilot round. For the
+> full fetch → reply → resolve loop, use the `resolve-github-reviews` prompt.
 
 ### 3. Sync with Base Branch
 
