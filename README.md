@@ -244,7 +244,7 @@ The same set of prompts is available for all supported tools.
 | `new-wp-component` | Scaffold a new component in a Silver Assist WordPress plugin | `{component-name}` |
 | `new-wp-plugin` | Scaffold a new Silver Assist WordPress plugin from scratch | `{plugin-name}` |
 | `quality-check` | Run the full quality pipeline (PHPCS, PHPStan level 8, PHPUnit) for a WP plugin | — |
-| `resolve-github-reviews` | Fetch, reply to, resolve & close PR review threads (Copilot/human) | `{pr-number}` |
+| `resolve-github-reviews` | Fetch, reply to, resolve & close PR review threads (Copilot/human) | `{pr-number}`, `{repo}` |
 
 ### Workflow Stages
 
