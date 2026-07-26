@@ -3,7 +3,7 @@
  * @module @silverassist/agents-toolkit
  */
 
-export const VERSION = "2.5.1";
+export const VERSION = "2.5.2";
 
 export const PROMPTS = {
   workflow: [

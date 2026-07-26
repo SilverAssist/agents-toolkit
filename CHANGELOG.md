@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.2] - 2026-07-26
+
 ### Added
 
 - **`tsdoc-standards.instructions.md`** ([#31](https://github.com/SilverAssist/agents-toolkit/issues/31)) — TSDoc (not JSDoc) documentation standard for TypeScript, `applyTo: "**/*.{ts,tsx}"`: core rules (no `{type}` braces in `@param`/`@returns`, `@typeParam` over `@template`, `@packageDocumentation` over `@module`, inline interface-member docs), the allowed-tags table, comment templates (Server Action, React component, utility, file header), and forbidden JSDoc patterns. Ported from the canonical ruleset maintained in the Next.js repos. Registered in `INSTRUCTIONS` and categorized under the `react` stack (next to `typescript`).
