@@ -41,7 +41,7 @@ plugin-slug/
 
 ### Key Principles
 
-1. **Unified scripts** — `build-release.sh` and `release.yml` are identical across all 6 plugins.
+1. **Unified scripts** — `build-release.sh` and `release.yml` are structurally identical across all 6 plugins. The only permitted per-plugin variation is the Silver Assist package validation block at the end of `build-release.sh` (see [Validation Checks](#validation-checks)), which may omit checks for packages the plugin does not depend on.
 2. **Selective copy** — Only runtime files go into the ZIP (no tests, docs, dev configs).
 3. **Auto-detection** — The build script finds the main plugin file, slug, and version automatically.
 4. **Checksums** — Every ZIP gets MD5 and SHA-256 checksums.
@@ -80,13 +80,21 @@ git push origin v1.3.6
 
 ### Step 1: Update All Versions
 
-Use whichever version script the plugin has:
+**Selection is driven by which script the plugin ships — each plugin ships exactly one variant**,
+and `release.yml` auto-detects the same way (it runs `update-version.sh` if present, else
+`update-version-simple.sh`). Manual runs and CI therefore stay consistent *because only one script
+exists per plugin*; never ship both, or CI's preference for `update-version.sh` would silently
+diverge from a manual `update-version-simple.sh` run.
+
+- Full variant (`update-version.sh`): `acf-clone-fields`, `silver-assist-post-revalidate`, `silver-assist-security`.
+- Simple variant (`update-version-simple.sh`): `contact-form-to-api`, `leadgen-app-form`, `nextjs-graphql-hooks`.
+- New plugin: ship **only** `update-version-simple.sh` unless it genuinely needs the full variant.
 
 ```bash
 # Full variant (acf-clone-fields, silver-assist-post-revalidate, silver-assist-security)
 ./scripts/update-version.sh 1.2.0 --no-confirm --force
 
-# Simple variant (contact-form-to-api, leadgen-app-form, nextjs-graphql-hooks)
+# Simple variant (contact-form-to-api, leadgen-app-form, nextjs-graphql-hooks, new plugins by default)
 ./scripts/update-version-simple.sh 1.2.0 --no-confirm --force
 ```
 
@@ -165,7 +173,7 @@ gh run watch <run-id> --exit-status
 
 ## Unified Build Script (`scripts/build-release.sh`)
 
-This script is **identical** across all Silver Assist plugins. When setting up a new plugin, copy it verbatim.
+This script is **structurally identical** across all Silver Assist plugins. When setting up a new plugin, copy it and change only the dependency-specific asset-validation checks a plugin does not need — the single allowed per-plugin variation, documented below (see the Silver Assist package-asset table and [Key Principles](#key-principles)). Everything else must remain identical; copying it verbatim for a plugin that lacks one of those dependencies would leave an invalid validation check that fails its release build.
 
 ### What It Does
 
@@ -406,7 +414,7 @@ The build script validates these Silver Assist package assets exist in the final
 | Settings Hub CSS | `vendor/silverassist/wp-settings-hub/assets/css/settings-hub.css` |
 | GitHub Updater JS | `vendor/silverassist/wp-github-updater/assets/js/check-updates.js` |
 
-If the plugin does NOT use these packages, remove the corresponding validation checks.
+If the plugin does NOT depend on one of these packages, omit only that package's validation check when creating the plugin's `build-release.sh`. This is the single allowed per-plugin variation of the script (see [Key Principles](#key-principles)); everything else must remain identical to the template above.
 
 ---
 
@@ -428,6 +436,14 @@ on:
       version:
         description: 'Version to release (e.g. 1.2.0). Leave empty to use plugin file version.'
         required: false
+
+# Note: `workflow_dispatch` still performs a REAL release — the "Create GitHub Release"
+# step below publishes the release and creates the `v<version>` tag if it does not
+# already exist. It is NOT a dry run. Use it only to release a version whose source is
+# already committed on the checked-out ref: the "Update version" step edits files inside
+# the CI checkout without committing them back, so an uncommitted bump would ship a ZIP
+# that differs from the repository. For a true dry run, run the build steps in a separate
+# non-publishing workflow that omits the "Create GitHub Release" step.
 
 permissions:
   contents: write
@@ -456,6 +472,10 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
           else
             VERSION=$(grep -o 'Version: [0-9]\+\.[0-9]\+\.[0-9]\+' *.php 2>/dev/null | head -1 | cut -d' ' -f2)
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not detect version: no tag, no manual input, and no Version: header found in root PHP files."
+            exit 1
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "🏷️ Version: $VERSION"

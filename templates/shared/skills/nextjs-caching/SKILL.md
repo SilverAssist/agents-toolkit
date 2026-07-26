@@ -5,7 +5,7 @@ description: Caching strategy for Next.js (App Router) frontends consuming the C
 
 # Next.js Caching Skill
 
-Canonical caching strategy for Silver Side Next.js (App Router) frontends. Use it when touching data
+Canonical caching strategy for Silver Assist Side Next.js (App Router) frontends. Use it when touching data
 fetching, route segment configs, the asset/page proxy, image config, or the on-demand revalidate
 route — and when diagnosing "why isn't this page cached / why is it serving stale".
 
@@ -76,15 +76,25 @@ Pick one (ordered by risk, lowest first):
    sets `Cache-Control: public, s-maxage=2592000, stale-while-revalidate=2592000` — the **same**
    header the ISR pages emit (see `expireTime` under ISR tiers), so the CDN policy is uniform across
    static and dynamic routes. The origin stays dynamic; the CDN caches the deterministic-per-URL
-   response. Per-repo regex, no build-time risk — this is what WEB-1069 shipped.
+   response. Per-repo regex, no build-time risk — this is what WEB-1069 shipped. **Requires:** a
+   per-repo path regex in `src/proxy.ts` that matches exactly the routes you want cached **and**
+   those routes must be **public and deterministic per URL** — no auth-, cookie-, or session-
+   dependent output. A `public` edge cache serves one stored response to *every* visitor, so a
+   personalized route matched here would leak one user's content to others. Never match
+   authenticated or personalized paths.
 2. **`export const dynamic = "force-static"` (interim).** Forces the POST read to `force-cache` and
    prerenders the route as real ISR (confirmed via `prerender-manifest.json`). Removed in WEB-1058
    because a CCDS failure at build time cached a **blank page**; safer now that reads throw on 5xx at
    runtime (a failed revalidation keeps the last good cache), but full prerender is sensitive to
-   null/bad records — keep the page fully null-safe and validate per repo before adopting.
+   null/bad records. **Requires:** the page is fully null-safe (every field access guarded); the read
+   throws on failure **at build/prerender time too** (not only during runtime revalidation) so a failed
+   read aborts generation instead of prerendering a cacheable blank/error page — the exact WEB-1058
+   regression; AND the client throws on 5xx at runtime (so ISR keeps the previous version instead of
+   caching an error). Re-validate this per repository before adopting the strategy.
 3. **`cacheComponents: true` + `use cache` (strategic).** Wrap the POST read in `use cache` so its data
-   lands in the static shell (PPR). Next-recommended long term; larger migration — do **not** mix ad
-   hoc with route-segment `export const revalidate`.
+   lands in the static shell (PPR). Next-recommended long term; larger migration. **Requires:** a
+   deliberate PPR migration for the whole route segment; do **not** mix ad hoc with route-segment
+   `export const revalidate` (the two models conflict).
 
 ---
 
@@ -164,7 +174,9 @@ is intentionally **long** (WEB-1069):
   30d revalidate). Set it to `5184000` (60d) so a 30d page yields the same header the proxy sets on
   dynamic pages: `s-maxage=2592000, stale-while-revalidate=2592000`.
 - The long default is safe because a missed webhook still self-heals within 30d; use `tags` for
-  immediate surgical invalidation. Shorter tiers (24h/7d) are fine per-route if a source is volatile.
+  immediate surgical invalidation. Shorter tiers (24h/7d) are appropriate per-route when the data
+  source updates more frequently than the 30d default — for example, sources that update daily or
+  weekly. Sources that update less frequently than 30d should keep the default.
 - Default to `export const revalidate` over `dynamic = "force-static"`: a failed ISR revalidation then
   preserves the last good cache instead of overwriting it with a broken page. Pair with a client that
   **throws on 5xx at runtime** (so ISR keeps the previous version) but returns an error during the
@@ -184,6 +196,10 @@ revalidatePath(path, "page");        // or "layout"
 revalidateTag(tag);                  // granular per-state / per-city tags
 if (invalidateCDN) await invalidateCloudFrontPaths([path]);
 ```
+
+If `invalidateCloudFrontPaths` throws, log the error and surface it to the caller — do **not**
+silently swallow it. The Next.js cache will be fresh but the CDN will serve stale until its TTL
+expires; an operator must retry the CloudFront invalidation manually.
 
 ---
 
@@ -226,5 +242,12 @@ curl -sI https://<host>/<care-type>/<state>/<city> | grep -i cache-control
 ```
 
 In the build output, `●` (or "Static"/"ISR") means prerendered; `ƒ` ("Dynamic") means it renders per
-request — a POST-read page should be the former. `next.config` `logging.fetches.fullUrl: true` shows
-per-fetch cache decisions in dev.
+request. Which one to expect depends on the strategy chosen in "Making a POST-read page cacheable":
+strategy **2** (`force-static`) prerenders fully, so it shows `●`; strategy **3** (`use cache` / PPR)
+shows `●` only when the whole route is static — if dynamic holes remain it renders as a **partial
+prerender** and Next marks it `◐` (partial), which is still correct output, so do not reject it.
+Strategy **1** (CDN edge override) intentionally leaves the route as `ƒ` — the page is CDN-cached at
+the edge even though Next classifies it as dynamic. Because the symbol alone is ambiguous across
+strategies, verify with the `curl -sI … | grep -i cache-control` check above and defer to the
+installed Next.js version's build-output legend rather than the symbol. `next.config`
+`logging.fetches.fullUrl: true` shows per-fetch cache decisions in dev.

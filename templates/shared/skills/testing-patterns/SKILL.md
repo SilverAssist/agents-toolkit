@@ -75,6 +75,24 @@ jest.mock('stripe', () => ({
 
 ## Server Action Testing Pattern
 
+### Mocking `next/navigation`
+
+Server Actions that call `redirect()` or use routing helpers require `next/navigation` to be mocked, since it is not available in the Jest test environment.
+
+```typescript
+// Mock next/navigation BEFORE imports.
+// redirect() must THROW like the real implementation — Next signals a redirect by throwing
+// NEXT_REDIRECT to terminate the action's control flow. A plain `jest.fn()` no-op would let
+// code after redirect() keep running, producing outcomes impossible in production. Throw a
+// sentinel and assert on it (e.g. `await expect(action()).rejects.toThrow(/NEXT_REDIRECT/)`).
+jest.mock('next/navigation', () => ({
+  redirect: jest.fn((url) => {
+    throw new Error(`NEXT_REDIRECT: ${url}`);
+  }),
+  useRouter: jest.fn(() => ({ push: jest.fn() })),
+}));
+```
+
 ### Basic Server Action Test
 
 ```typescript
@@ -112,6 +130,26 @@ describe('submitWizardToSalesforce', () => {
     // 5. Assert
     expect(result.success).toBe(true);
     expect(result.leadId).toBeDefined();
+  });
+
+  it('should return failure state when the API rejects', async () => {
+    // Simulate an error thrown by the mocked dependency
+    mockCreateLead.mockRejectedValue(new Error('API error'));
+
+    const formData = new FormData();
+    formData.append('email', 'test@example.com');
+    formData.append('firstName', 'John');
+
+    const result = await submitWizardToSalesforce(
+      { success: false, message: '', timestamp: 0 },
+      formData
+    );
+
+    // Assert the error path for THIS action: it catches the API failure and returns a
+    // failure state. Match the action's own contract — actions that instead throw (e.g.
+    // via redirect(), see the mock above) must be asserted with `rejects.toThrow(...)`.
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('error');
   });
 });
 ```

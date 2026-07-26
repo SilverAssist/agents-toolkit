@@ -25,9 +25,9 @@ This skill provides guidelines for organizing code following Domain-Driven Desig
 
 ### ❌ DON'T
 
-- Create generic folders like "helpers", "services", "utils" at root level
+- Create generic folders like `src/helpers/`, `src/services/`, or `src/utils/` directly under `src/` (a scoped `src/lib/utils/` for minimal cross-domain primitives is allowed)
 - Mix different domain concerns in the same folder
-- Create deeply nested folder structures (max 3 levels)
+- Create folder hierarchies deeper than 3 levels below `src/` (e.g., `src/components/auth/login-form/` is allowed; `src/components/auth/login-form/subform/` is not)
 - Use abbreviations in folder names
 
 ## Project Structure
@@ -228,7 +228,7 @@ Ask these questions to identify domains:
 ### ❌ Generic Folder Anti-Patterns
 
 ```
-# ❌ BAD: Generic folders
+# ❌ BAD: Generic folders at src/ root
 src/
 ├── components/
 ├── helpers/        # What kind of helpers?
@@ -236,6 +236,11 @@ src/
 ├── utils/          # Catch-all folder
 └── types/          # Types should live with their domain
 ```
+
+### Shared TypeScript Types
+
+- If a type is used by **3 or more domains**, place it in `src/lib/types/` — the shared-types exception lives under the allowed `src/lib/` scope, **not** a generic `src/types/` root (which the anti-pattern above forbids). Export it from that folder's own barrel (`src/lib/types/index.ts`) and import it as `@/lib/types`. A centrally shared primitive has **no owning domain**, so do not route it through a domain barrel — that would invert the intended dependency direction (domains → shared, never shared → a domain).
+- Otherwise, **colocate the type with its primary domain** (e.g., `src/lib/payment/types.ts`, `src/components/auth/types.ts`) and re-export it through that domain's barrel when other domains need it.
 
 ### ✅ Domain-Oriented Structure
 
