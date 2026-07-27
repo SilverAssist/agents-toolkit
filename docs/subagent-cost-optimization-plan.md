@@ -360,12 +360,16 @@ optional `--model-pins {on,off}` flag (default `on`) so a user can install *with
 
 ## 6. Rollout
 
-### Milestone 1 — Documentation-only (this PR)
+> **Status (2026-07-27):** Milestones 1–4 shipped on branch
+> `feature/39-m2-copilot-model-pins`. Milestone 5 is a post-merge measurement
+> activity that cannot be executed in code — see the checklist below.
+
+### Milestone 1 — Documentation-only ✅ shipped (`v2.6.0` era, commit `676afb2`)
 
 Ship *only* this plan file (`docs/subagent-cost-optimization-plan.md`) and get it reviewed.
 No template edits.
 
-### Milestone 2 — Copilot pins + docs (minor bump: `X.Y+1.0`)
+### Milestone 2 — Copilot pins + docs ✅ shipped in `v2.7.0` (commit `edd6b50`)
 
 - Add cheap-tier `model:` frontmatter to the 13 prompts in §5.2A.1.
 - Add explicit smart-tier `model:` frontmatter to the 6 prompts in §5.2A.2.
@@ -375,27 +379,59 @@ No template edits.
 - Bump `VERSION` in [package.json](../package.json) and [src/index.js](../src/index.js) together.
 - Update `CHANGELOG.md` `[Unreleased]`.
 
-### Milestone 3 — Claude installer transform (minor bump)
+### Milestone 3 — Claude installer transform ✅ shipped in `v2.8.0` (commit `aea26cd`)
 
 - Implement §5.2B (Copilot→Claude `model:` remap) in [bin/cli.js](../bin/cli.js).
 - Add [src/cli.test.js](../src/cli.test.js) coverage: spawn install, assert `.claude/commands/*.md`
   contains `model: haiku` (not the Copilot name) and that stripping works when the tag is
   unrecognized.
 
-### Milestone 4 — `Explore` override + config surface + `core-review --budget` (minor bump)
+### Milestone 4 — `Explore` override + config surface + `core-review --budget` ✅ shipped in `v2.9.0` (commit `45862d6`)
 
 - Add `templates/shared/agents/Explore.md` (§5.2C).
 - Extend [bin/cli.js](../bin/cli.js) with `agents/` install step and `--no-agent-overrides` flag.
 - Ship the `.agents-toolkit.json` `models` block (§5.2G) + `--model-pins` flag (§5.2H).
 - Update [templates/shared/skills/core-review/SKILL.md](../templates/shared/skills/core-review/SKILL.md) per §5.2D — model pin + new `--budget` argument.
-- Update orchestrator prompts (`create-github-pr`, `create-pr`, `finalize-github-pr`, `finalize-pr`, `resolve-github-reviews`) to pass explicit `--budget` when invoking `core-review`.
-- Update [templates/shared/prompts/resolve-github-reviews.prompt.md](../templates/shared/prompts/resolve-github-reviews.prompt.md) per §5.2E.
+- Update orchestrator prompts (`create-github-pr`, `finalize-github-pr`, `resolve-github-reviews`) to pass explicit `--budget` when invoking `core-review`. `create-pr` / `finalize-pr` (Jira variants) do not reference `core-review` today; extend when they do.
+- Update [templates/shared/prompts/resolve-github-reviews.prompt.md](../templates/shared/prompts/resolve-github-reviews.prompt.md) per §5.2E — the cheap-switch guidance ships in the header blockquote already added in M2.
 
-### Milestone 5 — Measure
+### Milestone 5 — Measure (post-merge, no code changes)
 
-After Milestone 4 ships, ask two heavy users to run their standard workflows for a week and
-compare token usage against the previous week's baseline. Adjust which prompts stay pinned
-cheap based on real failure modes.
+Once the M4 PR merges to `main` and is released as `v2.9.0`, run a **two-week measurement window**
+comparing token spend against the pre-M2 baseline. Not something the coding agent can do
+inside this branch — it needs live usage.
+
+**How to run it**
+
+1. **Pick two heavy users** (one primarily on Claude Code, one primarily on Copilot). Skip Codex
+   — no per-prompt pin, so no expected delta.
+2. **Baseline week (already captured)** — the git log before commit `edd6b50` (M2). Both users
+   were running the same workflows on the smart tier by default.
+3. **Post-M4 week** — the users run their standard PR / review / plan loops for 5 working days
+   with the default install (no `--model-pins off`, no `models.*` overrides).
+4. **Metrics to record per user, per day:**
+   - Total input tokens (Claude: dashboard export; Copilot: `gh copilot metrics` if available,
+     else user-reported).
+   - Total output tokens.
+   - Number of prompts invoked, broken down by tier (parse the `model:` alias in the shipped
+     `.claude/commands/*.md` or `.github/prompts/*.prompt.md`).
+   - Failure count: prompts where the cheap tier produced a wrong result that had to be
+     re-run on the smart tier. **Each failure is a candidate to demote back to smart-tier in the
+     shipped default.**
+5. **Deliverable** — a follow-up issue posted to
+   [#39](https://github.com/SilverAssist/agents-toolkit/issues/39) or a new tracking issue with:
+   - Aggregate token delta (%) vs baseline.
+   - Per-prompt failure count.
+   - Recommended tier adjustments for the next minor bump.
+
+**Failure-driven demotion policy.** If a prompt currently pinned cheap fails ≥ 2 out of 5 runs
+for the same class of task, move it to the smart-tier list in §5.2A.2 and ship the demotion in a
+patch release. Do **not** wait for the "perfect" list — the plan explicitly favors iterative
+adjustment over up-front classification (§1.1).
+
+**Nothing to code here.** The measurement lives outside the repo; the outputs feed back into
+`templates/shared/prompts/*.prompt.md` frontmatter and `templates/shared/prompts/README.md` as
+follow-up commits.
 
 ## 7. Risks & mitigations
 
