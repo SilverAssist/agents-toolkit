@@ -400,9 +400,11 @@ function linkSkill(canonicalSkillDir, agentSkillLinkPath, options = {}) {
  * @param {boolean} [params.dryRun] - Only report planned changes
  * @param {boolean} [params.copy] - Copy instead of symlink
  * @param {(name: string) => boolean} [params.dirFilter] - Skill folder filter
+ * @param {'on'|'off'} [params.modelPins] - When `'off'`, strip `model:` from every `SKILL.md` (honours `--model-pins off`)
+ * @param {{ cheap?: string, smart?: string }} [params.claudeModels] - When set, substitutes `haiku`/`sonnet`/`opus` in `SKILL.md` `model:` with the configured value
  * @returns {{ written: number, planned: number, installedSkills: Record<string, { canonicalDir: string }> }} Aggregated change counters and installed skill metadata
  */
-function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun = false, copy = false, dirFilter = null }) {
+function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun = false, copy = false, dirFilter = null, modelPins = 'on', claudeModels = null }) {
   const totals = { written: 0, planned: 0, installedSkills: {} };
   const skillsSrc = path.join(TEMPLATES_DIR, 'shared', 'skills');
   const canonicalDir = getAgentsSkillsDir(isGlobal);
@@ -411,8 +413,22 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
     return totals;
   }
 
+  // Build a per-file transform for SKILL.md frontmatter (`model:` rewrite/strip).
+  // Applied when populating the canonical store so every agent symlink inherits
+  // the transformed bytes. Non-SKILL.md files in a skill folder (assets,
+  // examples, scripts) pass through unchanged because `transformSkillFrontmatter`
+  // is a no-op on content without a `---` frontmatter block.
+  const shippedClaude = DEFAULT_CONFIG.models.claude;
+  const resolvedClaude = claudeModels || shippedClaude;
+  const transformNeeded = modelPins === 'off'
+    || resolvedClaude.cheap !== shippedClaude.cheap
+    || resolvedClaude.smart !== shippedClaude.smart;
+  const transformContent = transformNeeded
+    ? (content) => transformSkillFrontmatter(content, { claudeModels: resolvedClaude, stripModel: modelPins === 'off' })
+    : null;
+
   // 1. Populate the canonical store once (filtered by stack).
-  const canonicalResult = copyDir(skillsSrc, canonicalDir, { force, dryRun, dirFilter });
+  const canonicalResult = copyDir(skillsSrc, canonicalDir, { force, dryRun, dirFilter, transformContent });
   totals.written += canonicalResult.written;
   totals.planned += canonicalResult.planned;
 
@@ -521,6 +537,63 @@ function transformFrontmatterForClaude(content, options = {}) {
     else if ((alias === 'sonnet' || alias === 'opus') && claudeModels.smart) resolved = claudeModels.smart;
   }
   return `---\nmodel: ${resolved}\n---\n\n${body}`;
+}
+
+/**
+ * Rewrite the `model:` line inside a `SKILL.md` frontmatter without destroying
+ * the other npx-skills-standard fields (`name`, `description`, `allowed-tools`,
+ * etc.). Skills use scalar `model: haiku` (per the `npx skills` standard),
+ * and this transform mirrors {@link transformFrontmatterForClaude} for that
+ * single field:
+ *   - `stripModel: true` → remove the `model:` line (honours `--model-pins off`)
+ *   - `claudeModels.cheap` set → substitute `haiku` with the configured value
+ *   - `claudeModels.smart` set → substitute `sonnet`/`opus` with the configured value
+ *   - Otherwise → return content unchanged
+ *
+ * The skill's `model:` field is a **Claude Code-only concern** — Copilot and
+ * Codex do not read `model:` from a skill's frontmatter, they inherit the
+ * invoking prompt's model. So this transform is applied when populating the
+ * canonical `.agents/skills/` store regardless of the requesting agent; the
+ * Copilot symlinks reference the same bytes and simply ignore the field.
+ * @param {string} content - Original SKILL.md content
+ * @param {Object} [options] - Transform options
+ * @param {{ cheap?: string, smart?: string }} [options.claudeModels] - Aliases from `.agents-toolkit.json` `models.claude`
+ * @param {boolean} [options.stripModel] - When true, drop `model:` entirely
+ * @returns {string} Content with rewritten (or stripped) `model:` line, or the original content if no `model:` was present
+ */
+function transformSkillFrontmatter(content, options = {}) {
+  const { claudeModels, stripModel = false } = options;
+  const match = content.match(/^---\n([\s\S]*?)\n---\n(\n?)/);
+  if (!match) return content;
+
+  const frontmatterBody = match[1];
+  const trailingBlank = match[2];
+  const body = content.slice(match[0].length);
+
+  const modelLineRegex = /^model:[ \t]+([^\n]+)\n?/m;
+  const modelMatch = frontmatterBody.match(modelLineRegex);
+  if (!modelMatch) return content;
+
+  if (stripModel) {
+    const stripped = frontmatterBody
+      .replace(modelLineRegex, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/\n+$/, '');
+    return `---\n${stripped}\n---\n${trailingBlank}${body}`;
+  }
+
+  const currentValue = modelMatch[1].trim();
+  let alias = null;
+  if (/haiku/i.test(currentValue)) alias = 'cheap';
+  else if (/sonnet|opus/i.test(currentValue)) alias = 'smart';
+  if (!alias) return content;
+  if (!claudeModels) return content;
+
+  const resolved = alias === 'cheap' ? claudeModels.cheap : claudeModels.smart;
+  if (!resolved || resolved === currentValue) return content;
+
+  const rewrittenBody = frontmatterBody.replace(modelLineRegex, `model: ${resolved}\n`).replace(/\n+$/, '');
+  return `---\n${rewrittenBody}\n---\n${trailingBlank}${body}`;
 }
 
 /**
@@ -1004,6 +1077,8 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
       dryRun,
       copy,
       dirFilter: makeFilter('skills'),
+      modelPins,
+      claudeModels: models?.claude,
     });
     totalChanges += getChangeCount(result, dryRun);
     // Merge installed skills for lockfile (agent dir = .github/skills or ~/.copilot/skills).
@@ -1190,6 +1265,8 @@ function installClaude(options = {}) {
       dryRun,
       copy,
       dirFilter: makeFilter('skills'),
+      modelPins,
+      claudeModels: models?.claude,
     });
     totalChanges += getChangeCount(result, dryRun);
     for (const [name, meta] of Object.entries(result.installedSkills)) {
@@ -1296,6 +1373,12 @@ function restore(options = {}) {
     return shouldIncludeFile(basename, category, filters);
   };
 
+  // Re-resolve model settings from the config file chain so restore re-applies
+  // the same `SKILL.md` `model:` transforms as install (canonical skills are
+  // overwritten on every restore; without this the transformed frontmatter
+  // would be reverted to the shipped defaults).
+  const { modelPins, models } = resolveModelSettings({});
+
   // Determine which agent dirs were recorded in the lockfile.
   const agentDirs = new Set();
   for (const meta of Object.values(lockfile.skills || {})) {
@@ -1315,6 +1398,8 @@ function restore(options = {}) {
       dryRun,
       copy,
       dirFilter: makeFilter('skills'),
+      modelPins,
+      claudeModels: models?.claude,
     });
     totalRestored += dryRun ? result.planned : result.written;
   }

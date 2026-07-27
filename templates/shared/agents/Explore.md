@@ -7,6 +7,15 @@ model: haiku
 
 # Explore (cheap-tier override)
 
+> **Filename rule — do not rename this file.** Claude Code loads subagents by
+> filename stem (`.claude/agents/<name>.md`) and matches overrides against the
+> built-in subagent's exact name. This file overrides Claude's built-in `Explore`
+> subagent, so the stem **must** stay `Explore` (case-sensitive: `E` uppercase,
+> rest lowercase). Renaming to `EXPLORE.md`, `explore.md`, or any kebab-case
+> variant registers a *new* subagent instead of an override, leaving the built-in
+> `Explore` on its default (smart) tier — defeating this file's purpose. This is
+> a Claude Code protocol requirement, not a stylistic choice.
+
 Project-local override that pins the built-in `Explore` subagent to the cheap
 tier (`haiku`). Rationale: `Explore` runs during nearly every planning /
 review / PR cycle and does only **read-only** searches — the smart tier is

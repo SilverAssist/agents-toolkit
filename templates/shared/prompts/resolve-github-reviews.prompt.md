@@ -8,7 +8,7 @@ model:
 
 # Resolve GitHub PR Reviews
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the *fix step* may need real reasoning. For the fetch/reply/resolve mechanics you can temporarily switch to the cheap tier by editing this file's `model:` frontmatter (or reinstall with `--model-pins off` so the picker/session default wins) and switch back for the fix. The Copilot picker and Claude `/model` cannot override a `model:` pin. On Codex there is no per-prompt field, so `codex --model` is the effective session-level switch.
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the *fix step* may need real reasoning. The whole invocation runs on the pinned tier; there is **no per-turn switch during a single run** because `model:` locks the model for the invocation (neither the Copilot picker nor Claude `/model` can override it). To run the mechanical fetch/reply/resolve phases on the cheap tier instead, you have three options: (a) edit this file's `model:` frontmatter to the cheap-tier value before running and revert after, (b) reinstall the toolkit with `--model-pins off` so the Copilot picker / Claude `/model` / session default takes effect, or (c) run the fetch/reply/resolve `gh`/GraphQL commands standalone from a cheap-tier chat and invoke this prompt only for the fix step. On Codex there is no per-prompt field, so `codex --model` is the effective session-level switch.
 
 Clear a pull request's review threads end-to-end: **fetch → address → reply → resolve → verify `0` unresolved**.
 Works for both **Copilot** and **human** reviews.

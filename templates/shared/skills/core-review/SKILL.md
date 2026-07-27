@@ -77,9 +77,15 @@ realistically introduce:
 
 | Budget       | Scope                                                                            | When callers use it                                                             |
 | ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `quick`      | Just the diff (`git diff` vs the base branch) plus the files it directly touches | `finalize-*` and `resolve-github-reviews` pre-push fix batches                  |
-| `medium`     | Diff + one-hop neighbours: importers/consumers, docs & indexes that list the changed symbol or asset, sibling files in the same folder | `create-pr` / `create-github-pr` pre-PR pass — the default when unspecified     |
+| `quick`      | Just the diff (`git diff` vs the base branch) plus the files it directly touches | `finalize-github-pr` and `resolve-github-reviews` pre-push fix batches          |
+| `medium`     | Diff + one-hop neighbours: importers/consumers, docs & indexes that list the changed symbol or asset, sibling files in the same folder | `create-github-pr` pre-PR pass — the default when unspecified                   |
 | `thorough`   | Whole repository — every file, index, README, workflow, and cross-repo doc claim | Standalone pre-release review, or when the diff touches architecture / renaming |
+
+> **Only the GitHub-tracker orchestrators wire this skill today** (`create-github-pr`,
+> `finalize-github-pr`, `resolve-github-reviews`). The Jira-tracker variants (`create-pr`,
+> `finalize-pr`) do **not** invoke `core-review` — they run validations and push directly.
+> Standalone callers on Jira projects can invoke `core-review` manually with an explicit
+> `--budget`; the callers table above lists only the actual auto-wired invocations.
 
 **Cheap tier is safe at every budget.** `thorough` does not automatically switch to the smart
 tier — it just widens the file set. Callers who genuinely need reasoning (architecture reviews,

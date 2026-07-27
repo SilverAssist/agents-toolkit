@@ -887,6 +887,37 @@ test('core-review skill ships model: haiku and --budget hint', () => {
   assert.match(content, /## `--budget \{quick,medium,thorough\}`/, 'core-review must document the budget scoping');
 });
 
+test('--model-pins off strips model: from installed SKILL.md frontmatter', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--skills-only', '--model-pins', 'off'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const canonical = fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'core-review', 'SKILL.md'), 'utf-8');
+  assert.doesNotMatch(canonical, /^model:/m, 'model: line must be stripped from canonical SKILL.md with --model-pins off');
+  // Other npx-skills-standard fields must survive (name, description, argument-hint, allowed-tools).
+  assert.match(canonical, /^name: core-review$/m, 'name: field must survive --model-pins off');
+  assert.match(canonical, /^description:/m, 'description: field must survive --model-pins off');
+  assert.match(canonical, /^argument-hint:/m, 'argument-hint: field must survive --model-pins off');
+});
+
+test('models.claude.cheap override substitutes haiku in installed SKILL.md frontmatter', (t) => {
+  const tempDir = createTempProject(t);
+  fs.writeFileSync(
+    path.join(tempDir, '.agents-toolkit.json'),
+    JSON.stringify({ models: { claude: { cheap: 'sonnet' } } }, null, 2)
+  );
+
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--skills-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const canonical = fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'core-review', 'SKILL.md'), 'utf-8');
+  assert.match(canonical, /^model: sonnet$/m, 'core-review model: must be rewritten from haiku to configured cheap value');
+  assert.doesNotMatch(canonical, /^model: haiku$/m, 'shipped haiku pin must be replaced');
+  // Other frontmatter fields must survive the substitution.
+  assert.match(canonical, /^name: core-review$/m, 'name: field must survive cheap-tier substitution');
+  assert.match(canonical, /^description:/m, 'description: field must survive cheap-tier substitution');
+});
+
 test('orchestrator prompts pass explicit --budget to core-review', () => {
   const preview = (name) => fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
   assert.match(preview('create-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget medium`/, 'create-github-pr must pass --budget medium');
