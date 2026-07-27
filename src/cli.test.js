@@ -736,3 +736,42 @@ test('core-review skill is included for --tracker github, excluded for --tracker
   assert.equal(jira.status, 0, jira.stderr);
   assert.doesNotMatch(jira.stdout, /core-review[\\/]SKILL\.md/);
 });
+
+// ─── #39 M3: Copilot → Claude model: frontmatter remap ────────────────────────
+
+test('claude install remaps cheap-tier Copilot model to `haiku` alias', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const file = path.join(tempDir, '.claude', 'commands', 'quality-check.md');
+  const content = fs.readFileSync(file, 'utf-8');
+
+  assert.match(content, /^---\nmodel: haiku\n---\n\n/, 'expected haiku alias frontmatter');
+  assert.doesNotMatch(content, /Claude Haiku 4\.5 \(copilot\)/, 'Copilot vendor name must not leak into Claude commands');
+  assert.doesNotMatch(content, /GPT-5 mini \(copilot\)/, 'GPT-5 fallback must be dropped for Claude');
+  assert.doesNotMatch(content, /^agent:/m, 'Copilot-only `agent:` field must be stripped');
+  assert.doesNotMatch(content, /^tools:/m, 'Copilot-only `tools:` field must be stripped');
+});
+
+test('claude install remaps smart-tier Copilot model to `sonnet` alias', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const file = path.join(tempDir, '.claude', 'commands', 'create-plan.md');
+  const content = fs.readFileSync(file, 'utf-8');
+
+  assert.match(content, /^---\nmodel: sonnet\n---\n\n/, 'expected sonnet alias frontmatter');
+  assert.doesNotMatch(content, /Claude Sonnet 4\.5 \(copilot\)/, 'Copilot vendor name must not leak into Claude commands');
+  assert.doesNotMatch(content, /GPT-5 \(copilot\)/, 'GPT-5 fallback must be dropped for Claude');
+});
+
+test('claude install preserves the > **Model:** blockquote body text', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const content = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'quality-check.md'), 'utf-8');
+  assert.match(content, /> \*\*Model:\*\* Default cheap tier/, 'body-level model note must survive the transform');
+});

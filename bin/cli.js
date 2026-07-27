@@ -422,13 +422,91 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
 }
 
 /**
- * Strip GitHub Copilot frontmatter from a prompt file
- * Removes the ---\nagent: ...\ndescription: ...\n--- block
+ * Strip GitHub Copilot frontmatter from a prompt file.
+ * Removes the ---\nagent: ...\ndescription: ...\n--- block wholesale.
+ * Prefer {@link transformFrontmatterForClaude} for the Claude install path so
+ * `model:` pins survive as Claude aliases.
  * @param {string} content - File content
  * @returns {string} Content without Copilot frontmatter
  */
 function stripCopilotFrontmatter(content) {
   return content.replace(/^---\n(?:[\s\S]*?\n)?---\n\n?/, '');
+}
+
+/**
+ * Extract the first Claude model alias from a Copilot frontmatter block.
+ * Recognized substrings (case-insensitive, first match wins):
+ *   - "haiku"  → "haiku"
+ *   - "sonnet" → "sonnet"
+ *   - "opus"   → "opus"
+ * Non-Claude entries (e.g. `GPT-5 mini (copilot)`) are ignored so the fallback
+ * chain "Claude Haiku 4.5 (copilot)" → "GPT-5 mini (copilot)" collapses to
+ * `haiku` when copied into a Claude Code target.
+ * @param {string} frontmatterBody - Raw frontmatter body without --- delimiters
+ * @returns {string|null} Claude alias or null if none matched
+ */
+function extractClaudeAlias(frontmatterBody) {
+  const scalarMatch = frontmatterBody.match(/^model:[ \t]+([^\n]+)$/m);
+  const arrayMatch = frontmatterBody.match(/^model:[ \t]*\n((?:[ \t]*-[ \t]*[^\n]+\n?)+)/m);
+
+  const values = [];
+  if (scalarMatch && scalarMatch[1].trim()) {
+    values.push(scalarMatch[1].trim());
+  } else if (arrayMatch) {
+    for (const line of arrayMatch[1].split('\n')) {
+      const item = line.match(/^[ \t]*-[ \t]*(.+?)[ \t]*$/);
+      if (item) values.push(item[1]);
+    }
+  }
+
+  for (const value of values) {
+    if (/haiku/i.test(value)) return 'haiku';
+    if (/sonnet/i.test(value)) return 'sonnet';
+    if (/opus/i.test(value)) return 'opus';
+  }
+  return null;
+}
+
+/**
+ * Transform Copilot prompt frontmatter into Claude Code frontmatter.
+ * - Strips Copilot-only fields (`agent`, `description`, `tools`).
+ * - Reads the `model:` block (scalar or prioritized array) and remaps the
+ *   first recognized Copilot vendor-qualified name to a Claude alias via
+ *   {@link extractClaudeAlias}.
+ * - If a Claude alias survives, emits `---\nmodel: <alias>\n---\n\n` before
+ *   the body; otherwise strips the frontmatter entirely so Claude falls back
+ *   to the inherited session model.
+ * Optionally overrides the resolved alias with a user-configured value from
+ * `.agents-toolkit.json` `models.claude.{cheap,smart}` (M4 config surface).
+ * @param {string} content - Original file content (Copilot .prompt.md)
+ * @param {Object} [options] - Transform options
+ * @param {{ cheap?: string, smart?: string }} [options.claudeModels] - Aliases
+ *   from `.agents-toolkit.json` `models.claude.{cheap,smart}`. When present,
+ *   `haiku` is remapped to `models.claude.cheap` and `sonnet`/`opus` to
+ *   `models.claude.smart`.
+ * @param {boolean} [options.stripModel] - When true, drops the `model:` line
+ *   even if a Claude alias survives (honours `--model-pins off`).
+ * @returns {string} Content with Claude-compatible frontmatter
+ */
+function transformFrontmatterForClaude(content, options = {}) {
+  const { claudeModels, stripModel = false } = options;
+  const match = content.match(/^---\n([\s\S]*?)\n---\n\n?/);
+  if (!match) return content;
+
+  const frontmatterBody = match[1];
+  const body = content.slice(match[0].length);
+
+  if (stripModel) return body;
+
+  const alias = extractClaudeAlias(frontmatterBody);
+  if (!alias) return body;
+
+  let resolved = alias;
+  if (claudeModels) {
+    if (alias === 'haiku' && claudeModels.cheap) resolved = claudeModels.cheap;
+    else if ((alias === 'sonnet' || alias === 'opus') && claudeModels.smart) resolved = claudeModels.smart;
+  }
+  return `---\nmodel: ${resolved}\n---\n\n${body}`;
 }
 
 /**
@@ -904,7 +982,7 @@ function installCodex(options = {}) {
  * @param {Object} options - Install options
  */
 function installClaude(options = {}) {
-  const { force = false, dryRun = false, copy = false, global: isGlobal = false, filters = { stack: 'all', tracker: 'all' } } = options;
+  const { force = false, dryRun = false, copy = false, global: isGlobal = false, filters = { stack: 'all', tracker: 'all' }, modelPins = 'on', models = {} } = options;
   const scope = getInstallScope(options);
   const claudeDir = getClaudeTargetDir(isGlobal);
   const githubDir = getTargetDir(isGlobal);
@@ -919,6 +997,12 @@ function installClaude(options = {}) {
 
   const promptsFilter = makeFilter('prompts');
   const partialsFilter = makeFilter('partials');
+  const claudeTransform = (content) => adaptPathsForClaude(
+    transformFrontmatterForClaude(content, {
+      claudeModels: models.claude,
+      stripModel: modelPins === 'off',
+    })
+  );
 
   log('\n🤖 Claude Code Installer\n', 'bright');
 
@@ -934,7 +1018,7 @@ function installClaude(options = {}) {
       filter: promptsFilter,
       partialsFilter,
       renameFile: (name) => name.replace(/\.prompt\.md$/, '.md'),
-      transformContent: (content) => adaptPathsForClaude(stripCopilotFrontmatter(content)),
+      transformContent: claudeTransform,
     });
     totalChanges += getChangeCount(result, dryRun);
 

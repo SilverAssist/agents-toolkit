@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-07-27
+
+### Added
+
+- **Claude Code installer remaps `model:` frontmatter to Claude aliases** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — the `installClaude` transform now reads the shipped Copilot `model:` block (scalar or prioritized array) and rewrites it to a Claude alias before writing to `.claude/commands/*.md`:
+  - `*Haiku*` → `haiku` (cheap tier)
+  - `*Sonnet*` → `sonnet` (smart tier)
+  - `*Opus*` → `opus`
+  - Non-Claude entries (e.g. `GPT-5 mini (copilot)`) are dropped; the first matching entry wins so the cheap-first fallback chain collapses cleanly to a single alias.
+- **`extractClaudeAlias` + `transformFrontmatterForClaude` helpers** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) in `bin/cli.js` — replace the previous whole-frontmatter strip on the Claude install path with a two-stage transform (extract alias → rebuild frontmatter with just `model: <alias>`). Copilot-only fields (`agent`, `description`, `tools`) are still stripped. Prompts without any recognized `model:` still ship with no frontmatter (Claude falls back to the inherited session model — no behaviour change).
+- **M3 tests** in `src/cli.test.js` covering the cheap-tier (`quality-check.md` → `model: haiku`), smart-tier (`create-plan.md` → `model: sonnet`), Copilot-name leakage, and body-level `**Model:**` blockquote survival.
+
+### Notes
+
+- **Backward compatible.** Prompts without `model:` frontmatter still install as before (no frontmatter block in Claude output). The transform only fires when the shipped file carries a `model:` block.
+- **Independent of M4.** The new function accepts optional `claudeModels` and `stripModel` parameters that the M4 config surface (`.agents-toolkit.json` `models.claude.{cheap,smart}` + `--model-pins off`) will wire up later; today those parameters default to their zero values so the behaviour is exactly "remap and ship the alias".
+
 ## [2.7.0] - 2026-07-27
 
 ### Added
