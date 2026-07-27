@@ -101,12 +101,23 @@ realistically introduce:
 **Cheap tier is safe at every budget.** `thorough` does not automatically switch to the smart
 tier — it just widens the file set. Callers who genuinely need reasoning (architecture reviews,
 renames that span layers) can pass `--budget thorough` **and** escalate the model. Escalation
-mechanics differ per agent — the `model:` pin on the *invoking* prompt (or the reinstall-time
-`--model-pins off` / `.agents-toolkit.json` `models` overrides) wins over the Copilot picker and
-Claude `/model`; on Codex, `codex --model gpt-5-codex` is the effective session-level switch.
-For a one-off standalone run of this skill, the Copilot picker / Claude `/model sonnet` work
-because there is no wrapping prompt with a pin. Do **not** hard-code a smart-tier override in
-the calling prompt: the caller decides, not this skill.
+mechanics are platform-specific:
+
+- **Copilot** — skills don't have a `model:` boundary, so the invoking prompt's pin (or the
+  picker choice when this skill is invoked standalone from a fresh chat) governs. Set the
+  picker to a smart model before a one-off standalone run.
+- **Codex** — no per-skill pin either; launch the smart-tier session with
+  `codex --model gpt-5-codex` (or your provider's smart tier).
+- **Claude Code** — the skill's own `model: haiku` frontmatter locks the tier for the pass
+  **even on a standalone invocation**: `/model sonnet` in the chat does **not** override a
+  `SKILL.md model:` pin. To escalate on Claude, either (a) edit the installed
+  `.claude/skills/core-review/SKILL.md` `model:` value before running, (b) set
+  `models.claude.cheap` to `sonnet` (or `opus`) in `.agents-toolkit.json` and reinstall so the
+  shipped pin is remapped, or (c) reinstall with `--model-pins off` so the skill ships without
+  a `model:` and the outer `/model` takes effect.
+
+Do **not** hard-code a smart-tier override in the calling prompt: the caller decides, not this
+skill.
 
 The default when `--budget` is omitted is `medium`. `--budget quick` still runs the full
 checklist below — it just narrows the file set the checklist is applied to.

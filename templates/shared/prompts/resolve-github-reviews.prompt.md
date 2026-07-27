@@ -3,7 +3,7 @@ agent: agent
 description: Fetch, respond to, resolve, and close GitHub PR review comments (Copilot or human)
 model:
   - Claude Sonnet 4.5 (copilot)
-  - GPT-5 (copilot)
+  - GPT-5.5 (copilot)
 ---
 
 # Resolve GitHub PR Reviews
@@ -15,11 +15,20 @@ Works for both **Copilot** and **human** reviews.
 
 > **Cost note.** The *fetch*, *reply-formatting*, and *resolve* steps are mechanical — they
 > parse GraphQL / REST responses and post templated replies. The only step that may genuinely
-> need the smart tier is the **code fix** in Step 3. If your session model is expensive,
-> temporarily switch to a cheaper model (Copilot picker / Claude `/model haiku` / Codex
-> `--model o4-mini`) for the fetch, format, and resolve phases, and switch back only for the
-> fix step. This is orthogonal to the `core-review` pass invoked from Step 3, which already
-> pins itself to the cheap tier via its shipped frontmatter.
+> need the smart tier is the **code fix** in Step 3. But because `model:` **locks the model
+> for the whole invocation** (see paragraph above), you cannot switch mid-run to make the
+> mechanical phases cheap. To run those phases cheap, take one of the pre-invocation options:
+> (a) invoke the `gh`/GraphQL commands from a separate cheap-tier chat/session and use this
+> prompt only for the fix step; (b) edit this file's `model:` frontmatter to the cheap-tier
+> value before running and revert after; or (c) reinstall the toolkit with `--model-pins off`
+> so the Copilot picker / Claude `/model` / Codex session default takes effect.
+>
+> The `core-review` pass invoked from Step 3 pins itself cheap **only on Claude Code** (its
+> `SKILL.md model: haiku` frontmatter is honoured per-turn there). On **Copilot** skills
+> inherit the invoking prompt's model, so `core-review` runs on this prompt's smart tier when
+> invoked inline; to keep that pass cheap on Copilot, invoke `core-review` from a separate
+> cheap-tier chat instead of inline. On **Codex** the pass runs whatever session model is
+> active (`codex --model`).
 
 ## Prerequisites
 - `gh` CLI authenticated (`gh auth status`) with `repo` scope — the GraphQL thread-resolve mutation needs it

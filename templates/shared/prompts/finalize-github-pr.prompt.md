@@ -53,11 +53,14 @@ gh pr review --approve | cat
 
 > **Before pushing any fix commit**, run a **core review** on the fix set using the
 > **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
-> (diff + directly-touched files — the fix set is tight and the risk is mostly adjacent drift,
-> not cross-repo consistency). Run it as a dedicated read-only pass (inline on Copilot/Codex;
-> optionally a subagent on Claude Code). Apply everything it flags first — pushing an adjacent,
-> unfixed issue only starts a fresh Copilot round. For the full fetch → reply → resolve loop,
-> use the `resolve-github-reviews` prompt.
+> (diff + directly-touched files — the fix set here is tight and self-contained; cross-file
+> and one-hop adjacent drift was already covered by the pre-PR `medium` pass in
+> `create-github-pr`, so `quick` at this stage only needs to catch self-consistency issues
+> inside the fix commits themselves — a doc line the same fix made obsolete, a table row the
+> commit forgot to update, a link a rename left behind). Run it as a dedicated read-only pass
+> (inline on Copilot/Codex; optionally a subagent on Claude Code). Apply everything it flags
+> first — pushing an unfixed self-inconsistency only starts a fresh Copilot round. For the
+> full fetch → reply → resolve loop, use the `resolve-github-reviews` prompt.
 
 ### 3. Sync with Base Branch
 

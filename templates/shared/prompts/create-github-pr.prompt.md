@@ -3,7 +3,7 @@ agent: agent
 description: Create a pull request for the current branch linked to a GitHub issue
 model:
   - Claude Sonnet 4.5 (copilot)
-  - GPT-5 (copilot)
+  - GPT-5.5 (copilot)
 ---
 
 # Create GitHub Pull Request
@@ -111,8 +111,11 @@ differs (subagents are a Claude-Code-only optimization, not a requirement):
   the scope defined by `--budget medium` (diff + one-hop neighbours), producing the prioritized
   findings list.
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`)
-  with the brief "review the whole repo against the core-review checklist; report
-  `severity | file:line | problem | suggested fix`; do not edit files."
+  with the brief "review the diff plus one-hop neighbours (importers/consumers, sibling files,
+  docs/indexes that list the changed symbol or asset) against the core-review checklist;
+  report `severity | file:line | problem | suggested fix`; do not edit files." Match the
+  `--budget medium` scope above — do **not** ask the subagent for a whole-repo pass here, or
+  Claude runs `thorough` while Copilot/Codex run `medium`.
 
 Apply every `critical` and `warning` finding — including any stale reference exposed by removing
 the planning doc — re-run the checks from Step 4, then **commit the fixes and the doc removal and
