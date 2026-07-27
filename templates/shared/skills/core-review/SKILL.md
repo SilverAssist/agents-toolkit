@@ -47,13 +47,18 @@ optimization, never a requirement**:
 - **GitHub Copilot** — no subagents; run the checklist **inline as a distinct pass** before
   pushing (not folded into the edit under review), over the **whole repository — not just the
   diff**. Copilot's built-in code review can help on the diff, but only this whole-repo pass
-  covers the drift that triggers new review rounds.
+  covers the drift that triggers new review rounds. **Switch to a cheap model in the Copilot
+  picker before running** (e.g. `Claude Haiku 4.5 (copilot)` or `GPT-5 mini (copilot)`) — the
+  checklist below is deterministic and pattern-driven; the smart tier is wasted on it.
 - **Codex** — no subagents either; the same **inline whole-repo pass**, producing the same
-  prioritized findings list.
-- **Claude Code** — *optionally* delegate the pass to a read-only **subagent** (`Explore` or
-  `general-purpose`) with the brief: "Review this whole repository against the core-review
-  checklist; report findings as `severity | file:line | problem | suggested fix`; do not edit any
-  files." Relay its findings back to the main flow. Running it inline works too.
+  prioritized findings list. **Consider `codex --model o4-mini`** (or your provider's cheap
+  tier) for this pass — the checklist is deterministic.
+- **Claude Code** — the shipped skill frontmatter already pins `model: haiku` for the duration
+  of this pass, so the outer chat's smart tier is preserved. *Optionally* delegate the pass to
+  a read-only **subagent** (`Explore` or `general-purpose`) with the brief: "Review this whole
+  repository against the core-review checklist; report findings as
+  `severity | file:line | problem | suggested fix`; do not edit any files." Relay its findings
+  back to the main flow. Running it inline works too.
 
 Whichever agent, the contract is identical: **read-only in, prioritized findings out**, then the
 caller fixes and re-runs until clean.

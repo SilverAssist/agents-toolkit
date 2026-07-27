@@ -13,6 +13,14 @@ model:
 Clear a pull request's review threads end-to-end: **fetch → address → reply → resolve → verify `0` unresolved**.
 Works for both **Copilot** and **human** reviews.
 
+> **Cost note.** The *fetch*, *reply-formatting*, and *resolve* steps are mechanical — they
+> parse GraphQL / REST responses and post templated replies. The only step that may genuinely
+> need the smart tier is the **code fix** in Step 3. If your session model is expensive,
+> temporarily switch to a cheaper model (Copilot picker / Claude `/model haiku` / Codex
+> `--model o4-mini`) for the fetch, format, and resolve phases, and switch back only for the
+> fix step. This is orthogonal to the `core-review` pass invoked from Step 3, which already
+> pins itself to the cheap tier via its shipped frontmatter.
+
 ## Prerequisites
 - `gh` CLI authenticated (`gh auth status`) with `repo` scope — the GraphQL thread-resolve mutation needs it
 - Reference: `.github/prompts/_partials/github-integration.md`
