@@ -361,45 +361,50 @@ optional `--model-pins {on,off}` flag (default `on`) so a user can install *with
 ## 6. Rollout
 
 > **Status (2026-07-27):** Milestones 1–4 shipped on branch
-> `feature/39-m2-copilot-model-pins`. Milestone 5 is a post-merge measurement
-> activity that cannot be executed in code — see the checklist below.
+> `feature/39-m2-copilot-model-pins` as five commits (see per-milestone tags below).
+> **All four ship together in a single release** — the branch's `[Unreleased]`
+> block will be promoted to the next version (expected `v2.7.0`) in the release PR
+> per the repo's Release Flow. Milestone 5 is a post-merge measurement activity that
+> cannot be executed in code — see the checklist below.
 
-### Milestone 1 — Documentation-only ✅ shipped (`v2.6.0` era, commit `676afb2`)
+### Milestone 1 — Documentation-only ✅ shipped on `main` (commit `676afb2`, `v2.6.0` era)
 
 Ship *only* this plan file (`docs/subagent-cost-optimization-plan.md`) and get it reviewed.
 No template edits.
 
-### Milestone 2 — Copilot pins + docs ✅ shipped in `v2.7.0` (commit `edd6b50`)
+### Milestone 2 — Copilot pins + docs ✅ shipped on branch (commit `edd6b50`)
 
 - Add cheap-tier `model:` frontmatter to the 13 prompts in §5.2A.1.
 - Add explicit smart-tier `model:` frontmatter to the 6 prompts in §5.2A.2.
 - Add the `**Model:** …` override header line under each prompt's H1 (§5.2A.3).
 - Add the "Model-tier discipline" section to each root doc (§5.2F).
 - Update [templates/shared/prompts/README.md](../templates/shared/prompts/README.md) with the tier column.
-- Bump `VERSION` in [package.json](../package.json) and [src/index.js](../src/index.js) together.
-- Update `CHANGELOG.md` `[Unreleased]`.
+- Content lands in `CHANGELOG.md` `[Unreleased]`; the version bump happens in the release PR (not here) per Release Flow.
 
-### Milestone 3 — Claude installer transform ✅ shipped in `v2.8.0` (commit `aea26cd`)
+### Milestone 3 — Claude installer transform ✅ shipped on branch (commit `aea26cd`)
 
 - Implement §5.2B (Copilot→Claude `model:` remap) in [bin/cli.js](../bin/cli.js).
 - Add [src/cli.test.js](../src/cli.test.js) coverage: spawn install, assert `.claude/commands/*.md`
   contains `model: haiku` (not the Copilot name) and that stripping works when the tag is
   unrecognized.
 
-### Milestone 4 — `Explore` override + config surface + `core-review --budget` ✅ shipped in `v2.9.0` (commit `45862d6`)
+### Milestone 4 — `Explore` override + config surface + `core-review --budget` ✅ shipped on branch (commit `45862d6`)
 
 - Add `templates/shared/agents/Explore.md` (§5.2C).
 - Extend [bin/cli.js](../bin/cli.js) with `agents/` install step and `--no-agent-overrides` flag.
 - Ship the `.agents-toolkit.json` `models` block (§5.2G) + `--model-pins` flag (§5.2H).
-- Update [templates/shared/skills/core-review/SKILL.md](../templates/shared/skills/core-review/SKILL.md) per §5.2D — model pin + new `--budget` argument.
+- Update [templates/shared/skills/core-review/SKILL.md](../templates/shared/skills/core-review/SKILL.md) per §5.2D — model pin + new `--budget` argument + per-agent cheap-tier guidance (Copilot picker, `codex --model o4-mini`).
 - Update orchestrator prompts (`create-github-pr`, `finalize-github-pr`, `resolve-github-reviews`) to pass explicit `--budget` when invoking `core-review`. `create-pr` / `finalize-pr` (Jira variants) do not reference `core-review` today; extend when they do.
-- Update [templates/shared/prompts/resolve-github-reviews.prompt.md](../templates/shared/prompts/resolve-github-reviews.prompt.md) per §5.2E — the cheap-switch guidance ships in the header blockquote already added in M2.
+- Update [templates/shared/prompts/resolve-github-reviews.prompt.md](../templates/shared/prompts/resolve-github-reviews.prompt.md) per §5.2E — cheap-switch guidance in the header blockquote plus an explicit body paragraph advising the switch for the fetch / reply-format / resolve mechanical steps.
+- Add `AGENTS` export to [src/index.js](../src/index.js) and the corresponding row to the sync-check table in [.github/copilot-instructions.md](../.github/copilot-instructions.md).
+- Add the "When to escalate `sonnet` → `opus`" paragraph to `templates/agents/CLAUDE.md`.
 
-### Milestone 5 — Measure (post-merge, no code changes)
+### Milestone 5 — Measure (post-release, no code changes)
 
-Once the M4 PR merges to `main` and is released as `v2.9.0`, run a **two-week measurement window**
-comparing token spend against the pre-M2 baseline. Not something the coding agent can do
-inside this branch — it needs live usage.
+Once the cumulative M2–M4 release ships from `main` (expected as `v2.7.0`), run a
+**5-working-day measurement window** comparing token spend against the pre-M2 baseline
+(the git log before commit `edd6b50`). Not something the coding agent can do inside this
+branch — it needs live usage.
 
 **How to run it**
 

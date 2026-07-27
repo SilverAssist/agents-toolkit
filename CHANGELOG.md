@@ -7,12 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.9.0] - 2026-07-27
+Cheap-first model-tier discipline across all three agents ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)). Ships as one release when the release PR promotes this block. The five milestones (M1 plan → M2 Copilot pins → M3 Claude installer remap → M4 Explore override + config surface + `core-review --budget` → M5 measurement protocol) are documented in [docs/subagent-cost-optimization-plan.md](docs/subagent-cost-optimization-plan.md).
 
 ### Added
 
-- **`Explore` cheap-tier subagent override for Claude Code** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — shipped at `templates/shared/agents/Explore.md` with `model: haiku`. The Claude installer now copies `templates/shared/agents/*.md` into `.claude/agents/` (project-local override for Claude's built-in `Explore` subagent). Suppressed with the new `--no-agent-overrides` flag; installed by default because `Explore` is read-only and runs during nearly every autonomous cycle, so pinning it to the cheap tier prevents the parent's smart tier from inheriting into every exploration turn.
-- **`.agents-toolkit.json` `models` config block** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) with the shipped defaults visible for editing:
+#### M2 — Explicit `model:` frontmatter on every shipped prompt
+
+- **Cheap-first universal defaults** so a fresh install runs cost-optimally without configuration. Every `.prompt.md` in `templates/shared/prompts/` now carries a prioritized `model:` array (primary + fallback) plus a `**Model:**` override header under its H1 pointing at each agent's native picker.
+  - **Cheap-tier pin** (`Claude Haiku 4.5 (copilot)` → `GPT-5 mini (copilot)`) on the 13 checklist/mechanical prompts: `add-tests`, `analyze-github-issue`, `analyze-ticket`, `audit-ai-seo`, `finalize-github-pr`, `finalize-pr`, `fix-issues`, `new-wp-component`, `new-wp-plugin`, `prepare-github-release`, `prepare-pr`, `quality-check`, `review-code`.
+  - **Smart-tier pin** (`Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)`) — explicit, not implicit inheritance — on the 6 orchestrator/design prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+- **"Model-tier discipline" section** added to all four root docs in `templates/agents/` (`AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`), documenting the cheap-first rule of thumb, the autonomous-cycle invariant (delegates keep their own pins — orchestrators do **not** force their tier onto delegated steps), and the per-agent override surface (Copilot picker / Claude `/model` / Codex `--model`). `CLAUDE.md` also gets a **"When to escalate `sonnet` → `opus`"** paragraph explaining why `sonnet` is the default smart tier (matches or beats `opus` on `SWE-Bench Verified` at 5× lower cost) and when the escalation is actually justified.
+- **Model tiers section in `templates/shared/prompts/README.md`** — per-prompt tier table with rationale, override surface reference, and autonomous-cycle note.
+- **`docs/subagent-cost-optimization-plan.md`** — full plan covering M1 through M5 with vendor-support matrix (verified 2026-07) and design decisions (cheap-first universal, native pickers only, `core-review --budget {quick,medium,thorough}`).
+
+#### M3 — Claude Code installer remaps `model:` frontmatter to Claude aliases
+
+- The `installClaude` transform now reads the shipped Copilot `model:` block (scalar or prioritized array) and rewrites it to a Claude alias before writing to `.claude/commands/*.md`:
+  - `*Haiku*` → `haiku` (cheap tier)
+  - `*Sonnet*` → `sonnet` (smart tier)
+  - `*Opus*` → `opus`
+  - Non-Claude entries (e.g. `GPT-5 mini (copilot)`) are dropped; the first matching entry wins so the cheap-first fallback chain collapses cleanly to a single alias.
+- **`extractClaudeAlias` + `transformFrontmatterForClaude` helpers** in `bin/cli.js` — a two-stage transform (extract alias → rebuild frontmatter with just `model: <alias>`) that replaces the previous whole-frontmatter strip. Copilot-only fields (`agent`, `description`, `tools`) are still stripped. Prompts without any recognized `model:` still ship with no frontmatter (Claude falls back to the inherited session model — no behaviour change).
+
+#### M4 — Subagent overrides, config surface, and `core-review --budget`
+
+- **`Explore` cheap-tier subagent override for Claude Code** — `templates/shared/agents/Explore.md` shipped with `model: haiku` and auto-installed by `installClaude` to `.claude/agents/` (project-local override for Claude's built-in `Explore` subagent). Suppressed with the new `--no-agent-overrides` flag; installed by default because `Explore` is read-only and runs during nearly every autonomous cycle, so pinning it cheap prevents the parent's smart tier from inheriting into every exploration turn.
+- **`.agents-toolkit.json` `models` config block** with the shipped defaults visible for editing:
   ```json
   "models": {
     "copilot": { "cheap": "Claude Haiku 4.5 (copilot)", "smart": "Claude Sonnet 4.5 (copilot)" },
@@ -20,19 +40,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   }
   ```
   New `resolveModelSettings()` in `bin/cli.js` reads the block from the global → project → CLI-flag chain and threads it into every install path. Persist an escalation to `opus` project-wide by setting `models.claude.smart` (or `models.copilot.smart` to `Claude Opus 4.7 (copilot)`); the next install rewrites every smart-tier prompt's `model:` frontmatter accordingly. Cheap tier stays cheap unless the user overrides it.
-- **`--model-pins {on,off}` CLI flag** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — `on` (default) ships the resolved `model:` frontmatter as configured; `off` strips the `model:` block entirely from every installed prompt (Copilot/Codex keep their other frontmatter fields intact; Claude prompts install with no frontmatter at all) so every prompt falls back to the agent's picker/session default. Also readable from `.agents-toolkit.json` `modelPins`.
-- **`transformFrontmatterForCopilot()` helper** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) in `bin/cli.js` — mirrors the Claude helper: parses the shipped `model:` block, infers the tier from the primary entry (`*Haiku*` → cheap, `*Sonnet*`/`*Opus*` → smart), substitutes the user's configured value for the shipped default in-place, or removes the block when `stripModel` is true. Fast-path returns the content untouched when the resolved cheap/smart match the shipped defaults, so a default install is still a byte-identical copy.
-- **`core-review` skill gains `model: haiku` frontmatter and `--budget {quick,medium,thorough}` argument** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)):
+- **`--model-pins {on,off}` CLI flag** — `on` (default) ships the resolved `model:` frontmatter as configured; `off` strips the `model:` block entirely from every installed prompt (Copilot/Codex keep their other frontmatter fields intact; Claude prompts install with no frontmatter at all) so every prompt falls back to the agent's picker/session default. Also readable from `.agents-toolkit.json` `modelPins`.
+- **`--no-agent-overrides` CLI flag** — suppresses `.claude/agents/` install for projects that want to keep Claude's built-in defaults.
+- **`transformFrontmatterForCopilot()` helper** in `bin/cli.js` — mirrors the Claude helper: parses the shipped `model:` block, infers the tier from the primary entry (`*Haiku*` → cheap, `*Sonnet*`/`*Opus*` → smart), substitutes the user's configured value for the shipped default in-place, or removes the block when `stripModel` is true. Fast-path returns the content untouched when the resolved cheap/smart match the shipped defaults, so a default install is still a byte-identical copy.
+- **`core-review` skill gains `model: haiku` frontmatter and `--budget {quick,medium,thorough}` argument**:
   - `quick` — diff + directly-touched files. Used by `finalize-github-pr` and `resolve-github-reviews` pre-push fix batches.
   - `medium` — diff + one-hop neighbours (importers, indexes, sibling files). Used by `create-github-pr` pre-PR pass; the default when `--budget` is omitted.
   - `thorough` — whole repository. Used for standalone pre-release reviews or architecture-scoped changes.
-  Cheap tier is safe at every budget — `thorough` widens the file set, not the reasoning depth. Callers who genuinely need reasoning override at the agent level (Copilot picker, Claude `/model`, Codex `--model`); this skill never hard-codes a smart-tier override.
-- **`AGENTS` export in `src/index.js`** listing the shipped subagent overrides (currently just `Explore`).
-- **"When to escalate `sonnet` → `opus`" paragraph in `templates/agents/CLAUDE.md`** — documents why the smart-tier default is `sonnet` (matches or beats `opus` on `SWE-Bench Verified` at 5× lower cost) and when the escalation is actually justified (novel architecture, cross-layer renames, multi-hour research). Persist the escalation via `.agents-toolkit.json` `models.claude.smart`; keep one-offs on `/model opus`.
+  Cheap tier is safe at every budget — `thorough` widens the file set, not the reasoning depth. Callers who genuinely need reasoning override at the agent level (Copilot picker, Claude `/model`, Codex `--model`); this skill never hard-codes a smart-tier override. The skill's "How to run it" section also documents the Copilot-picker and `codex --model` cheap-switch guidance per agent.
+- **`AGENTS` export in `src/index.js`** listing the shipped subagent overrides (currently just `Explore`). The `.github/copilot-instructions.md` sync-check table also lists this new export.
+- **Cheap-switch body paragraph in `resolve-github-reviews.prompt.md`** — documents that the fetch, reply-formatting, and resolve phases are mechanical and can run on a cheaper model while the actual code fix step keeps the smart tier.
+
+#### M5 — Measurement protocol (post-merge, no code)
+
+- The plan doc §6 now marks M1–M4 shipped and rewrites M5 into an executable protocol: 2 heavy users, 5-working-day post-release window, per-user/per-day metrics (input/output tokens, prompts by tier, cheap-tier failure count), with a **failure-driven demotion policy** (≥ 2/5 failures on the same class ships a patch-release move back to smart tier).
 
 ### Changed
 
-- **Orchestrator prompts pass explicit `--budget` to `core-review`** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)):
+- **Orchestrator prompts pass explicit `--budget` to `core-review`:**
   - `create-github-pr.prompt.md` → `--budget medium` (pre-PR pass; diff is complete).
   - `finalize-github-pr.prompt.md` → `--budget quick` (fix set is tight; risk is adjacent drift).
   - `resolve-github-reviews.prompt.md` → `--budget quick` (batched fixes, scoped).
@@ -40,42 +65,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Notes
 
-- **Backward compatible.** No CLI flags become required; `.agents-toolkit.json` files without a `models` block still install the shipped defaults. Prompts that do not carry a `model:` block install unchanged.
-- **Autonomous-cycle invariant preserved.** The M2 rule stays intact: orchestrators do not force their tier onto delegated steps. The `--budget` on `core-review` scopes the file set, not the model — delegated skills keep their own pins.
-
-## [2.8.0] - 2026-07-27
-
-### Added
-
-- **Claude Code installer remaps `model:` frontmatter to Claude aliases** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — the `installClaude` transform now reads the shipped Copilot `model:` block (scalar or prioritized array) and rewrites it to a Claude alias before writing to `.claude/commands/*.md`:
-  - `*Haiku*` → `haiku` (cheap tier)
-  - `*Sonnet*` → `sonnet` (smart tier)
-  - `*Opus*` → `opus`
-  - Non-Claude entries (e.g. `GPT-5 mini (copilot)`) are dropped; the first matching entry wins so the cheap-first fallback chain collapses cleanly to a single alias.
-- **`extractClaudeAlias` + `transformFrontmatterForClaude` helpers** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) in `bin/cli.js` — replace the previous whole-frontmatter strip on the Claude install path with a two-stage transform (extract alias → rebuild frontmatter with just `model: <alias>`). Copilot-only fields (`agent`, `description`, `tools`) are still stripped. Prompts without any recognized `model:` still ship with no frontmatter (Claude falls back to the inherited session model — no behaviour change).
-- **M3 tests** in `src/cli.test.js` covering the cheap-tier (`quality-check.md` → `model: haiku`), smart-tier (`create-plan.md` → `model: sonnet`), Copilot-name leakage, and body-level `**Model:**` blockquote survival.
-
-### Notes
-
-- **Backward compatible.** Prompts without `model:` frontmatter still install as before (no frontmatter block in Claude output). The transform only fires when the shipped file carries a `model:` block.
-- **Independent of M4.** The new function accepts optional `claudeModels` and `stripModel` parameters that the M4 config surface (`.agents-toolkit.json` `models.claude.{cheap,smart}` + `--model-pins off`) will wire up later; today those parameters default to their zero values so the behaviour is exactly "remap and ship the alias".
-
-## [2.7.0] - 2026-07-27
-
-### Added
-
-- **Explicit `model:` frontmatter on every shipped prompt** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — cheap-first universal defaults so a fresh install runs cost-optimally without configuration. Every `.prompt.md` in `templates/shared/prompts/` now carries a prioritized `model:` array (primary + fallback) plus a `**Model:**` override header under its H1 pointing at each agent's native picker.
-  - **Cheap-tier pin** (`Claude Haiku 4.5 (copilot)` → `GPT-5 mini (copilot)`) on the 13 checklist/mechanical prompts: `add-tests`, `analyze-github-issue`, `analyze-ticket`, `audit-ai-seo`, `finalize-github-pr`, `finalize-pr`, `fix-issues`, `new-wp-component`, `new-wp-plugin`, `prepare-github-release`, `prepare-pr`, `quality-check`, `review-code`.
-  - **Smart-tier pin** (`Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)`) — explicit, not implicit inheritance — on the 6 orchestrator/design prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
-- **"Model-tier discipline" section** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) added to all four root docs in `templates/agents/` (`AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`), documenting the cheap-first rule of thumb, the autonomous-cycle invariant (delegates keep their own pins — orchestrators do **not** force their tier onto delegated steps), and the per-agent override surface (Copilot picker / Claude `/model` / Codex `--model`).
-- **Model tiers section in `templates/shared/prompts/README.md`** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — per-prompt tier table with rationale, override surface reference, and autonomous-cycle note.
-- **`docs/subagent-cost-optimization-plan.md`** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — full plan covering M1 through M5 (M2 shipped in this release; M3 = Claude installer `model:` remap; M4 = `Explore.md` override + `.agents-toolkit.json` `models` block + `core-review --budget` + `--model-pins` CLI flag; M5 = measure). Documents the vendor-support matrix (verified 2026-07) and the design decisions (cheap-first universal, native pickers only, `core-review --budget {quick,medium,thorough}`).
-
-### Notes
-
-- **Backward compatible.** Every asset still works when the `model:` field is ignored (Codex sessions today, older Copilot versions, older Claude Code releases). The frontmatter is a hint, not a requirement.
-- **No behaviour changes** to prompt bodies — only frontmatter additions and the `**Model:**` header line.
-- **Claude Code installer transform lands in the M3 minor bump** — until then, Claude users see the Copilot-qualified names in their `.claude/commands/*.md`; Claude falls back to the inherited session model, so nothing breaks.
+- **Backward compatible.** Every asset still works when the `model:` field is ignored (Codex sessions today, older Copilot versions, older Claude Code releases). Prompts without a `model:` block install unchanged. `.agents-toolkit.json` files without a `models` block still install the shipped defaults. Default install is byte-identical to the previous release when no user overrides are set.
+- **Autonomous-cycle invariant preserved.** Orchestrators do not force their tier onto delegated steps — the callee's own `model:` pin wins for that turn. The `--budget` on `core-review` scopes the file set, not the model — delegated skills keep their own pins.
+- **13 new tests** in `src/cli.test.js` (48 → 61 passing) covering the frontmatter transforms, `--model-pins`, config overrides, `Explore` install/skip, and `--budget` wiring.
 
 ## [2.6.0] - 2026-07-26
 

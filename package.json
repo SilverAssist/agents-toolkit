@@ -1,6 +1,6 @@
 {
   "name": "@silverassist/agents-toolkit",
-  "version": "2.9.0",
+  "version": "2.6.0",
   "description": "Reusable AI agent prompts for development workflows with Jira integration — supports GitHub Copilot, Claude Code, and Codex",
   "author": "Santiago Ramirez",
   "license": "PolyForm-Noncommercial-1.0.0",
