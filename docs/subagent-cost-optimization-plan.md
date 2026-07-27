@@ -63,9 +63,9 @@ pin cheap, keep smart, or leave it agent-neutral.
 | [analyze-github-issue.prompt.md](../templates/shared/prompts/analyze-github-issue.prompt.md) | Read + structured summary | **Cheap** |
 | [analyze-ticket.prompt.md](../templates/shared/prompts/analyze-ticket.prompt.md) | Read + structured summary | **Cheap** |
 | [audit-ai-seo.prompt.md](../templates/shared/prompts/audit-ai-seo.prompt.md) | Pure checklist | **Cheap** |
-| [create-github-pr.prompt.md](../templates/shared/prompts/create-github-pr.prompt.md) | Orchestration + git ops; delegates review to `core-review` | **Smart** outer / **cheap** delegate |
-| [create-plan.prompt.md](../templates/shared/prompts/create-plan.prompt.md) | Genuine design reasoning | **Smart** (keep) |
-| [create-pr.prompt.md](../templates/shared/prompts/create-pr.prompt.md) | Same as create-github-pr | **Smart** outer / **cheap** delegate |
+| [create-github-pr.prompt.md](../templates/shared/prompts/create-github-pr.prompt.md) | Orchestration + git ops; delegates review to `core-review` | **Smart pin** (outer) + delegates run cheap by their own frontmatter |
+| [create-plan.prompt.md](../templates/shared/prompts/create-plan.prompt.md) | Genuine design reasoning | **Smart pin** |
+| [create-pr.prompt.md](../templates/shared/prompts/create-pr.prompt.md) | Same as create-github-pr | **Smart pin** (outer) + delegates run cheap by their own frontmatter |
 | [finalize-github-pr.prompt.md](../templates/shared/prompts/finalize-github-pr.prompt.md) | Checklist + gh calls | **Cheap** |
 | [finalize-pr.prompt.md](../templates/shared/prompts/finalize-pr.prompt.md) | Checklist + Jira calls | **Cheap** |
 | [fix-issues.prompt.md](../templates/shared/prompts/fix-issues.prompt.md) | Run tools → parse → mechanical fix | **Cheap** (fallback to smart if diagnostics are non-trivial) |
@@ -74,10 +74,10 @@ pin cheap, keep smart, or leave it agent-neutral.
 | [prepare-github-release.prompt.md](../templates/shared/prompts/prepare-github-release.prompt.md) | Mechanical: bump versions, changelog, tag | **Cheap** |
 | [prepare-pr.prompt.md](../templates/shared/prompts/prepare-pr.prompt.md) | Runs validations, commits | **Cheap** |
 | [quality-check.prompt.md](../templates/shared/prompts/quality-check.prompt.md) | Runs PHPCS/PHPStan/PHPUnit and reports | **Cheap** |
-| [resolve-github-reviews.prompt.md](../templates/shared/prompts/resolve-github-reviews.prompt.md) | Fetch threads → apply fix → reply | **Smart** for the *fix step only*, **cheap** for fetch/reply/format |
+| [resolve-github-reviews.prompt.md](../templates/shared/prompts/resolve-github-reviews.prompt.md) | Fetch threads → apply fix → reply | **Smart pin** (fix step may need reasoning); documents cheap-switch guidance for fetch/reply/format |
 | [review-code.prompt.md](../templates/shared/prompts/review-code.prompt.md) | Pure checklist | **Cheap** |
-| [work-github-issue.prompt.md](../templates/shared/prompts/work-github-issue.prompt.md) | Implementation reasoning | **Smart** (keep) |
-| [work-ticket.prompt.md](../templates/shared/prompts/work-ticket.prompt.md) | Implementation reasoning | **Smart** (keep) |
+| [work-github-issue.prompt.md](../templates/shared/prompts/work-github-issue.prompt.md) | Implementation reasoning | **Smart pin** |
+| [work-ticket.prompt.md](../templates/shared/prompts/work-ticket.prompt.md) | Implementation reasoning | **Smart pin** |
 
 ### 4.2 Skills — [templates/shared/skills/](../templates/shared/skills/)
 
@@ -110,24 +110,34 @@ side goals for the same PR series:
 
 ### 5.1 Guiding principles
 
-1. **Default cheap for well-defined work; escalate on demand.** If a task is a checklist,
-   pin the cheap tier. If the model can't complete it, the user can rerun on a smarter model.
-2. **Keep the contract portable.** Every asset must still work on all three agents. Model
+1. **Cheap-first, universal defaults.** *Every* executable asset ships with an explicit
+   `model:` pin — never inheritance. Checklist / mechanical work pins to the **cheap tier**;
+   design / reasoning work pins **explicitly** to the smart tier so the choice is visible in
+   review, not implicit in the caller's session.
+2. **Native pickers are the override surface.** We do not add a custom interactive picker.
+   The user changes tier on demand through each agent's built-in UI: Copilot model picker in
+   the chat panel, Claude Code `/model` slash command, Codex `codex --model …` / config. The
+   frontmatter sets the default; the picker overrides.
+3. **Autonomous cycles honour defaults.** When a smart-tier orchestrator (e.g.
+   `create-github-pr`, `work-github-issue`) chains to a cheap-tier prompt or skill, the
+   invoked file's own `model:` frontmatter takes effect for that turn. Orchestrators must
+   never force their tier onto delegated steps — the callee's pin wins.
+4. **Keep the contract portable.** Every asset must still work on all three agents. Model
    pins are *hints*, gated by frontmatter fields each agent already ignores when absent.
-3. **Never model-pin reference-only skills.** They don't invoke — pinning has no effect but
+5. **Never model-pin reference-only skills.** They don't invoke — pinning has no effect but
    creates drift risk.
-4. **The outer planner stays smart.** We only downgrade the sub-workers and mechanical
-   prompts, not the plans/decisions that spawn them.
-5. **Document, don't hard-code.** Ship sensible defaults, but every model pin must be
-   overridable via env var or user config so downstream projects can opt out per-repo.
+6. **Document, don't hard-code.** Ship sensible defaults, but every model pin must be
+   overridable via env var or user config so downstream projects can opt out per-repo
+   (§5.2G/H).
 
 ### 5.2 Concrete changes to ship
 
-#### A. Add model hints to Copilot prompt frontmatter
+#### A. Pin every prompt with an explicit `model:` (cheap-first)
 
-For every prompt classified **Cheap** in §4.1, add a `model:` line to the shipped `.prompt.md`
-frontmatter. Use a **prioritized array** so the fallback still works if the primary model
-isn't available on the user's plan.
+Every `.prompt.md` in `templates/shared/prompts/` gets a `model:` line. Use a **prioritized
+array** so the fallback still works if the primary model isn't available on the user's plan.
+
+**A.1 Cheap-tier prompts (13)** — Haiku primary, GPT-5 mini fallback:
 
 ```yaml
 ---
@@ -139,14 +149,42 @@ model:
 ---
 ```
 
-Prompts to update: `add-tests`, `analyze-github-issue`, `analyze-ticket`, `audit-ai-seo`,
+Applies to: `add-tests`, `analyze-github-issue`, `analyze-ticket`, `audit-ai-seo`,
 `finalize-github-pr`, `finalize-pr`, `fix-issues`, `new-wp-component`, `new-wp-plugin`,
 `prepare-github-release`, `prepare-pr`, `quality-check`, `review-code`.
 
-Prompts to leave **without** a `model:` pin (main planner decides): `create-plan`,
-`work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`,
-`resolve-github-reviews`. These are outer-loop orchestrators that call cheap sub-steps
-themselves.
+**A.2 Smart-tier prompts (6)** — Sonnet primary, GPT-5 fallback (pinned explicitly, not
+inherited):
+
+```yaml
+---
+agent: agent
+description: Draft implementation plan for a feature or fix
+model:
+  - Claude Sonnet 4.5 (copilot)
+  - GPT-5 (copilot)
+---
+```
+
+Applies to: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`,
+`create-github-pr`, `resolve-github-reviews`. These orchestrate real design work; their
+delegated sub-steps (`quality-check`, `core-review`, `finalize-pr`, etc.) keep their own
+cheap pins per principle §5.1.3.
+
+**A.3 User override — no custom picker.** Every prompt file gets a short header line under
+the H1:
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot
+> model picker before running, or via `/model` in Claude Code, or `codex --model` in Codex.
+
+This keeps the tier discoverable in the file itself while relying on each agent's native UI
+for per-run changes — no bespoke interactive prompt.
+
+**A.4 Autonomous cycles.** When one prompt chains into another (e.g. `create-github-pr` →
+`prepare-pr` → `quality-check`), each callee runs on its own declared tier. Orchestrator
+prompts must *not* pass a model override to their delegates — the delegate's frontmatter is
+authoritative. This is what guarantees a smart-tier planning session still gets cheap
+execution for the mechanical sub-tasks.
 
 #### B. Strip `model:` for Claude Code during install
 
@@ -177,7 +215,7 @@ Pick **B1**. Extend `stripCopilotFrontmatter` (or a new sibling helper) so the t
 
 Add a new file:
 
-```
+```text
 templates/shared/agents/Explore.md
 ```
 
@@ -206,7 +244,9 @@ Corresponding [bin/cli.js](../bin/cli.js) changes:
 - Add a `--no-agent-overrides` (or `--stack override:none`) flag so downstream projects can
   keep their own definitions.
 
-#### D. Update the `core-review` skill to pin its model
+#### D. Update the `core-review` skill: pin model + add `--budget`
+
+**D.1 Model pin (per-agent).**
 
 - **Claude Code:** update the skill frontmatter (after CLI transform per §B) so
   [core-review/SKILL.md](../templates/shared/skills/core-review/SKILL.md) carries `model: haiku`. Because skills honour `model:` only
@@ -219,6 +259,33 @@ Corresponding [bin/cli.js](../bin/cli.js) changes:
 - **Codex:** update the "How to run it" section with a one-line hint: "Consider `codex
   --model o4-mini` (or your provider's cheap tier) for this pass — the checklist is
   deterministic."
+
+**D.2 New `--budget` argument.** Formalize thoroughness as an explicit argument the caller
+passes when invoking `core-review`. Semantics:
+
+| Budget | Scope | Model recommendation |
+| --- | --- | --- |
+| `quick` | Diff-only scan (files changed in current branch vs `main`). Runs the checklist against changed files only; skips whole-repo consistency scan. | Cheap (Haiku / GPT-5 mini). |
+| `medium` *(default)* | Diff + all files that import/export changed symbols (1-hop blast radius). Full checklist. | Cheap. |
+| `thorough` | Whole-repo consistency scan (current behaviour). Full checklist against every relevant file. | Cheap by default; caller may override to smart tier if the change touches shared architecture. |
+
+Invocation contract:
+
+```markdown
+Run `core-review` with `--budget medium` on branch `feature/x`.
+```
+
+The skill's "How to run it" section will list the three budgets, note that `medium` is the
+default, and clarify that budget selection happens **before** the run (via argument in the
+invocation) — no interactive picker inside the skill.
+
+Orchestrator prompts (`create-github-pr`, `create-pr`, `resolve-github-reviews`,
+`finalize-github-pr`, `finalize-pr`) should pass an explicit budget when invoking
+`core-review`:
+
+- `finalize-github-pr` / `finalize-pr` / `resolve-github-reviews` → `--budget quick`
+- `create-github-pr` / `create-pr` → `--budget medium`
+- Standalone "pre-release" invocation → `--budget thorough`
 
 #### E. Update `resolve-github-reviews.prompt.md`
 
@@ -282,10 +349,14 @@ optional `--model-pins {on,off}` flag (default `on`) so a user can install *with
 
 ### 5.3 Explicit non-changes
 
-- No changes to prompts that spawn genuine reasoning (`create-plan`, `work-*`).
+- No changes to the *behavior* of prompts that spawn genuine reasoning (`create-plan`,
+  `work-*`) — they get an explicit smart-tier pin (§5.2A.2) but their instructions are
+  unchanged.
 - No changes to reference-only skills.
 - No new subagent types — we're using Claude's built-in Explore/general-purpose plus the
   existing `runSubagent` capability on Copilot.
+- **No custom interactive picker.** Tier overrides go through each agent's native UI
+  (§5.1.2). The frontmatter is the default; the picker is the override.
 
 ## 6. Rollout
 
@@ -296,10 +367,13 @@ No template edits.
 
 ### Milestone 2 — Copilot pins + docs (minor bump: `X.Y+1.0`)
 
-- Add `model:` frontmatter to the "Cheap" prompts in §5.2A.
+- Add cheap-tier `model:` frontmatter to the 13 prompts in §5.2A.1.
+- Add explicit smart-tier `model:` frontmatter to the 6 prompts in §5.2A.2.
+- Add the `**Model:** …` override header line under each prompt's H1 (§5.2A.3).
 - Add the "Model-tier discipline" section to each root doc (§5.2F).
 - Update [templates/shared/prompts/README.md](../templates/shared/prompts/README.md) with the tier column.
 - Bump `VERSION` in [package.json](../package.json) and [src/index.js](../src/index.js) together.
+- Update `CHANGELOG.md` `[Unreleased]`.
 
 ### Milestone 3 — Claude installer transform (minor bump)
 
@@ -308,12 +382,13 @@ No template edits.
   contains `model: haiku` (not the Copilot name) and that stripping works when the tag is
   unrecognized.
 
-### Milestone 4 — `Explore` override + config surface (minor bump)
+### Milestone 4 — `Explore` override + config surface + `core-review --budget` (minor bump)
 
 - Add `templates/shared/agents/Explore.md` (§5.2C).
 - Extend [bin/cli.js](../bin/cli.js) with `agents/` install step and `--no-agent-overrides` flag.
 - Ship the `.agents-toolkit.json` `models` block (§5.2G) + `--model-pins` flag (§5.2H).
-- Update [templates/shared/skills/core-review/SKILL.md](../templates/shared/skills/core-review/SKILL.md) per §5.2D.
+- Update [templates/shared/skills/core-review/SKILL.md](../templates/shared/skills/core-review/SKILL.md) per §5.2D — model pin + new `--budget` argument.
+- Update orchestrator prompts (`create-github-pr`, `create-pr`, `finalize-github-pr`, `finalize-pr`, `resolve-github-reviews`) to pass explicit `--budget` when invoking `core-review`.
 - Update [templates/shared/prompts/resolve-github-reviews.prompt.md](../templates/shared/prompts/resolve-github-reviews.prompt.md) per §5.2E.
 
 ### Milestone 5 — Measure
@@ -341,16 +416,21 @@ cheap based on real failure modes.
 - `package.json` `version` and `src/index.js` `VERSION` match.
 - CHANGELOG `[Unreleased]` documents the model-hint behaviour and the opt-out flag.
 
-## 9. Open questions
+## 9. Design decisions (resolved)
 
-1. Do we want a shared *"cheap"* alias per agent that the user sets once, and every prompt
-   references — or do we want per-prompt qualified names? (Plan currently favours the alias
-   approach via §5.2G.)
-2. Should [core-review](../templates/shared/skills/core-review/SKILL.md) grow a `--budget` argument (thoroughness level) so the caller can
-   ask for `quick` on cheap runs and `thorough` on smart runs?
-3. Do we want an install-time interactive prompt ("pick your cheap/smart tier") the first
-   time `install` runs against a fresh repo?
+1. **Per-prompt vendor-qualified names for M2; alias config block ships in M4.** Every
+   prompt file carries its own prioritized `model:` array today (self-contained, reviewable
+   in isolation). The `.agents-toolkit.json` `models` alias block (§5.2G) lands in M4 as an
+   opt-in *override* — if present, `bin/cli.js` substitutes the alias into the shipped
+   frontmatter at install time. Both approaches coexist.
+2. **`core-review` gets `--budget {quick,medium,thorough}` in M4.** Default `medium`, cheap
+   model in all three modes; the caller may override to smart tier for `thorough` on
+   architecture-touching changes. Semantics fully specified in §5.2D.2.
+3. **No install-time interactive picker.** Tier overrides happen through each agent's
+   native UI (Copilot model picker, Claude `/model`, Codex `--model`). The frontmatter is
+   the default; the picker is the override. This keeps the toolkit non-interactive and
+   scriptable.
 
 ---
 
-**Next step:** review this plan; on approval, open Milestone 2 as `feature/subagent-cost-copilot-pins`.
+**Next step:** implement Milestone 2 on `feature/39-m2-copilot-model-pins`.
