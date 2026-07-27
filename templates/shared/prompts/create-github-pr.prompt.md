@@ -8,7 +8,7 @@ model:
 
 # Create GitHub Pull Request
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates (`prepare-pr`, `core-review`) run on their own cheap-tier pins. To change tier, edit this file's `model:` frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides; the Copilot picker and Claude `/model` cannot override a `model:` pin. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`). **Delegate model behaviour is platform-specific**: on **Claude Code** the delegates (`prepare-pr`, `core-review`) run on their own cheap-tier pins because `SKILL.md`/slash-command frontmatter establishes a per-turn model boundary; on **Copilot** only `.prompt.md` files establish a `model:` boundary — skills inherit the invoking prompt, so an inline `core-review` from this smart-tier prompt runs on the smart tier too (invoke `core-review` as a standalone chat if you want it cheap); on **Codex** the entire session runs one model set by `codex --model`, so delegate `model:` is advisory and cannot switch mid-session. To change this prompt's tier, edit its `model:` frontmatter, reinstall with `--model-pins off` (strips all pins so the picker/session default wins), or set `.agents-toolkit.json` `models.{copilot,claude}` overrides. The Copilot picker and Claude `/model` cannot override a `model:` pin; on Codex `codex --model` is the session-level override.
 
 Create a pull request for the current branch linked to GitHub issue **#{issue-number}**.
 

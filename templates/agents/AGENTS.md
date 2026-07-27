@@ -59,7 +59,10 @@ Every shipped prompt carries an explicit `model:` frontmatter default. The rule 
 - **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5` → `GPT-5 mini`). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
 - **Design / reasoning → smart tier** (`Claude Sonnet 4.5` → `GPT-5`). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
 
-**Autonomous cycles honour each callee's own pin.** A smart-tier orchestrator (`create-github-pr`, `work-github-issue`, …) chaining into a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) lets the delegate's frontmatter win for that turn — do not force the orchestrator's tier onto delegated steps.
+**Autonomous cycles — delegate model behaviour is platform-specific.**
+- **Claude Code**: each delegate has its own `model:` boundary (skills via `SKILL.md`, slash-commands via `.md` frontmatter), so a cheap-tier delegate invoked from a smart-tier orchestrator (`create-github-pr` → `core-review`) runs on the delegate's own pin for that turn. Do **not** force the orchestrator's tier onto delegated steps.
+- **Copilot**: only `.prompt.md` files establish a `model:` boundary; skills inherit the invoking prompt's model. An inline `core-review` (or any skill) from a smart-tier orchestrator runs on the smart tier too — to keep it cheap, invoke it as a standalone chat (fresh prompt invocation) rather than inline.
+- **Codex**: the session runs one model set by `codex --model` (or `~/.codex/config.toml`); delegate `model:` frontmatter is advisory and cannot switch mid-session. To run a cheap-tier delegate, open a separate `codex --model <cheap>` session for that step.
 
 **Overrides.** The `model:` frontmatter pin **wins over the Copilot picker and Claude `/model`** (both are only consulted when no pin is set). To change tier:
 - **Edit the installed file's `model:` frontmatter** directly, or

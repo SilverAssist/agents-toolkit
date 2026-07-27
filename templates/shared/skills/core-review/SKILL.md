@@ -59,10 +59,12 @@ optimization, never a requirement**:
   (or your provider's cheap tier) for this pass — the checklist is deterministic.
 - **Claude Code** — the shipped skill frontmatter already pins `model: haiku` for the duration
   of this pass, so the outer chat's smart tier is preserved. *Optionally* delegate the pass to
-  a read-only **subagent** (`Explore` or `general-purpose`) with the brief: "Review this whole
-  repository against the core-review checklist; report findings as
-  `severity | file:line | problem | suggested fix`; do not edit any files." Relay its findings
-  back to the main flow. Running it inline works too.
+  a read-only **subagent** (`Explore` or `general-purpose`) with the brief: "Review the file
+  set matching the caller's `--budget` (`quick` → the diff vs the base branch plus the files
+  it directly touches; `medium` → diff plus one-hop neighbours — importers/consumers, sibling
+  files, docs/indexes that list the changed symbol; `thorough` → the whole repository) against
+  the core-review checklist; report findings as `severity | file:line | problem | suggested fix`;
+  do not edit any files." Relay its findings back to the main flow. Running it inline works too.
 
 Whichever agent, the contract is identical: **read-only in, prioritized findings out**, then the
 caller fixes and re-runs until clean.
@@ -216,14 +218,20 @@ term and each synonym, then reconcile every hit.
 grep -rn "subagent" . --include="*.md"
 ```
 
-### P2 — Keep the *mechanism* branch-specific, never the *scope/contract*
+### P2 — Keep the *mechanism* branch-specific, never the *contract*
 
 When guidance branches per agent / platform / environment, only the **mechanism** may differ; the
-**scope or contract** must stay identical across every branch.
+**contract** (what the caller passes in and what the pass returns out) must stay identical across
+every branch. **Scope is caller-selected via `--budget`, not per-agent** — the mechanism chooses
+*how* the file set is walked, never *which* file set is walked.
 
 ```text
-❌ "Copilot runs it inline over the changed files and their neighbors."   (silently narrowed scope)
-✅ "Copilot runs it inline over the whole repository."                     (mechanism differs, scope constant)
+❌ "Copilot runs it inline over only the changed file."                  (silently narrows scope
+                                                                            beyond `--budget`)
+✅ "Copilot runs it inline over the file set the caller's `--budget`
+   selected."                                                              (mechanism differs,
+                                                                            scope-selection contract
+                                                                            constant)
 ```
 
 ### P3 — "We updated X" must match the diff
@@ -277,9 +285,11 @@ read-only review pass itself — the pass only inspects and reports.
 
 1. The caller applies every `critical` and `warning`; applies `nit`s unless there is a reason not to.
 2. The caller re-runs the project's checks (`lint`, `type-check`, `tsc --noEmit`, `test`, `build` — whichever exist).
-3. The caller re-runs the review over the whole repo. **Loop until the pass reports zero findings
-   *within the change's blast radius***, *then* push. Pre-existing issues outside that scope are
-   noted (see "What NOT to flag" below) but do not block convergence.
+3. The caller re-runs the review **at the same `--budget`** the initial pass used. **Loop until
+   the pass reports zero findings *within the change's blast radius***, *then* push. Pre-existing
+   issues outside that scope are noted (see "What NOT to flag" below) but do not block convergence.
+   Escalate the `--budget` (e.g. `quick` → `medium`) only when a fix ripples into files the initial
+   scope did not cover.
 
 Because these repos guide agents, an inaccurate doc induces downstream errors — so it is worth
 iterating N times to reach an optimal, consistent result rather than stopping at the first
