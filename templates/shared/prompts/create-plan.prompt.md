@@ -3,7 +3,7 @@ agent: agent
 description: Create a detailed implementation plan for a feature
 model:
   - Claude Sonnet 4.5 (copilot)
-  - GPT-5 (copilot)
+  - GPT-5.5 (copilot)
 ---
 
 # Create Implementation Plan

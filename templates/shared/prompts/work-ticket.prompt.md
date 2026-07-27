@@ -3,7 +3,7 @@ agent: agent
 description: Start working on a Jira ticket with full workflow setup
 model:
   - Claude Sonnet 4.5 (copilot)
-  - GPT-5 (copilot)
+  - GPT-5.5 (copilot)
 ---
 
 # Work on Jira Ticket

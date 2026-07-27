@@ -3,7 +3,7 @@ agent: agent
 description: Create a pull request for the current branch
 model:
   - Claude Sonnet 4.5 (copilot)
-  - GPT-5 (copilot)
+  - GPT-5.5 (copilot)
 ---
 
 # Create Pull Request
