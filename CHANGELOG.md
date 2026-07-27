@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Cheap-first model-tier discipline across all three agents ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)). Ships as one release when the release PR promotes this block. The five milestones (M1 plan → M2 Copilot pins → M3 Claude installer remap → M4 Explore override + config surface + `core-review --budget` → M5 measurement protocol) are documented in [docs/subagent-cost-optimization-plan.md](docs/subagent-cost-optimization-plan.md).
+Cheap-first model-tier discipline across all three agents ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)). Ships as one release when the release PR promotes this block. Five milestones: M1 plan (design doc, removed after implementation) → M2 Copilot pins → M3 Claude installer remap → M4 Explore override + config surface + `core-review --budget` → M5 post-release measurement protocol.
 
 ### Added
 
@@ -18,7 +18,6 @@ Cheap-first model-tier discipline across all three agents ([#39](https://github.
   - **Smart-tier pin** (`Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)`) — explicit, not implicit inheritance — on the 6 orchestrator/design prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
 - **"Model-tier discipline" section** added to all four root docs in `templates/agents/` (`AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`), documenting the cheap-first rule of thumb, the autonomous-cycle invariant (delegates keep their own pins — orchestrators do **not** force their tier onto delegated steps), and the per-agent override surface (Copilot picker / Claude `/model` / Codex `--model`). `CLAUDE.md` also gets a **"When to escalate `sonnet` → `opus`"** paragraph explaining why `sonnet` is the default smart tier (matches or beats `opus` on `SWE-Bench Verified` at 5× lower cost) and when the escalation is actually justified.
 - **Model tiers section in `templates/shared/prompts/README.md`** — per-prompt tier table with rationale, override surface reference, and autonomous-cycle note.
-- **`docs/subagent-cost-optimization-plan.md`** — full plan covering M1 through M5 with vendor-support matrix (verified 2026-07) and design decisions (cheap-first universal, native pickers only, `core-review --budget {quick,medium,thorough}`).
 
 #### M3 — Claude Code installer remaps `model:` frontmatter to Claude aliases
 
