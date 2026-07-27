@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Prepare code for a pull request by running all validations
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # Prepare for Pull Request
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Prepare the current branch for a pull request by running all validations.
 

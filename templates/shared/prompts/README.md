@@ -49,6 +49,28 @@ prompts/
     └── quality-check.prompt.md       # Run PHPCS / PHPStan / PHPUnit
 ```
 
+## Model tiers
+
+Every shipped prompt carries an explicit `model:` frontmatter default so a fresh install runs cost-optimally without configuration. Overrides go through each agent's native UI (Copilot model picker / Claude `/model` / Codex `--model`); the frontmatter is the default, the picker is the override.
+
+| Tier | Copilot default | Claude alias | When to keep it | When to override to smart |
+| --- | --- | --- | --- | --- |
+| **Cheap** | `Claude Haiku 4.5 (copilot)` → `GPT-5 mini (copilot)` | `haiku` | Checklist / mechanical work (see table below) | Rare — only if the cheap model can't complete the task |
+| **Smart** | `Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)` | `sonnet` | Design / reasoning work | Always the default for the 6 orchestrator prompts below |
+
+| Prompt | Tier | Rationale |
+| --- | --- | --- |
+| `analyze-ticket`, `analyze-github-issue` | Cheap | Read + summarize |
+| `add-tests`, `audit-ai-seo`, `fix-issues`, `review-code` | Cheap | Deterministic checklists |
+| `new-wp-component`, `new-wp-plugin`, `quality-check` | Cheap | Scaffolding / tool runs |
+| `prepare-pr`, `prepare-github-release`, `finalize-pr`, `finalize-github-pr` | Cheap | Validation + git/gh mechanics |
+| `create-plan` | Smart | Real design reasoning |
+| `work-ticket`, `work-github-issue` | Smart | Implementation orchestration (delegates keep their own cheap pins) |
+| `create-pr`, `create-github-pr` | Smart | PR authoring + review orchestration (delegates keep their own cheap pins) |
+| `resolve-github-reviews` | Smart | The *fix* step may need reasoning; fetch/reply mechanics can be cheap-tier overridden |
+
+**Autonomous cycles honour each callee's own pin.** A smart-tier orchestrator chaining into a cheap-tier delegate lets the delegate's `model:` win for that turn — orchestrators must not force their tier onto delegated steps.
+
 ## Workflow Stages
 
 ```

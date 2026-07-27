@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Analyze a GitHub issue without creating branches or making changes
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # Analyze GitHub Issue
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Analyze GitHub issue **#{issue-number}** in repository **{owner}/{repo}** and provide a comprehensive assessment without making any code changes.
 

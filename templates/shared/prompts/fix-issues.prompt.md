@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Fix failing tests and lint errors
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # Fix Code Issues
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Fix failing tests, lint errors, and type errors in the codebase.
 

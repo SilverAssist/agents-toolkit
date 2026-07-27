@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Create a detailed implementation plan for a feature
+model:
+  - Claude Sonnet 4.5 (copilot)
+  - GPT-5 (copilot)
 ---
 
 # Create Implementation Plan
+
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — planning requires reasoning. Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Create a detailed implementation plan for: **{feature-description}**
 

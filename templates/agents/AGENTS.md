@@ -52,6 +52,22 @@
 
 ---
 
+## 💰 Model-tier discipline
+
+Every shipped prompt carries an explicit `model:` frontmatter default. The rule of thumb:
+
+- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5` → `GPT-5 mini`). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (`Claude Sonnet 4.5` → `GPT-5`). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+
+**Autonomous cycles honour each callee's own pin.** A smart-tier orchestrator (`create-github-pr`, `work-github-issue`, …) chaining into a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) lets the delegate's frontmatter win for that turn — do not force the orchestrator's tier onto delegated steps.
+
+**Overrides use native pickers**, never a custom prompt:
+- **Copilot:** model picker in the VS Code chat panel before invoking the prompt.
+- **Claude Code:** `/model` slash command.
+- **Codex:** `codex --model …` or `~/.codex/config.toml`.
+
+---
+
 ## ⚙️ Code Conventions (Quick Reference)
 
 | Rule | Standard |

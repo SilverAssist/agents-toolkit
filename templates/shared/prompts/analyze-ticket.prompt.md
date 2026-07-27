@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Analyze a Jira ticket without creating branches or making changes
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # Analyze Jira Ticket
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Analyze Jira ticket **{ticket-id}** and provide a comprehensive assessment without making any code changes.
 

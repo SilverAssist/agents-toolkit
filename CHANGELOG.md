@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-07-27
+
+### Added
+
+- **Explicit `model:` frontmatter on every shipped prompt** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — cheap-first universal defaults so a fresh install runs cost-optimally without configuration. Every `.prompt.md` in `templates/shared/prompts/` now carries a prioritized `model:` array (primary + fallback) plus a `**Model:**` override header under its H1 pointing at each agent's native picker.
+  - **Cheap-tier pin** (`Claude Haiku 4.5 (copilot)` → `GPT-5 mini (copilot)`) on the 13 checklist/mechanical prompts: `add-tests`, `analyze-github-issue`, `analyze-ticket`, `audit-ai-seo`, `finalize-github-pr`, `finalize-pr`, `fix-issues`, `new-wp-component`, `new-wp-plugin`, `prepare-github-release`, `prepare-pr`, `quality-check`, `review-code`.
+  - **Smart-tier pin** (`Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)`) — explicit, not implicit inheritance — on the 6 orchestrator/design prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+- **"Model-tier discipline" section** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) added to all four root docs in `templates/agents/` (`AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`), documenting the cheap-first rule of thumb, the autonomous-cycle invariant (delegates keep their own pins — orchestrators do **not** force their tier onto delegated steps), and the per-agent override surface (Copilot picker / Claude `/model` / Codex `--model`).
+- **Model tiers section in `templates/shared/prompts/README.md`** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — per-prompt tier table with rationale, override surface reference, and autonomous-cycle note.
+- **`docs/subagent-cost-optimization-plan.md`** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — full plan covering M1 through M5 (M2 shipped in this release; M3 = Claude installer `model:` remap; M4 = `Explore.md` override + `.agents-toolkit.json` `models` block + `core-review --budget` + `--model-pins` CLI flag; M5 = measure). Documents the vendor-support matrix (verified 2026-07) and the design decisions (cheap-first universal, native pickers only, `core-review --budget {quick,medium,thorough}`).
+
+### Notes
+
+- **Backward compatible.** Every asset still works when the `model:` field is ignored (Codex sessions today, older Copilot versions, older Claude Code releases). The frontmatter is a hint, not a requirement.
+- **No behaviour changes** to prompt bodies — only frontmatter additions and the `**Model:**` header line.
+- **Claude Code installer transform lands in the M3 minor bump** — until then, Claude users see the Copilot-qualified names in their `.claude/commands/*.md`; Claude falls back to the inherited session model, so nothing breaks.
+
 ## [2.6.0] - 2026-07-26
 
 ### Added

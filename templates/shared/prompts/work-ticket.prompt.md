@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Start working on a Jira ticket with full workflow setup
+model:
+  - Claude Sonnet 4.5 (copilot)
+  - GPT-5 (copilot)
 ---
 
 # Work on Jira Ticket
+
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates run on their own cheap-tier pins. Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Start working on Jira ticket **{ticket-id}** with complete workflow setup.
 

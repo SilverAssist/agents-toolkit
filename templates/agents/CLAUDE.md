@@ -61,6 +61,17 @@ Custom slash commands are available in `.claude/commands/`:
 | `/fix-issues` | Fix identified code issues |
 | `/add-tests` | Add tests for existing code |
 
+## Model-tier discipline
+
+Every shipped slash command carries an explicit `model:` frontmatter default (after the CLI's Copilot→Claude alias remap). The rule of thumb:
+
+- **Checklist / mechanical work → `haiku`.** Commands: `/quality-check`, `/review-code`, `/fix-issues`, `/add-tests`, `/prepare-pr`, `/finalize-*`, `/analyze-*`, `/audit-ai-seo`, `/prepare-github-release`, `/new-wp-*`.
+- **Design / reasoning → `sonnet` (explicit, not inherited).** Commands: `/create-plan`, `/work-ticket`, `/work-github-issue`, `/create-pr`, `/create-github-pr`, `/resolve-github-reviews`.
+
+**Autonomous cycles honour each callee's own pin.** A smart-tier command that delegates to a cheap-tier skill or command lets the delegate's `model:` win for that turn — skills honour `model:` only while active, so the outer chat's model is preserved when the delegate finishes.
+
+**Override for one turn:** use the `/model` slash command in Claude Code before invoking the command. Or set `CLAUDE_CODE_SUBAGENT_MODEL` in your shell to force a specific model for every subagent spawn.
+
 ## Key Technologies & Frameworks
 
 - **Next.js 15.x** with App Router for modern React development

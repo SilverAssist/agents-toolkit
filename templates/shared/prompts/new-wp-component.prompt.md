@@ -6,9 +6,14 @@ tools:
   - read_file
   - replace_string_in_file
   - create_file
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # New Component
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Scaffold a new component in the current Silver Assist plugin following the LoadableInterface architecture.
 

@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Start working on a GitHub issue with full workflow setup
+model:
+  - Claude Sonnet 4.5 (copilot)
+  - GPT-5 (copilot)
 ---
 
 # Work on GitHub Issue
+
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates run on their own cheap-tier pins. Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Start working on GitHub issue **#{issue-number}** in repository **{owner}/{repo}** with complete workflow setup.
 

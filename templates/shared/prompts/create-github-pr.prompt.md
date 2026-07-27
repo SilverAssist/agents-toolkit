@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Create a pull request for the current branch linked to a GitHub issue
+model:
+  - Claude Sonnet 4.5 (copilot)
+  - GPT-5 (copilot)
 ---
 
 # Create GitHub Pull Request
+
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates (`prepare-pr`, `core-review`) run on their own cheap-tier pins. Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Create a pull request for the current branch linked to GitHub issue **#{issue-number}**.
 

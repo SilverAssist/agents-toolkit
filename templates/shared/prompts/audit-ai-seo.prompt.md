@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Run a comprehensive AI SEO optimization audit on the current project. Checks agent-friendly UX, E-E-A-T signals, content quality, technical SEO, and structured data.
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # AI SEO Optimization Audit
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Run a comprehensive audit of this project for Google AI Search visibility and browser agent readiness.
 

@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Add tests for a component or function
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # Add Tests
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Add tests for **{target-file}** or **{component-name}**.
 

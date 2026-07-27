@@ -48,6 +48,19 @@
 
 ---
 
+## 💰 Model-tier discipline
+
+Every shipped prompt carries an explicit `model:` frontmatter default (used by Copilot; Codex sessions honour the recommendation by running `codex --model`). The rule of thumb:
+
+- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5` → `GPT-5 mini`). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (`Claude Sonnet 4.5` → `GPT-5`). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+
+**Autonomous cycles honour each callee's own pin.** When a smart-tier orchestrator chains into a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) let the delegate's frontmatter recommendation win — do not force the orchestrator's tier onto delegated steps.
+
+**Overrides for Codex users:** each prompt's `**Model:**` header line lists the cheap-tier default. If you want to change tier for the current run, restart the Codex session with `codex --model …` or set `~/.codex/config.toml` `model = "…"`.
+
+---
+
 ## ⚙️ Code Conventions (Quick Reference)
 
 | Rule | Standard |

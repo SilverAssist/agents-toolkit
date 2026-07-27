@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Fetch, respond to, resolve, and close GitHub PR review comments (Copilot or human)
+model:
+  - Claude Sonnet 4.5 (copilot)
+  - GPT-5 (copilot)
 ---
 
 # Resolve GitHub PR Reviews
+
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the *fix step* may need real reasoning. For the fetch/reply/resolve mechanics you can temporarily switch to the cheap tier via the Copilot model picker (`/model` in Claude Code, `codex --model` in Codex) and switch back for the fix.
 
 Clear a pull request's review threads end-to-end: **fetch → address → reply → resolve → verify `0` unresolved**.
 Works for both **Copilot** and **human** reviews.

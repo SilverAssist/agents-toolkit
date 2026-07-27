@@ -45,6 +45,17 @@ For each phase:
 - ✅ **Document as you go** - Update docs with each phase
 - ✅ **Type safety** - Maintain full TypeScript coverage
 
+## Model-tier discipline
+
+Every shipped `.prompt.md` carries an explicit `model:` frontmatter default. The rule of thumb:
+
+- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5` → `GPT-5 mini`). Prompts: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (`Claude Sonnet 4.5` → `GPT-5`). Prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+
+**Autonomous cycles honour each callee's own pin.** When a smart-tier orchestrator (`create-github-pr`, `work-github-issue`, …) chains into a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) let the delegate's frontmatter win — do not force the orchestrator's tier onto delegated steps.
+
+**Override:** use the Copilot model picker in the VS Code chat panel before invoking the prompt. The frontmatter is the default; the picker is the override.
+
 ## Key Technologies & Frameworks
 
 - **Next.js 15.x** with App Router for modern React development

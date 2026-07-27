@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Finalize a pull request after approval and prepare for merge
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # Finalize Pull Request
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Finalize PR for Jira ticket **{ticket-id}** after approval and prepare for merge.
 

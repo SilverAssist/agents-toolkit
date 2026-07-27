@@ -1,9 +1,14 @@
 ---
 agent: agent
 description: Quick code review of current changes
+model:
+  - Claude Haiku 4.5 (copilot)
+  - GPT-5 mini (copilot)
 ---
 
 # Quick Code Review
+
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
 
 Perform a quick code review of the current changes.
 
