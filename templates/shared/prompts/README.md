@@ -65,11 +65,14 @@ Every shipped prompt carries an explicit `model:` frontmatter default so a fresh
 | `new-wp-component`, `new-wp-plugin`, `quality-check` | Cheap | Scaffolding / tool runs |
 | `prepare-pr`, `prepare-github-release`, `finalize-pr`, `finalize-github-pr` | Cheap | Validation + git/gh mechanics |
 | `create-plan` | Smart | Real design reasoning |
-| `work-ticket`, `work-github-issue` | Smart | Implementation orchestration (delegates keep their own cheap pins) |
-| `create-pr`, `create-github-pr` | Smart | PR authoring + review orchestration (delegates keep their own cheap pins) |
-| `resolve-github-reviews` | Smart | The *fix* step may need reasoning; fetch/reply mechanics can be cheap-tier overridden |
+| `work-ticket`, `work-github-issue` | Smart | Implementation orchestration (see "Autonomous cycles" note below — delegate behaviour is platform-specific) |
+| `create-pr`, `create-github-pr` | Smart | PR authoring + review orchestration (see "Autonomous cycles" note below — delegate behaviour is platform-specific) |
+| `resolve-github-reviews` | Smart | The *fix* step may need reasoning. The fetch/reply mechanics run on the pinned smart tier during a single invocation because `model:` locks the model for the run — to run those phases cheap you must invoke them from a separate cheap-tier chat, edit the installed `model:` before running, or reinstall with `--model-pins off`. |
 
-**Autonomous cycles honour each callee's own pin.** A smart-tier orchestrator chaining into a cheap-tier delegate lets the delegate's `model:` win for that turn — orchestrators must not force their tier onto delegated steps.
+**Autonomous cycles — delegate model behaviour is platform-specific.**
+- **Claude Code**: each delegate has its own `model:` boundary (skills via `SKILL.md`, slash-commands via `.md` frontmatter), so a cheap-tier delegate invoked from a smart-tier orchestrator runs on the delegate's own pin for that turn. Orchestrators must not force their tier onto delegated steps.
+- **Copilot**: only `.prompt.md` files establish a `model:` boundary; skills inherit the invoking prompt's model. An inline delegate skill (like `core-review`) called from a smart-tier orchestrator therefore runs on the smart tier too — to force it cheap on Copilot, invoke the delegate as a **standalone chat** (fresh prompt invocation) rather than inline.
+- **Codex**: the session runs one model set by `codex --model`; delegate `model:` is advisory-only and cannot switch mid-session. Open a separate `codex --model <cheap>` session for cheap-tier delegate steps.
 
 ## Workflow Stages
 

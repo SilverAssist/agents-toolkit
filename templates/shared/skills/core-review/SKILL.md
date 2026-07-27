@@ -49,10 +49,13 @@ optimization, never a requirement**:
   caller-supplied `--budget` (see the next section) — `quick` is diff + directly-touched files,
   `medium` adds one-hop neighbours, `thorough` is the whole repo. On Copilot the effective model
   for this pass is whatever the *invoking* prompt pins (skills don't have their own model on
-  Copilot), so callers that pin cheap (`finalize-github-pr`, `resolve-github-reviews`) already
-  run the pass on `Claude Haiku 4.5` / `GPT-5 mini`. If you invoke this skill standalone from a
-  fresh chat with no wrapping prompt, set the picker to a cheap model before running — the
-  checklist is deterministic and pattern-driven, so the smart tier is wasted on it.
+  Copilot), so the shipped `model: haiku` in this skill's frontmatter is **advisory-only on
+  Copilot** — it is honoured only when the invoking prompt is itself cheap-pinned (e.g.
+  `finalize-github-pr`, which is a cheap-tier orchestrator) or when this skill is invoked
+  standalone from a fresh chat. Smart-tier orchestrators (`create-github-pr`,
+  `resolve-github-reviews`, `work-github-issue`) run their inline `core-review` pass on the
+  smart tier on Copilot; to keep the pass cheap there, invoke this skill as a **standalone
+  chat** with the picker set to a cheap model.
 - **Codex** — no subagents either; the same **inline pass**, scoped by the caller's `--budget`
   (see below). Codex has no per-prompt or per-skill `model:` field, so the model is set
   session-wide by `codex --model` (or `~/.codex/config.toml`). Consider `codex --model o4-mini`
@@ -71,10 +74,16 @@ caller fixes and re-runs until clean.
 
 ## `--budget {quick,medium,thorough}` — cost-aware scoping
 
-The review pass is **cheap-tier by default** (Claude `haiku` on Claude Code, `Claude Haiku 4.5`
-on Copilot/Codex — see the shipped `model:` frontmatter). It runs at least once per PR, plus
-once per review round, so a `sonnet`-tier default would multiply the token cost of every autonomous
-cycle. Callers pass `--budget` to scope the pass to the amount of drift the current step can
+The review pass is **cheap-tier by default on Claude Code** (the shipped `model: haiku`
+frontmatter is honoured per-turn there). On **Copilot** the pass inherits the invoking prompt's
+model (skills have no independent `model:` boundary), so "cheap by default" holds only when the
+caller is itself cheap-pinned (`finalize-github-pr`) or the skill is invoked standalone with a
+cheap picker; when invoked inline from a smart-tier orchestrator (`create-github-pr`,
+`resolve-github-reviews`), the pass runs smart. On **Codex** the pass runs whatever the session
+model is (`codex --model`). The skill still ships `model: haiku` because it runs at least once
+per PR plus once per review round, so a `sonnet`-tier default would multiply the token cost of
+every autonomous cycle wherever the pin *is* honoured. Callers pass `--budget` to scope the pass
+to the amount of drift the current step can realistically introduce:
 realistically introduce:
 
 | Budget       | Scope                                                                            | When callers use it                                                             |
