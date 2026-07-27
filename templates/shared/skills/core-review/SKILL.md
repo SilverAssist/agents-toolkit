@@ -1,6 +1,8 @@
 ---
 name: core-review
 description: Run a thorough, whole-repo consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Use when about to push a branch for review or to push a batch of review fixes.
+model: haiku
+argument-hint: --budget quick|medium|thorough
 ---
 
 # Silver Assist — Core Review (Pre-Review)
@@ -55,6 +57,29 @@ optimization, never a requirement**:
 
 Whichever agent, the contract is identical: **read-only in, prioritized findings out**, then the
 caller fixes and re-runs until clean.
+
+## `--budget {quick,medium,thorough}` — cost-aware scoping
+
+The review pass is **cheap-tier by default** (Claude `haiku` on Claude Code, `Claude Haiku 4.5`
+on Copilot/Codex — see the shipped `model:` frontmatter). It runs at least once per PR, plus
+once per review round, so a `sonnet`-tier default would multiply the token cost of every autonomous
+cycle. Callers pass `--budget` to scope the pass to the amount of drift the current step can
+realistically introduce:
+
+| Budget       | Scope                                                                            | When callers use it                                                             |
+| ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `quick`      | Just the diff (`git diff` vs the base branch) plus the files it directly touches | `finalize-*` and `resolve-github-reviews` pre-push fix batches                  |
+| `medium`     | Diff + one-hop neighbours: importers/consumers, docs & indexes that list the changed symbol or asset, sibling files in the same folder | `create-pr` / `create-github-pr` pre-PR pass — the default when unspecified     |
+| `thorough`   | Whole repository — every file, index, README, workflow, and cross-repo doc claim | Standalone pre-release review, or when the diff touches architecture / renaming |
+
+**Cheap tier is safe at every budget.** `thorough` does not automatically switch to the smart
+tier — it just widens the file set. Callers who genuinely need reasoning (architecture reviews,
+renames that span layers) can pass `--budget thorough` **and** override the model at the agent
+level (Copilot picker, Claude `/model sonnet`, Codex `--model gpt-5-codex`). Do **not** hard-code
+a smart-tier override in the calling prompt: the caller decides, not this skill.
+
+The default when `--budget` is omitted is `medium`. `--budget quick` still runs the full
+checklist below — it just narrows the file set the checklist is applied to.
 
 ## The review checklist
 

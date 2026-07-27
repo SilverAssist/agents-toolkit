@@ -775,3 +775,121 @@ test('claude install preserves the > **Model:** blockquote body text', (t) => {
   const content = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'quality-check.md'), 'utf-8');
   assert.match(content, /> \*\*Model:\*\* Default cheap tier/, 'body-level model note must survive the transform');
 });
+
+// ─── #39 M4: --model-pins + models config + agent overrides + --budget ────────
+
+test('help shows --model-pins and --no-agent-overrides flags', () => {
+  const { status, stdout } = runCli(['help'], process.cwd());
+  assert.equal(status, 0);
+  assert.match(stdout, /--model-pins <val>/);
+  assert.match(stdout, /--no-agent-overrides/);
+});
+
+test('claude install copies Explore subagent override by default', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const explorePath = path.join(tempDir, '.claude', 'agents', 'Explore.md');
+  assert.ok(fs.existsSync(explorePath), 'Explore.md must exist at .claude/agents/Explore.md');
+  const content = fs.readFileSync(explorePath, 'utf-8');
+  assert.match(content, /^---\n[\s\S]*?name: Explore/, 'Explore.md must keep its Claude subagent frontmatter');
+  assert.match(content, /model: haiku/, 'Explore override must pin cheap tier');
+});
+
+test('--no-agent-overrides skips .claude/agents/ install', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only', '--no-agent-overrides'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentsDir = path.join(tempDir, '.claude', 'agents');
+  assert.equal(fs.existsSync(agentsDir), false, '.claude/agents/ must not be created with --no-agent-overrides');
+});
+
+test('invalid --model-pins value fails with a clear error', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stdout } = runCli(['install', '--model-pins', 'yes'], tempDir);
+  assert.equal(status, 1);
+  assert.match(stdout, /Invalid --model-pins value/);
+});
+
+test('--model-pins off strips model: from copilot prompts', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--prompts-only', '--model-pins', 'off'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const file = path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md');
+  const content = fs.readFileSync(file, 'utf-8');
+  assert.doesNotMatch(content, /^model:/m, 'model: block must be stripped from copilot prompts with --model-pins off');
+  assert.doesNotMatch(content, /Claude Haiku 4\.5 \(copilot\)/, 'cheap-tier vendor name must be gone');
+  // Frontmatter block itself still exists (agent/description/tools stay).
+  assert.match(content, /^---\n[\s\S]*?agent: agent/m, 'other frontmatter fields must survive --model-pins off');
+});
+
+test('--model-pins off strips model: from claude commands', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only', '--model-pins', 'off'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const file = path.join(tempDir, '.claude', 'commands', 'quality-check.md');
+  const content = fs.readFileSync(file, 'utf-8');
+  assert.doesNotMatch(content, /^---\nmodel:/m, 'claude commands must have no model frontmatter with --model-pins off');
+});
+
+test('models.copilot config overrides substitute into copilot prompt frontmatter', (t) => {
+  const tempDir = createTempProject(t);
+  fs.writeFileSync(
+    path.join(tempDir, '.agents-toolkit.json'),
+    JSON.stringify({
+      models: {
+        copilot: { cheap: 'GPT-5 mini (copilot)', smart: 'Claude Opus 4.7 (copilot)' },
+      },
+    }, null, 2)
+  );
+
+  const { status, stderr } = runCli(['install', '--prompts-only', '--force'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  // Cheap-tier prompt: primary entry rewritten from Haiku to GPT-5 mini.
+  const cheap = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md'), 'utf-8');
+  assert.match(cheap, /- GPT-5 mini \(copilot\)/, 'cheap-tier primary must be rewritten');
+  assert.doesNotMatch(cheap, /- Claude Haiku 4\.5 \(copilot\)/, 'shipped Haiku pin must be replaced');
+
+  // Smart-tier prompt: primary entry rewritten from Sonnet to Opus.
+  const smart = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'create-plan.prompt.md'), 'utf-8');
+  assert.match(smart, /- Claude Opus 4\.7 \(copilot\)/, 'smart-tier primary must be rewritten to Opus');
+  assert.doesNotMatch(smart, /- Claude Sonnet 4\.5 \(copilot\)/, 'shipped Sonnet pin must be replaced');
+});
+
+test('models.claude config overrides substitute alias in claude commands', (t) => {
+  const tempDir = createTempProject(t);
+  fs.writeFileSync(
+    path.join(tempDir, '.agents-toolkit.json'),
+    JSON.stringify({ models: { claude: { smart: 'opus' } } }, null, 2)
+  );
+
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  // Cheap tier keeps haiku (no override), smart tier uses configured opus.
+  const cheap = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'quality-check.md'), 'utf-8');
+  assert.match(cheap, /^---\nmodel: haiku\n---/, 'unoverridden cheap tier must stay haiku');
+
+  const smart = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'create-plan.md'), 'utf-8');
+  assert.match(smart, /^---\nmodel: opus\n---/, 'smart tier must be rewritten to configured opus alias');
+});
+
+test('core-review skill ships model: haiku and --budget hint', () => {
+  const skillPath = path.join(process.cwd(), 'templates', 'shared', 'skills', 'core-review', 'SKILL.md');
+  const content = fs.readFileSync(skillPath, 'utf-8');
+  assert.match(content, /^model: haiku$/m, 'core-review must pin the cheap tier for Claude');
+  assert.match(content, /argument-hint: --budget quick\|medium\|thorough/, 'core-review must advertise the --budget argument');
+  assert.match(content, /## `--budget \{quick,medium,thorough\}`/, 'core-review must document the budget scoping');
+});
+
+test('orchestrator prompts pass explicit --budget to core-review', () => {
+  const preview = (name) => fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
+  assert.match(preview('create-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget medium`/, 'create-github-pr must pass --budget medium');
+  assert.match(preview('finalize-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'finalize-github-pr must pass --budget quick');
+  assert.match(preview('resolve-github-reviews.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'resolve-github-reviews must pass --budget quick');
+});

@@ -87,9 +87,12 @@ Now run a **whole-repo** consistency review to catch the doc↔code drift, inval
 broken links, and stale indexes that otherwise trigger multi-round Copilot reviews. Review the
 whole repo — not just the diff — because Copilot re-reviews entire files.
 
-Run the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) as a dedicated,
-read-only review pass. It works on every agent — only the mechanism differs (subagents are a
-Claude-Code-only optimization, not a requirement):
+Run the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget medium`**
+(diff + one-hop neighbours: importers, indexes, sibling files). This is the pre-PR pass — the
+diff is complete, so a `quick` pass would miss cross-file drift, but `thorough` (whole-repo) is
+normally overkill at this stage unless the change touches architecture or renames symbols across
+layers. Run it as a dedicated, read-only pass. It works on every agent — only the mechanism
+differs (subagents are a Claude-Code-only optimization, not a requirement):
 
 - **GitHub Copilot / Codex** — no subagents; run the checklist **inline as a distinct pass** over
   the **whole repository** (not just the diff), producing the prioritized findings list.

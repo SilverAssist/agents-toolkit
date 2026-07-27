@@ -43,6 +43,20 @@ const DEFAULT_CONFIG = {
   pr: {
     targetBranch: 'dev',
     template: 'default'
+  },
+  // Cheap-first model pins shipped with each prompt (see docs/subagent-cost-
+  // optimization-plan.md §5.2G). Override per-project or per-user by editing
+  // these values; the CLI substitutes them into `model:` frontmatter at
+  // install time. Setting a value to null preserves the shipped default.
+  models: {
+    copilot: {
+      cheap: 'Claude Haiku 4.5 (copilot)',
+      smart: 'Claude Sonnet 4.5 (copilot)'
+    },
+    claude: {
+      cheap: 'haiku',
+      smart: 'sonnet'
+    }
   }
 };
 
@@ -821,6 +835,102 @@ function installAgentsFile(options = {}) {
   return result;
 }
 
+/**
+ * Rewrite Copilot / Codex prompt frontmatter to honour user-configured model
+ * pins from `.agents-toolkit.json` `models.copilot.{cheap,smart}` or strip
+ * the pins entirely when `--model-pins off`.
+ *
+ * The shipped defaults are:
+ *   - cheap tier: `Claude Haiku 4.5 (copilot)` → `GPT-5 mini (copilot)`
+ *   - smart tier: `Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)`
+ *
+ * The tier of a given prompt is inferred from the first entry in its `model:`
+ * array (`*Haiku*` = cheap, `*Sonnet*`/`*Opus*` = smart). When the resolved
+ * cheap/smart matches the shipped default, the content is returned unchanged
+ * (fast path — no rewrite for the common case).
+ *
+ * When `stripModel` is true (`--model-pins off`), the entire `model:` block
+ * (scalar line or block-scalar array) is removed from the frontmatter so
+ * every prompt falls back to Copilot's picker default.
+ *
+ * @param {string} content - Original .prompt.md content
+ * @param {Object} [options] - Transform options
+ * @param {{cheap:string,smart:string}} [options.copilotModels] - Resolved user
+ *   overrides. Defaults to the shipped values.
+ * @param {boolean} [options.stripModel] - When true, drop `model:` entirely.
+ * @returns {string} Content with rewritten (or stripped) frontmatter
+ */
+function transformFrontmatterForCopilot(content, options = {}) {
+  const { copilotModels, stripModel = false } = options;
+  const match = content.match(/^---\n([\s\S]*?)\n---\n(\n?)/);
+  if (!match) return content;
+
+  const frontmatterBody = match[1];
+  const trailingBlank = match[2];
+  const body = content.slice(match[0].length);
+
+  const arrayBlockRegex = /^model:[ \t]*\n((?:[ \t]*-[ \t]*[^\n]+\n?)+)/m;
+  const scalarBlockRegex = /^model:[ \t]+[^\n]+\n?/m;
+  const arrayBlockMatch = frontmatterBody.match(arrayBlockRegex);
+  const scalarBlockMatch = arrayBlockMatch ? null : frontmatterBody.match(scalarBlockRegex);
+
+  if (stripModel) {
+    let stripped = frontmatterBody;
+    if (arrayBlockMatch) {
+      stripped = stripped.replace(arrayBlockRegex, '').replace(/\n{2,}/g, '\n').replace(/\n+$/, '');
+    } else if (scalarBlockMatch) {
+      stripped = stripped.replace(scalarBlockRegex, '').replace(/\n{2,}/g, '\n').replace(/\n+$/, '');
+    } else {
+      return content;
+    }
+    return `---\n${stripped}\n---\n${trailingBlank}${body}`;
+  }
+
+  if (!arrayBlockMatch && !scalarBlockMatch) return content;
+  if (!copilotModels) return content;
+
+  const shippedCheap = DEFAULT_CONFIG.models.copilot.cheap;
+  const shippedSmart = DEFAULT_CONFIG.models.copilot.smart;
+  if (copilotModels.cheap === shippedCheap && copilotModels.smart === shippedSmart) {
+    return content;
+  }
+
+  const values = [];
+  if (arrayBlockMatch) {
+    for (const line of arrayBlockMatch[1].split('\n')) {
+      const item = line.match(/^[ \t]*-[ \t]*(.+?)[ \t]*$/);
+      if (item) values.push(item[1]);
+    }
+  } else {
+    values.push(scalarBlockMatch[0].replace(/^model:[ \t]+/, '').trim());
+  }
+
+  if (!values.length) return content;
+
+  let tier = null;
+  const primary = values[0];
+  if (/haiku/i.test(primary)) tier = 'cheap';
+  else if (/sonnet|opus/i.test(primary)) tier = 'smart';
+  if (!tier) return content;
+
+  const shipped = tier === 'cheap' ? shippedCheap : shippedSmart;
+  const resolved = tier === 'cheap' ? copilotModels.cheap : copilotModels.smart;
+  if (!resolved || resolved === shipped) return content;
+
+  const rewritten = values.map((v) => (v === shipped ? resolved : v));
+  const newBlock = rewritten.length === 1
+    ? `model: ${rewritten[0]}`
+    : `model:\n${rewritten.map((v) => `  - ${v}`).join('\n')}`;
+
+  let newFrontmatter;
+  if (arrayBlockMatch) {
+    newFrontmatter = frontmatterBody.replace(arrayBlockRegex, `${newBlock}\n`).replace(/\n+$/, '');
+  } else {
+    newFrontmatter = frontmatterBody.replace(scalarBlockRegex, `${newBlock}\n`).replace(/\n+$/, '');
+  }
+  return `---\n${newFrontmatter}\n---\n${trailingBlank}${body}`;
+}
+
 function installGitBasedTarget(options = {}, target = 'copilot') {
   const {
     force = false,
@@ -829,6 +939,8 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     copy = false,
     global: isGlobal = false,
     filters = { stack: 'all', tracker: 'all' },
+    modelPins = 'on',
+    models = DEFAULT_CONFIG.models,
   } = options;
   const isCodex = target === 'codex';
   const targetDir = getTargetDir(isGlobal);
@@ -844,6 +956,14 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   const promptsFilter = makeFilter('prompts');
   const partialsFilter = makeFilter('partials');
+  const shippedCopilot = DEFAULT_CONFIG.models.copilot;
+  const copilotModels = models?.copilot || shippedCopilot;
+  const copilotTransformNeeded = modelPins === 'off'
+    || copilotModels.cheap !== shippedCopilot.cheap
+    || copilotModels.smart !== shippedCopilot.smart;
+  const copilotTransform = copilotTransformNeeded
+    ? (content) => transformFrontmatterForCopilot(content, { copilotModels, stripModel: modelPins === 'off' })
+    : undefined;
 
   log(isCodex ? '\n⚡ Codex Installer\n' : isGlobal ? '\n🌐 Agents Toolkit Global Installer\n' : '\n📦 Agents Toolkit Installer\n', 'bright');
 
@@ -857,7 +977,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallPrompts) {
     info('Installing prompts...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun, filter: promptsFilter, partialsFilter });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun, filter: promptsFilter, partialsFilter, transformContent: copilotTransform });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -982,7 +1102,16 @@ function installCodex(options = {}) {
  * @param {Object} options - Install options
  */
 function installClaude(options = {}) {
-  const { force = false, dryRun = false, copy = false, global: isGlobal = false, filters = { stack: 'all', tracker: 'all' }, modelPins = 'on', models = {} } = options;
+  const {
+    force = false,
+    dryRun = false,
+    copy = false,
+    global: isGlobal = false,
+    filters = { stack: 'all', tracker: 'all' },
+    modelPins = 'on',
+    models = DEFAULT_CONFIG.models,
+    noAgentOverrides = false,
+  } = options;
   const scope = getInstallScope(options);
   const claudeDir = getClaudeTargetDir(isGlobal);
   const githubDir = getTargetDir(isGlobal);
@@ -1024,6 +1153,21 @@ function installClaude(options = {}) {
 
     if (!dryRun && result.written > 0) {
       success(`Installed ${result.written} command files to .claude/commands/`);
+    }
+  }
+
+  // Install Claude Code subagent overrides (e.g. Explore.md → cheap tier).
+  // Skipped when --no-agent-overrides is passed so users can keep Claude's
+  // built-in defaults.
+  if (scope.shouldInstallPrompts && !noAgentOverrides) {
+    const agentsDir = path.join(TEMPLATES_DIR, 'shared', 'agents');
+    if (fs.existsSync(agentsDir)) {
+      info('Installing subagent overrides...');
+      const result = copyDir(agentsDir, path.join(claudeDir, 'agents'), { force, dryRun });
+      totalChanges += getChangeCount(result, dryRun);
+      if (!dryRun && result.written > 0) {
+        success(`Installed ${result.written} agent override(s) to .claude/agents/`);
+      }
     }
   }
 
@@ -1369,6 +1513,8 @@ function showHelp() {
   console.log('  --skills-only       Only install skills');
   console.log('  --hooks-only        Only install hooks (PostToolUse validation scripts)');
   console.log('  --copy              Copy skills instead of symlinking to .agents/skills/');
+  console.log('  --model-pins <val>  Ship `model:` frontmatter: on | off (default: on)');
+  console.log('  --no-agent-overrides  Skip installing .claude/agents/ overrides (Claude only)');
   console.log('  --dry-run           Show what would be installed');
 
   console.log('');
@@ -1403,6 +1549,7 @@ function parseArgs() {
   let target = null;
   let stack = null;
   let tracker = null;
+  let modelPins = null;
   for (let i = 0; i < flags.length; i++) {
     const arg = flags[i];
     if (arg === '--target') {
@@ -1435,6 +1582,16 @@ function parseArgs() {
       }
     } else if (arg.startsWith('--tracker=')) {
       tracker = arg.split('=').slice(1).join('=');
+    } else if (arg === '--model-pins') {
+      const value = flags[i + 1];
+      if (value && !value.startsWith('-')) {
+        modelPins = value;
+        i++;
+      } else {
+        modelPins = '';
+      }
+    } else if (arg.startsWith('--model-pins=')) {
+      modelPins = arg.split('=').slice(1).join('=');
     }
   }
 
@@ -1451,9 +1608,11 @@ function parseArgs() {
     claude: flags.includes('--claude'),
     codex: flags.includes('--codex'),
     append: flags.includes('--append'),
+    noAgentOverrides: flags.includes('--no-agent-overrides'),
     target,
     stack,
     tracker,
+    modelPins,
   };
   
   return { command, options };
@@ -1570,6 +1729,68 @@ function resolveFilters(options = {}) {
 }
 
 /**
+ * Read the `models` block and `modelPins` toggle from the resolved config
+ * chain (global → project → CLI flag).
+ * `--model-pins off` strips shipped `model:` frontmatter during install so
+ * every prompt falls back to the agent's globally-configured default.
+ * `--model-pins on` (default) keeps the shipped pins and applies any user
+ * overrides from `.agents-toolkit.json` `models.{copilot,claude}.{cheap,smart}`.
+ * @param {Object} [options] - Parsed CLI options
+ * @returns {{ modelPins: 'on'|'off', models: { copilot: {cheap:string,smart:string}, claude: {cheap:string,smart:string} } }}
+ */
+function resolveModelSettings(options = {}) {
+  const validPins = ['on', 'off'];
+  let modelPins = 'on';
+  const models = {
+    copilot: { ...DEFAULT_CONFIG.models.copilot },
+    claude: { ...DEFAULT_CONFIG.models.claude },
+  };
+
+  const applyConfigFile = (configPath) => {
+    if (!fs.existsSync(configPath)) return;
+    try {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      if (config.modelPins && validPins.includes(config.modelPins)) {
+        modelPins = config.modelPins;
+      }
+      if (config.models && typeof config.models === 'object') {
+        for (const agent of ['copilot', 'claude']) {
+          const agentModels = config.models[agent];
+          if (agentModels && typeof agentModels === 'object') {
+            if (typeof agentModels.cheap === 'string' && agentModels.cheap.trim()) {
+              models[agent].cheap = agentModels.cheap.trim();
+            }
+            if (typeof agentModels.smart === 'string' && agentModels.smart.trim()) {
+              models[agent].smart = agentModels.smart.trim();
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore invalid config.
+    }
+  };
+
+  applyConfigFile(path.join(getHomeDir(), '.agents-toolkit.json'));
+  applyConfigFile(path.join(process.cwd(), '.agents-toolkit.json'));
+
+  if (options.modelPins !== null && options.modelPins !== undefined) {
+    const value = options.modelPins.trim().toLowerCase();
+    if (!value) {
+      error('Missing value for --model-pins. Use on or off.');
+      process.exit(1);
+    }
+    if (!validPins.includes(value)) {
+      error(`Invalid --model-pins value: ${options.modelPins}. Use on or off.`);
+      process.exit(1);
+    }
+    modelPins = value;
+  }
+
+  return { modelPins, models };
+}
+
+/**
  * Main CLI entry point
  */
 function main() {
@@ -1580,15 +1801,19 @@ function main() {
   const filters = (command === 'install' || command === 'update')
     ? resolveFilters(options)
     : { stack: 'all', tracker: 'all' };
+  const modelSettings = (command === 'install' || command === 'update')
+    ? resolveModelSettings(options)
+    : { modelPins: 'on', models: DEFAULT_CONFIG.models };
+  const installOptions = { ...options, filters, ...modelSettings };
 
   switch (command) {
     case 'install':
       if (target === 'claude') {
-        installClaude({ ...options, filters });
+        installClaude(installOptions);
       } else if (target === 'codex') {
-        installCodex({ ...options, filters });
+        installCodex(installOptions);
       } else {
-        install({ ...options, filters });
+        install(installOptions);
       }
       break;
     case 'restore':
@@ -1599,11 +1824,11 @@ function main() {
       break;
     case 'update':
       if (target === 'claude') {
-        installClaude({ ...options, force: true, filters });
+        installClaude({ ...installOptions, force: true });
       } else if (target === 'codex') {
-        installCodex({ ...options, force: true, filters });
+        installCodex({ ...installOptions, force: true });
       } else {
-        install({ ...options, force: true, filters });
+        install({ ...installOptions, force: true });
       }
       break;
     case 'list':

@@ -72,6 +72,8 @@ Every shipped slash command carries an explicit `model:` frontmatter default (af
 
 **Override for one turn:** use the `/model` slash command in Claude Code before invoking the command. Or set `CLAUDE_CODE_SUBAGENT_MODEL` in your shell to force a specific model for every subagent spawn.
 
+**When to escalate `sonnet` → `opus`.** `sonnet` is the default smart tier because it matches or beats `opus` on `SWE-Bench Verified` (the agentic-code benchmark) while costing **5× less** per token ($3/$15 vs $15/$75 per MTok). The 6 orchestrator commands are checklist-driven — the prompt itself provides the structure — so `sonnet` executes them as well as `opus` would. Reach for `opus` only when the task requires **long, unstructured reasoning**: novel architecture design that touches many layers at once, cross-repository renames whose blast radius is not knowable upfront, or multi-hour research where the model is genuinely inventing the plan (not following one). Persist the escalation project-wide by setting `.agents-toolkit.json` → `"models": { "claude": { "smart": "opus" } }`; the next install rewrites every smart-tier command's frontmatter accordingly. One-off escalations should stay on `/model opus` and revert.
+
 ## Key Technologies & Frameworks
 
 - **Next.js 15.x** with App Router for modern React development

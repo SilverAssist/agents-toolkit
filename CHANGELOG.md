@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-07-27
+
+### Added
+
+- **`Explore` cheap-tier subagent override for Claude Code** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — shipped at `templates/shared/agents/Explore.md` with `model: haiku`. The Claude installer now copies `templates/shared/agents/*.md` into `.claude/agents/` (project-local override for Claude's built-in `Explore` subagent). Suppressed with the new `--no-agent-overrides` flag; installed by default because `Explore` is read-only and runs during nearly every autonomous cycle, so pinning it to the cheap tier prevents the parent's smart tier from inheriting into every exploration turn.
+- **`.agents-toolkit.json` `models` config block** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) with the shipped defaults visible for editing:
+  ```json
+  "models": {
+    "copilot": { "cheap": "Claude Haiku 4.5 (copilot)", "smart": "Claude Sonnet 4.5 (copilot)" },
+    "claude":  { "cheap": "haiku", "smart": "sonnet" }
+  }
+  ```
+  New `resolveModelSettings()` in `bin/cli.js` reads the block from the global → project → CLI-flag chain and threads it into every install path. Persist an escalation to `opus` project-wide by setting `models.claude.smart` (or `models.copilot.smart` to `Claude Opus 4.7 (copilot)`); the next install rewrites every smart-tier prompt's `model:` frontmatter accordingly. Cheap tier stays cheap unless the user overrides it.
+- **`--model-pins {on,off}` CLI flag** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) — `on` (default) ships the resolved `model:` frontmatter as configured; `off` strips the `model:` block entirely from every installed prompt (Copilot/Codex keep their other frontmatter fields intact; Claude prompts install with no frontmatter at all) so every prompt falls back to the agent's picker/session default. Also readable from `.agents-toolkit.json` `modelPins`.
+- **`transformFrontmatterForCopilot()` helper** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)) in `bin/cli.js` — mirrors the Claude helper: parses the shipped `model:` block, infers the tier from the primary entry (`*Haiku*` → cheap, `*Sonnet*`/`*Opus*` → smart), substitutes the user's configured value for the shipped default in-place, or removes the block when `stripModel` is true. Fast-path returns the content untouched when the resolved cheap/smart match the shipped defaults, so a default install is still a byte-identical copy.
+- **`core-review` skill gains `model: haiku` frontmatter and `--budget {quick,medium,thorough}` argument** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)):
+  - `quick` — diff + directly-touched files. Used by `finalize-github-pr` and `resolve-github-reviews` pre-push fix batches.
+  - `medium` — diff + one-hop neighbours (importers, indexes, sibling files). Used by `create-github-pr` pre-PR pass; the default when `--budget` is omitted.
+  - `thorough` — whole repository. Used for standalone pre-release reviews or architecture-scoped changes.
+  Cheap tier is safe at every budget — `thorough` widens the file set, not the reasoning depth. Callers who genuinely need reasoning override at the agent level (Copilot picker, Claude `/model`, Codex `--model`); this skill never hard-codes a smart-tier override.
+- **`AGENTS` export in `src/index.js`** listing the shipped subagent overrides (currently just `Explore`).
+- **"When to escalate `sonnet` → `opus`" paragraph in `templates/agents/CLAUDE.md`** — documents why the smart-tier default is `sonnet` (matches or beats `opus` on `SWE-Bench Verified` at 5× lower cost) and when the escalation is actually justified (novel architecture, cross-layer renames, multi-hour research). Persist the escalation via `.agents-toolkit.json` `models.claude.smart`; keep one-offs on `/model opus`.
+
+### Changed
+
+- **Orchestrator prompts pass explicit `--budget` to `core-review`** ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)):
+  - `create-github-pr.prompt.md` → `--budget medium` (pre-PR pass; diff is complete).
+  - `finalize-github-pr.prompt.md` → `--budget quick` (fix set is tight; risk is adjacent drift).
+  - `resolve-github-reviews.prompt.md` → `--budget quick` (batched fixes, scoped).
+- **`showHelp()`** advertises `--model-pins` and `--no-agent-overrides`.
+
+### Notes
+
+- **Backward compatible.** No CLI flags become required; `.agents-toolkit.json` files without a `models` block still install the shipped defaults. Prompts that do not carry a `model:` block install unchanged.
+- **Autonomous-cycle invariant preserved.** The M2 rule stays intact: orchestrators do not force their tier onto delegated steps. The `--budget` on `core-review` scopes the file set, not the model — delegated skills keep their own pins.
+
 ## [2.8.0] - 2026-07-27
 
 ### Added

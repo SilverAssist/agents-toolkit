@@ -146,12 +146,14 @@ For every unresolved thread from Step 2:
 
 **Then — once per batch, not per thread** — after **all** the per-thread fixes above are applied,
 run a single **whole-repo** consistency pass (the *core review*) before committing the batch. Use
-the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) as a dedicated read-only pass
-(inline on Copilot/Codex; optionally a subagent on Claude Code). A fix often leaves or introduces
-an adjacent issue (a now-stale doc line, a broken link, a table missing the new asset) that would
-trigger yet another Copilot round. Apply everything the pass flags, re-run the checks above, and
-only then proceed to Step 4. Running this once over the completed batch — rather than per thread —
-keeps the (whole-repo) review cost bounded.
+the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
+(diff + directly-touched files — the batch is small and scoped, so `medium`/`thorough` would only
+add unrelated noise). Run it as a dedicated read-only pass (inline on Copilot/Codex; optionally
+a subagent on Claude Code). A fix often leaves or introduces an adjacent issue (a now-stale doc
+line, a broken link, a table missing the new asset) that would trigger yet another Copilot round.
+Apply everything the pass flags, re-run the checks above, and only then proceed to Step 4.
+Running this once over the completed batch — rather than per thread — keeps the (whole-repo)
+review cost bounded.
 
 ### 4. Commit and push fixes (before replying)
 
