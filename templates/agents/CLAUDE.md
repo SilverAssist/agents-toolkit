@@ -70,7 +70,12 @@ Every shipped slash command carries an explicit `model:` frontmatter default (af
 
 **Autonomous cycles honour each callee's own pin.** A smart-tier command that delegates to a cheap-tier skill or command lets the delegate's `model:` win for that turn — skills honour `model:` only while active, so the outer chat's model is preserved when the delegate finishes.
 
-**Override for one turn:** use the `/model` slash command in Claude Code before invoking the command. Or set `CLAUDE_CODE_SUBAGENT_MODEL` in your shell to force a specific model for every subagent spawn.
+**Override.** The `model:` pin **wins over `/model`** — Claude Code only consults `/model` when the invoked command has no `model:` frontmatter. To change tier:
+- **Edit the installed command's `model:` frontmatter** in `.claude/commands/*.md` directly, or
+- **Reinstall with `--model-pins off`** (strips every pin so `/model` and the session default take effect), or
+- **Reinstall with `.agents-toolkit.json` `models` overrides** (remaps `haiku`/`sonnet` per tier project-wide).
+
+For subagent spawns specifically, `CLAUDE_CODE_SUBAGENT_MODEL` in your shell forces a specific model for every subagent regardless of the calling command's pin.
 
 **When to escalate `sonnet` → `opus`.** `sonnet` is the default smart tier because it matches or beats `opus` on `SWE-Bench Verified` (the agentic-code benchmark) while costing **5× less** per token ($3/$15 vs $15/$75 per MTok). The 6 orchestrator commands are checklist-driven — the prompt itself provides the structure — so `sonnet` executes them as well as `opus` would. Reach for `opus` only when the task requires **long, unstructured reasoning**: novel architecture design that touches many layers at once, cross-repository renames whose blast radius is not knowable upfront, or multi-hour research where the model is genuinely inventing the plan (not following one). Persist the escalation project-wide by setting `.agents-toolkit.json` → `"models": { "claude": { "smart": "opus" } }`; the next install rewrites every smart-tier command's frontmatter accordingly. One-off escalations should stay on `/model opus` and revert.
 

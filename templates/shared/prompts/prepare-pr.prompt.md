@@ -8,7 +8,7 @@ model:
 
 # Prepare for Pull Request
 
-> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). The `model:` pin wins over the Copilot picker and Claude `/model` (both are only consulted when no `model:` is set). To change it, edit this file's frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
 
 Prepare the current branch for a pull request by running all validations.
 

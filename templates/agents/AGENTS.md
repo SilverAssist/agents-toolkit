@@ -61,10 +61,11 @@ Every shipped prompt carries an explicit `model:` frontmatter default. The rule 
 
 **Autonomous cycles honour each callee's own pin.** A smart-tier orchestrator (`create-github-pr`, `work-github-issue`, …) chaining into a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) lets the delegate's frontmatter win for that turn — do not force the orchestrator's tier onto delegated steps.
 
-**Overrides use native pickers**, never a custom prompt:
-- **Copilot:** model picker in the VS Code chat panel before invoking the prompt.
-- **Claude Code:** `/model` slash command.
-- **Codex:** `codex --model …` or `~/.codex/config.toml`.
+**Overrides.** The `model:` frontmatter pin **wins over the Copilot picker and Claude `/model`** (both are only consulted when no pin is set). To change tier:
+- **Edit the installed file's `model:` frontmatter** directly, or
+- **Reinstall with `--model-pins off`** (strips all pins so the picker / session default wins), or
+- **Reinstall with `.agents-toolkit.json` `models` overrides** (remaps per tier project-wide).
+- **Codex** has no per-prompt field yet, so `codex --model …` or `~/.codex/config.toml` `model = "…"` is the effective session-level override.
 
 ---
 

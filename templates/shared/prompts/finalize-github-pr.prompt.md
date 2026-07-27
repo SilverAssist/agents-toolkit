@@ -8,7 +8,7 @@ model:
 
 # Finalize GitHub Pull Request
 
-> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
+> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). The `model:` pin wins over the Copilot picker and Claude `/model` (both are only consulted when no `model:` is set). To change it, edit this file's frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
 
 Finalize PR for GitHub issue **#{issue-number}** after approval and prepare for merge.
 
@@ -51,13 +51,13 @@ gh pr review --request-changes --body "..." | cat
 gh pr review --approve | cat
 ```
 
-> **Before pushing any fix commit**, run a **whole-repo core review** (not just the changed
-> files) using the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with
-> **`--budget quick`** (diff + directly-touched files — the fix set is tight and the risk is
-> mostly adjacent drift, not cross-repo consistency). Run it as a dedicated read-only pass
-> (inline on Copilot/Codex; optionally a subagent on Claude Code). Apply everything it flags
-> first — pushing an adjacent, unfixed issue only starts a fresh Copilot round. For the full
-> fetch → reply → resolve loop, use the `resolve-github-reviews` prompt.
+> **Before pushing any fix commit**, run a **core review** on the fix set using the
+> **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
+> (diff + directly-touched files — the fix set is tight and the risk is mostly adjacent drift,
+> not cross-repo consistency). Run it as a dedicated read-only pass (inline on Copilot/Codex;
+> optionally a subagent on Claude Code). Apply everything it flags first — pushing an adjacent,
+> unfixed issue only starts a fresh Copilot round. For the full fetch → reply → resolve loop,
+> use the `resolve-github-reviews` prompt.
 
 ### 3. Sync with Base Branch
 

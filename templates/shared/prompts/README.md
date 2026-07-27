@@ -51,7 +51,7 @@ prompts/
 
 ## Model tiers
 
-Every shipped prompt carries an explicit `model:` frontmatter default so a fresh install runs cost-optimally without configuration. Overrides go through each agent's native UI (Copilot model picker / Claude `/model` / Codex `--model`); the frontmatter is the default, the picker is the override.
+Every shipped prompt carries an explicit `model:` frontmatter default so a fresh install runs cost-optimally without configuration. **The pin wins over the Copilot picker and Claude `/model`** (both are only consulted when no `model:` is set) — permanent overrides require editing the installed file's frontmatter, reinstalling the toolkit with `--model-pins off` (strips all pins so the picker/session default wins), or reinstalling with `.agents-toolkit.json` `models` overrides (remaps per tier). Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
 
 | Tier | Copilot default | Claude alias | When to keep it | When to override to smart |
 | --- | --- | --- | --- | --- |

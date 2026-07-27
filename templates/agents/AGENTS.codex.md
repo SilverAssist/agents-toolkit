@@ -57,7 +57,7 @@ Every shipped prompt carries an explicit `model:` frontmatter default (used by C
 
 **Autonomous cycles honour each callee's own pin.** When a smart-tier orchestrator chains into a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) let the delegate's frontmatter recommendation win — do not force the orchestrator's tier onto delegated steps.
 
-**Overrides for Codex users:** each prompt's `**Model:**` header line lists the cheap-tier default. If you want to change tier for the current run, restart the Codex session with `codex --model …` or set `~/.codex/config.toml` `model = "…"`.
+**Overrides for Codex users:** Codex has no per-prompt `model:` field, so the shipped frontmatter is advisory here — `codex --model …` (session-wide) or `~/.codex/config.toml` `model = "…"` is the effective override, and it takes effect for every prompt in the session. On Copilot and Claude Code the `model:` pin **wins over the picker / `/model`** (both are only consulted when no pin is set); those users must edit the installed file's frontmatter or reinstall with `--model-pins off` / `.agents-toolkit.json` `models` overrides.
 
 ---
 

@@ -8,7 +8,7 @@ model:
 
 # Resolve GitHub PR Reviews
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the *fix step* may need real reasoning. For the fetch/reply/resolve mechanics you can temporarily switch to the cheap tier via the Copilot model picker (`/model` in Claude Code, `codex --model` in Codex) and switch back for the fix.
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the *fix step* may need real reasoning. For the fetch/reply/resolve mechanics you can temporarily switch to the cheap tier by editing this file's `model:` frontmatter (or reinstall with `--model-pins off` so the picker/session default wins) and switch back for the fix. The Copilot picker and Claude `/model` cannot override a `model:` pin. On Codex there is no per-prompt field, so `codex --model` is the effective session-level switch.
 
 Clear a pull request's review threads end-to-end: **fetch → address → reply → resolve → verify `0` unresolved**.
 Works for both **Copilot** and **human** reviews.
@@ -153,22 +153,22 @@ For every unresolved thread from Step 2:
    ```
 
 **Then — once per batch, not per thread** — after **all** the per-thread fixes above are applied,
-run a single **whole-repo** consistency pass (the *core review*) before committing the batch. Use
-the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
+run a single consistency pass (the *core review*) before committing the batch. Use the
+**`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
 (diff + directly-touched files — the batch is small and scoped, so `medium`/`thorough` would only
 add unrelated noise). Run it as a dedicated read-only pass (inline on Copilot/Codex; optionally
 a subagent on Claude Code). A fix often leaves or introduces an adjacent issue (a now-stale doc
 line, a broken link, a table missing the new asset) that would trigger yet another Copilot round.
 Apply everything the pass flags, re-run the checks above, and only then proceed to Step 4.
-Running this once over the completed batch — rather than per thread — keeps the (whole-repo)
-review cost bounded.
+Running this once over the completed batch — rather than per thread — keeps the review cost
+bounded.
 
 ### 4. Commit and push fixes (before replying)
 
 Reply bodies reference the fixing commit SHA, so **commit and push first** — otherwise the SHA
 does not exist on the remote branch yet and the reply link is dead.
 
-> Run the whole-repo **core review** from Step 3 *before* this commit — pushing an adjacent,
+> Run the **core review** from Step 3 *before* this commit — pushing an adjacent,
 > unfixed issue starts a fresh Copilot round and defeats the purpose of resolving in batches.
 
 ```bash

@@ -54,7 +54,10 @@ Every shipped `.prompt.md` carries an explicit `model:` frontmatter default. The
 
 **Autonomous cycles honour each callee's own pin.** When a smart-tier orchestrator (`create-github-pr`, `work-github-issue`, …) chains into a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) let the delegate's frontmatter win — do not force the orchestrator's tier onto delegated steps.
 
-**Override:** use the Copilot model picker in the VS Code chat panel before invoking the prompt. The frontmatter is the default; the picker is the override.
+**Override.** The `model:` pin **wins over the Copilot picker** — VS Code Copilot only consults the picker when the invoked prompt has no `model:` frontmatter. To change tier:
+- **Edit the installed prompt's `model:` frontmatter** in `.github/prompts/*.prompt.md` directly, or
+- **Reinstall with `--model-pins off`** (strips every pin so the picker takes effect), or
+- **Reinstall with `.agents-toolkit.json` `models` overrides** (remaps per tier project-wide).
 
 ## Key Technologies & Frameworks
 

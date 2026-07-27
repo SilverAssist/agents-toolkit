@@ -45,14 +45,18 @@ and **Claude Code**; only the *mechanism* differs, and **subagents are a Claude-
 optimization, never a requirement**:
 
 - **GitHub Copilot** — no subagents; run the checklist **inline as a distinct pass** before
-  pushing (not folded into the edit under review), over the **whole repository — not just the
-  diff**. Copilot's built-in code review can help on the diff, but only this whole-repo pass
-  covers the drift that triggers new review rounds. **Switch to a cheap model in the Copilot
-  picker before running** (e.g. `Claude Haiku 4.5 (copilot)` or `GPT-5 mini (copilot)`) — the
-  checklist below is deterministic and pattern-driven; the smart tier is wasted on it.
-- **Codex** — no subagents either; the same **inline whole-repo pass**, producing the same
-  prioritized findings list. **Consider `codex --model o4-mini`** (or your provider's cheap
-  tier) for this pass — the checklist is deterministic.
+  pushing (not folded into the edit under review). The scope of the pass is set by the
+  caller-supplied `--budget` (see the next section) — `quick` is diff + directly-touched files,
+  `medium` adds one-hop neighbours, `thorough` is the whole repo. On Copilot the effective model
+  for this pass is whatever the *invoking* prompt pins (skills don't have their own model on
+  Copilot), so callers that pin cheap (`finalize-github-pr`, `resolve-github-reviews`) already
+  run the pass on `Claude Haiku 4.5` / `GPT-5 mini`. If you invoke this skill standalone from a
+  fresh chat with no wrapping prompt, set the picker to a cheap model before running — the
+  checklist is deterministic and pattern-driven, so the smart tier is wasted on it.
+- **Codex** — no subagents either; the same **inline pass**, scoped by the caller's `--budget`
+  (see below). Codex has no per-prompt or per-skill `model:` field, so the model is set
+  session-wide by `codex --model` (or `~/.codex/config.toml`). Consider `codex --model o4-mini`
+  (or your provider's cheap tier) for this pass — the checklist is deterministic.
 - **Claude Code** — the shipped skill frontmatter already pins `model: haiku` for the duration
   of this pass, so the outer chat's smart tier is preserved. *Optionally* delegate the pass to
   a read-only **subagent** (`Explore` or `general-purpose`) with the brief: "Review this whole
@@ -79,9 +83,13 @@ realistically introduce:
 
 **Cheap tier is safe at every budget.** `thorough` does not automatically switch to the smart
 tier — it just widens the file set. Callers who genuinely need reasoning (architecture reviews,
-renames that span layers) can pass `--budget thorough` **and** override the model at the agent
-level (Copilot picker, Claude `/model sonnet`, Codex `--model gpt-5-codex`). Do **not** hard-code
-a smart-tier override in the calling prompt: the caller decides, not this skill.
+renames that span layers) can pass `--budget thorough` **and** escalate the model. Escalation
+mechanics differ per agent — the `model:` pin on the *invoking* prompt (or the reinstall-time
+`--model-pins off` / `.agents-toolkit.json` `models` overrides) wins over the Copilot picker and
+Claude `/model`; on Codex, `codex --model gpt-5-codex` is the effective session-level switch.
+For a one-off standalone run of this skill, the Copilot picker / Claude `/model sonnet` work
+because there is no wrapping prompt with a pin. Do **not** hard-code a smart-tier override in
+the calling prompt: the caller decides, not this skill.
 
 The default when `--budget` is omitted is `medium`. `--budget quick` still runs the full
 checklist below — it just narrows the file set the checklist is applied to.

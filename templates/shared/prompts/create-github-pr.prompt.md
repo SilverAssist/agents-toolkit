@@ -8,7 +8,7 @@ model:
 
 # Create GitHub Pull Request
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates (`prepare-pr`, `core-review`) run on their own cheap-tier pins. Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates (`prepare-pr`, `core-review`) run on their own cheap-tier pins. To change tier, edit this file's `model:` frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides; the Copilot picker and Claude `/model` cannot override a `model:` pin. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
 
 Create a pull request for the current branch linked to GitHub issue **#{issue-number}**.
 
@@ -67,25 +67,38 @@ npm run build --if-present
 
 Fix any issues before proceeding.
 
-### 5. Pre-PR core review (whole repo)
+### 5. Pre-PR core review
 
-**First, remove the planning document** created by `work-github-issue` (e.g.
-`docs/{feature-name}-plan.md`) — it has served its purpose. Deleting it now, **at PR creation
-(not at finalization)**, keeps it out of the base branch instead of accumulating in `docs/` after
-the merge. Do this **before** the review below, so the pass covers the *final* branch state and
-catches any now-stale reference to the removed file (links, indexes, mentions):
+**First, remove the planning document(s)** created by `work-github-issue` or `create-plan`
+(shipped pattern: `docs/<feature-name>-plan.md`) — they have served their purpose. Deleting them
+now, **at PR creation (not at finalization)**, keeps them out of the base branch instead of
+accumulating in `docs/` after the merge. Do this **before** the review below, so the pass covers
+the *final* branch state and catches any now-stale reference to the removed file (links,
+indexes, mentions).
+
+The step below is **self-discovering** — it removes every `docs/*plan*.md` (and
+`docs/**/*plan*.md`) file that was **added on this branch** vs `$BASE_BRANCH`, so it works even
+when the executor cannot resolve `{feature-name}` from context (a plain `[ -f docs/{feature-name}-plan.md ]`
+with an unsubstituted placeholder silently matches nothing and skips the `git rm`). It never
+touches plan docs that existed before the branch. Do **not** replace the glob with a literal
+file name — that re-introduces the silent-skip bug.
 
 ```bash
-# Remove it only if it exists — a missing file is fine, but a real `git rm` error
-# (permissions, path typo) must surface, so do not blanket-mask with `|| true`.
-if [ -f docs/{feature-name}-plan.md ]; then
-  git rm docs/{feature-name}-plan.md
+# Discover planning docs added on THIS branch (vs the base branch). Handles both the shipped
+# `docs/<feature-name>-plan.md` pattern and any nested variant under `docs/`.
+PLAN_DOCS=$(git diff "$BASE_BRANCH" --name-only --diff-filter=A -- 'docs/*plan*.md' 'docs/**/*plan*.md' 2>/dev/null)
+if [ -n "$PLAN_DOCS" ]; then
+  echo "Removing planning docs added on this branch:"
+  printf '  %s\n' $PLAN_DOCS
+  # xargs so a git rm failure (permissions, unmerged path) surfaces — no `|| true` mask.
+  echo "$PLAN_DOCS" | xargs git rm
+else
+  echo "No planning docs to remove (nothing added on this branch matches docs/*plan*.md)."
 fi
 ```
 
-Now run a **whole-repo** consistency review to catch the doc↔code drift, invalid code examples,
-broken links, and stale indexes that otherwise trigger multi-round Copilot reviews. Review the
-whole repo — not just the diff — because Copilot re-reviews entire files.
+Now run a **consistency review** to catch the doc↔code drift, invalid code examples,
+broken links, and stale indexes that otherwise trigger multi-round Copilot reviews.
 
 Run the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget medium`**
 (diff + one-hop neighbours: importers, indexes, sibling files). This is the pre-PR pass — the
@@ -95,7 +108,8 @@ layers. Run it as a dedicated, read-only pass. It works on every agent — only 
 differs (subagents are a Claude-Code-only optimization, not a requirement):
 
 - **GitHub Copilot / Codex** — no subagents; run the checklist **inline as a distinct pass** over
-  the **whole repository** (not just the diff), producing the prioritized findings list.
+  the scope defined by `--budget medium` (diff + one-hop neighbours), producing the prioritized
+  findings list.
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`)
   with the brief "review the whole repo against the core-review checklist; report
   `severity | file:line | problem | suggested fix`; do not edit files."

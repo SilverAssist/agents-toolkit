@@ -32,12 +32,14 @@ Cheap-first model-tier discipline across all three agents ([#39](https://github.
 
 - **`Explore` cheap-tier subagent override for Claude Code** — `templates/shared/agents/Explore.md` shipped with `model: haiku` and auto-installed by `installClaude` to `.claude/agents/` (project-local override for Claude's built-in `Explore` subagent). Suppressed with the new `--no-agent-overrides` flag; installed by default because `Explore` is read-only and runs during nearly every autonomous cycle, so pinning it cheap prevents the parent's smart tier from inheriting into every exploration turn.
 - **`.agents-toolkit.json` `models` config block** with the shipped defaults visible for editing:
+
   ```json
   "models": {
     "copilot": { "cheap": "Claude Haiku 4.5 (copilot)", "smart": "Claude Sonnet 4.5 (copilot)" },
     "claude":  { "cheap": "haiku", "smart": "sonnet" }
   }
   ```
+
   New `resolveModelSettings()` in `bin/cli.js` reads the block from the global → project → CLI-flag chain and threads it into every install path. Persist an escalation to `opus` project-wide by setting `models.claude.smart` (or `models.copilot.smart` to `Claude Opus 4.7 (copilot)`); the next install rewrites every smart-tier prompt's `model:` frontmatter accordingly. Cheap tier stays cheap unless the user overrides it.
 - **`--model-pins {on,off}` CLI flag** — `on` (default) ships the resolved `model:` frontmatter as configured; `off` strips the `model:` block entirely from every installed prompt (Copilot/Codex keep their other frontmatter fields intact; Claude prompts install with no frontmatter at all) so every prompt falls back to the agent's picker/session default. Also readable from `.agents-toolkit.json` `modelPins`.
 - **`--no-agent-overrides` CLI flag** — suppresses `.claude/agents/` install for projects that want to keep Claude's built-in defaults.
@@ -62,9 +64,14 @@ Cheap-first model-tier discipline across all three agents ([#39](https://github.
   - `resolve-github-reviews.prompt.md` → `--budget quick` (batched fixes, scoped).
 - **`showHelp()`** advertises `--model-pins` and `--no-agent-overrides`.
 
+### Fixed
+
+- **Plan-doc removal is now self-discovering in `create-github-pr.prompt.md`.** The previous step ran `[ -f docs/{feature-name}-plan.md ]` with an unsubstituted `{feature-name}` placeholder, which silently matched no file and skipped `git rm` without a warning — leaving the planning doc to land in the base branch after merge. The new step uses `git diff "$BASE_BRANCH" --name-only --diff-filter=A -- 'docs/*plan*.md' 'docs/**/*plan*.md'` to discover every plan doc added on the branch, prints them explicitly, and fails loudly on any `git rm` error. Works regardless of whether the executor resolves the placeholder from context.
+- **`create-pr.prompt.md` (Jira flow) now has a plan-doc removal step.** Previously the Jira orchestrator went straight from validations to `git push`, leaving the plan doc created by `work-ticket` / `create-plan` in the base branch after merge — a drift from the GitHub flow. New Step 5 mirrors the self-discovering removal above and commits it before push; steps 5–7 renumbered to 6–8.
+
 ### Notes
 
-- **Backward compatible.** Every asset still works when the `model:` field is ignored (Codex sessions today, older Copilot versions, older Claude Code releases). Prompts without a `model:` block install unchanged. `.agents-toolkit.json` files without a `models` block still install the shipped defaults. Default install is byte-identical to the previous release when no user overrides are set.
+- **Backward compatible.** Every asset still works when the `model:` field is ignored (Codex sessions today, older Copilot versions, older Claude Code releases). Prompts without a `model:` block install unchanged. `.agents-toolkit.json` files without a `models` block still install the shipped defaults. The Copilot frontmatter transform is a no-op when the resolved cheap/smart values match the shipped defaults (fast path returns the file untouched), so users with default settings receive the shipped bytes verbatim; note that the shipped templates themselves have changed in this release (new `model:` blocks on cheap-tier prompts, delegate-preserving language), so the installed output differs from v2.6.0 by design.
 - **Autonomous-cycle invariant preserved.** Orchestrators do not force their tier onto delegated steps — the callee's own `model:` pin wins for that turn. The `--budget` on `core-review` scopes the file set, not the model — delegated skills keep their own pins.
 - **13 new tests** in `src/cli.test.js` (48 → 61 passing) covering the frontmatter transforms, `--model-pins`, config overrides, `Explore` install/skip, and `--budget` wiring.
 

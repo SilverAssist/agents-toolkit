@@ -8,7 +8,7 @@ model:
 
 # Create Implementation Plan
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — planning requires reasoning. Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — planning requires reasoning. To change tier, edit this file's `model:` frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides; the Copilot picker and Claude `/model` cannot override a `model:` pin. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
 
 Create a detailed implementation plan for: **{feature-description}**
 

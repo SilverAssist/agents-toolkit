@@ -8,7 +8,7 @@ model:
 
 # Create Pull Request
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates (`prepare-pr`, `core-review`) run on their own cheap-tier pins. Override via the Copilot model picker, `/model` in Claude Code, or `codex --model` in Codex.
+> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the `prepare-pr` delegate runs on its own cheap-tier pin. To change tier, edit this file's `model:` frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides; the Copilot picker and Claude `/model` cannot override a `model:` pin. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
 
 Create a pull request for the current branch linked to Jira ticket **{ticket-id}**.
 
@@ -62,13 +62,39 @@ npm run build --if-present
 
 Fix any issues before proceeding.
 
-### 5. Push Branch
+### 5. Remove the planning document
+
+The planning document created by `work-ticket` or `create-plan` (shipped pattern:
+`docs/<feature-name>-plan.md`) has served its purpose. Delete it now, **at PR creation (not at
+finalization)**, so it stays out of the base branch after merge.
+
+The step below is **self-discovering** — it removes every `docs/*plan*.md` (and
+`docs/**/*plan*.md`) file that was **added on this branch** vs `$BASE_BRANCH`, so it works even
+when the executor cannot resolve `{feature-name}` from context. It never touches plan docs that
+existed before the branch. Do **not** replace the glob with a literal file name — an
+unsubstituted `[ -f docs/{feature-name}-plan.md ]` silently matches nothing and skips the
+`git rm`.
+
+```bash
+PLAN_DOCS=$(git diff "$BASE_BRANCH" --name-only --diff-filter=A -- 'docs/*plan*.md' 'docs/**/*plan*.md' 2>/dev/null)
+if [ -n "$PLAN_DOCS" ]; then
+  echo "Removing planning docs added on this branch:"
+  printf '  %s\n' $PLAN_DOCS
+  # xargs so a git rm failure (permissions, unmerged path) surfaces — no `|| true` mask.
+  echo "$PLAN_DOCS" | xargs git rm
+  git commit -m "docs: Remove planning doc for {ticket-id} ahead of PR"
+else
+  echo "No planning docs to remove (nothing added on this branch matches docs/*plan*.md)."
+fi
+```
+
+### 6. Push Branch
 
 ```bash
 git push -u origin $(git branch --show-current)
 ```
 
-### 6. Create Pull Request
+### 7. Create Pull Request
 
 #### PR Title
 ```
@@ -118,7 +144,7 @@ Brief description of what this PR accomplishes.
 - **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
 - **Reviewers**: Based on changed files
 
-### 7. Link PR to Jira
+### 8. Link PR to Jira
 
 Add comment to Jira ticket:
 ```markdown
