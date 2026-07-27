@@ -5,6 +5,22 @@ model: haiku
 argument-hint: --budget quick|medium|thorough
 ---
 
+<!--
+  Note on the `model: haiku` pin above:
+  - **Claude Code** honours it per-turn — this is why it exists (cheap-tier default so this
+    pass, which runs at least once per PR + once per review round, does not multiply the
+    cost of every autonomous cycle).
+  - **VS Code Copilot's chat-customizations-evaluations linter** flags `model:` as an
+    unsupported skill attribute (its allow-list for skills is: `argument-hint`,
+    `compatibility`, `context`, `description`, `disable-model-invocation`, `license`,
+    `metadata`, `name`, `user-invocable`). That warning in the Problems panel is
+    **expected and cosmetic** — Copilot's runtime silently ignores unknown skill
+    attributes, and skills have no independent `model:` boundary on Copilot anyway (they
+    inherit the invoking prompt's model). Suppress-by-editing is not worth the split-ship
+    complexity: keep the pin so Claude Code stays cheap.
+  - **Codex** has no per-skill `model:` mechanism at all, so this line is inert there.
+-->
+
 # Silver Assist — Core Review (Pre-Review)
 
 A **pre-emptive, whole-repo consistency review** that runs *before* a reviewer (Copilot or a
