@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Create a detailed implementation plan for a feature
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 5
 ---
 
 # Create Implementation Plan

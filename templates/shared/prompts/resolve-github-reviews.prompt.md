@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Fetch, respond to, resolve, and close GitHub PR review comments (Copilot or human)
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 5
 ---
 
 # Resolve GitHub PR Reviews

@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Start working on a Jira ticket with full workflow setup
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 5
 ---
 
 # Work on Jira Ticket

@@ -6,7 +6,7 @@ tools:
   - read_file
   - replace_string_in_file
   - create_file
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # New Component

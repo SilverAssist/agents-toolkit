@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Fix failing tests and lint errors
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # Fix Code Issues

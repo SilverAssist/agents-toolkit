@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Prepare code for a pull request by running all validations
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # Prepare for Pull Request

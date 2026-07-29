@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Add tests for a component or function
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # Add Tests

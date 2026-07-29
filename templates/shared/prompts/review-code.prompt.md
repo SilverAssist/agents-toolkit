@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Quick code review of current changes
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # Quick Code Review

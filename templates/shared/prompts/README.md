@@ -55,8 +55,8 @@ Every shipped prompt carries an explicit `model:` pin so a fresh install runs co
 
 | Tier | Copilot / Codex | Claude Code | Used for |
 | --- | --- | --- | --- |
-| **Cheap** | `Claude Haiku 4.5 (copilot)` | `haiku` | Checklist / mechanical work — 13 prompts |
-| **Smart** | `Claude Sonnet 5 (copilot)` | `sonnet` | Design / reasoning work — 6 prompts |
+| **Cheap** | `Claude Haiku 4.5` | `haiku` | Checklist / mechanical work — 13 prompts |
+| **Smart** | `Claude Sonnet 5` | `sonnet` | Design / reasoning work — 6 prompts |
 
 | Prompt | Tier | Rationale |
 | --- | --- | --- |
@@ -71,7 +71,7 @@ Every shipped prompt carries an explicit `model:` pin so a fresh install runs co
 
 ### How each agent reads the pin
 
-- **Claude Code** — the installer rewrites the Copilot model name to the matching alias, so `Claude Haiku 4.5 (copilot)` installs as `model: haiku`. Aliases track the current generation, so they do not go stale. The pin **wins over `/model`**, which is only consulted when no `model:` is set.
+- **Claude Code** — the installer rewrites the Copilot model name to the matching alias, so `Claude Haiku 4.5` installs as `model: haiku`. Aliases track the current generation, so they do not go stale. The pin **wins over `/model`**, which is only consulted when no `model:` is set.
 - **Copilot** — the pin is used as shipped. It **wins over the picker**, which is only consulted when no `model:` is set. Note that only `.prompt.md` files establish a model boundary: skills inherit the invoking prompt's model, so an inline `core-review` from a smart-tier orchestrator runs smart. Invoke the skill as a standalone chat to keep it cheap.
 - **Codex** — `model:` is **ignored entirely**; the session runs whatever `codex --model` set. The field is left in place because Codex reads the same files through symlinks; it produces a non-blocking lint warning and nothing else.
 

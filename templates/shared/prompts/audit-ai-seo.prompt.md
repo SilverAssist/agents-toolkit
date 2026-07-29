@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Run a comprehensive AI SEO optimization audit on the current project. Checks agent-friendly UX, E-E-A-T signals, content quality, technical SEO, and structured data.
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # AI SEO Optimization Audit

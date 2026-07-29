@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Finalize a pull request after approval and prepare for merge
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # Finalize GitHub Pull Request

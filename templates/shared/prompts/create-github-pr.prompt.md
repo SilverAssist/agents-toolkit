@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Create a pull request for the current branch linked to a GitHub issue
-model: Claude Sonnet 5 (copilot)
+model: Claude Sonnet 5
 ---
 
 # Create GitHub Pull Request

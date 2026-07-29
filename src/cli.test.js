@@ -792,7 +792,7 @@ test('copilot install ships the prompt pin verbatim', (t) => {
   const installed = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md'), 'utf-8');
   const shipped = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', 'quality-check.prompt.md'), 'utf-8');
   assert.equal(installed, shipped, 'copilot prompts must install byte-identical to the template');
-  assert.match(installed, /^model: Claude Haiku 4\.5 \(copilot\)$/m, 'cheap tier pin must survive');
+  assert.match(installed, /^model: Claude Haiku 4\.5$/m, 'cheap tier pin must survive');
 });
 
 test('claude install preserves the > **Model:** blockquote body text', (t) => {

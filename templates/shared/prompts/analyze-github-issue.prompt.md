@@ -1,7 +1,7 @@
 ---
 agent: agent
 description: Analyze a GitHub issue without creating branches or making changes
-model: Claude Haiku 4.5 (copilot)
+model: Claude Haiku 4.5
 ---
 
 # Analyze GitHub Issue

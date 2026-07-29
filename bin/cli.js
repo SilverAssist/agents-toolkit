@@ -426,12 +426,12 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
 /**
  * Map a Copilot model name to the equivalent Claude Code alias.
  *
- * Copilot names a specific version (`Claude Haiku 4.5 (copilot)`); Claude Code
+ * Copilot names a specific version (`Claude Haiku 4.5`); Claude Code
  * takes a generation-independent alias (`haiku`) and resolves it to whatever is
  * current. Matching on the family substring is therefore deliberate — it keeps
  * a Copilot version bump from needing a matching change here.
  *
- * A non-Claude pin (`GPT-5 mini (copilot)`) has no Claude equivalent and yields
+ * A non-Claude pin (`GPT-5 mini`) has no Claude equivalent and yields
  * `null`, which installs the command with no `model:` at all so Claude falls
  * back to the session model.
  *
@@ -454,7 +454,7 @@ function extractClaudeAlias(frontmatterBody) {
  * Transform Copilot prompt frontmatter into Claude Code frontmatter.
  * - Strips Copilot-only fields (`agent`, `description`, `tools`).
  * - Rewrites the `model:` pin to the matching Claude alias via
- *   {@link extractClaudeAlias}, so `Claude Haiku 4.5 (copilot)` — meaningless
+ *   {@link extractClaudeAlias}, so `Claude Haiku 4.5` — meaningless
  *   to Claude Code — installs as `model: haiku`.
  * - When no Claude alias applies, strips the frontmatter entirely so Claude
  *   falls back to the inherited session model.
