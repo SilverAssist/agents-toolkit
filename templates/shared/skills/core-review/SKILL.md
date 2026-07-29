@@ -100,7 +100,6 @@ model is (`codex --model`). The skill still ships `model: haiku` because it runs
 per PR plus once per review round, so a `sonnet`-tier default would multiply the token cost of
 every autonomous cycle wherever the pin *is* honoured. Callers pass `--budget` to scope the pass
 to the amount of drift the current step can realistically introduce:
-realistically introduce:
 
 | Budget       | Scope                                                                            | When callers use it                                                             |
 | ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -126,11 +125,8 @@ mechanics are platform-specific:
   `codex --model gpt-5-codex` (or your provider's smart tier).
 - **Claude Code** — the skill's own `model: haiku` frontmatter locks the tier for the pass
   **even on a standalone invocation**: `/model sonnet` in the chat does **not** override a
-  `SKILL.md model:` pin. To escalate on Claude, either (a) edit the installed
-  `.claude/skills/core-review/SKILL.md` `model:` value before running, (b) set
-  `models.claude.cheap` to `sonnet` (or `opus`) in `.agents-toolkit.json` and reinstall so the
-  shipped pin is remapped, or (c) reinstall with `--model-pins off` so the skill ships without
-  a `model:` and the outer `/model` takes effect.
+  `SKILL.md model:` pin. To escalate, edit the `model:` line in the installed
+  `.agents/skills/core-review/SKILL.md` before running and revert afterward.
 
 Do **not** hard-code a smart-tier override in the calling prompt: the caller decides, not this
 skill.

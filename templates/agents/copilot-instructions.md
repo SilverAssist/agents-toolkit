@@ -47,17 +47,16 @@ For each phase:
 
 ## Model-tier discipline
 
-Every shipped `.prompt.md` carries an explicit `model:` frontmatter default. The rule of thumb:
+Every shipped `.prompt.md` carries a hardcoded `model:` pin, written as a single value. The rule of thumb:
 
-- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5` → `GPT-5 mini`). Prompts: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
-- **Design / reasoning → smart tier** (`Claude Sonnet 4.5` → `GPT-5`). Prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5 (copilot)`). Prompts: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (`Claude Sonnet 5 (copilot)`). Prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
 
 **Model boundaries are prompt-level only on Copilot.** VS Code Copilot honours `model:` on `.prompt.md` files but **not** on skills — skills inherit the invoking prompt's model. So a smart-tier orchestrator invoking `core-review` (or any other skill) inline runs the skill on the smart tier too. When a smart-tier orchestrator chains into another **prompt** that establishes a fresh `model:` boundary (an explicit new invocation of `quality-check.prompt.md`, `prepare-pr.prompt.md`, …), the invoked prompt's own pin wins. To force a cheap-tier delegate, invoke it as a **separate chat / fresh prompt invocation** rather than referencing it inline from the orchestrator.
 
-**Override.** The `model:` pin **wins over the Copilot picker** — VS Code Copilot only consults the picker when the invoked prompt has no `model:` frontmatter. To change tier:
-- **Edit the installed prompt's `model:` frontmatter** in `.github/prompts/*.prompt.md` directly, or
-- **Reinstall with `--model-pins off`** (strips every pin so the picker takes effect), or
-- **Reinstall with `.agents-toolkit.json` `models` overrides** (remaps per tier project-wide).
+**To change a tier, edit the `model:` line in `.github/prompts/<name>.prompt.md`.** There is no tier config and no CLI flag. The pin **wins over the picker** — VS Code Copilot consults the picker only when the invoked prompt has no `model:` frontmatter.
+
+**Keep `model:` a single value, not a list.** A prioritized array is undocumented for prompt files and GitHub Copilot CLI rejects it outright (`model: Expected string, received array`). If the pinned model is unavailable, Copilot falls back to its own default — the toolkit does not ship fallback chains.
 
 ## Key Technologies & Frameworks
 

@@ -34,6 +34,7 @@ already on `sonnet`/`opus`.
 
 ## Override the override
 
-Delete `.claude/agents/Explore.md` or set `.agents-toolkit.json`
-`models.claude.cheap` to a smarter alias if this project needs a stronger
-default for exploration.
+If this project needs a stronger default for exploration, edit the `model:`
+line above to a smarter alias, or delete `.claude/agents/Explore.md` entirely
+to fall back to Claude's built-in `Explore`. Install with
+`--no-agent-overrides` to skip shipping this file in the first place.

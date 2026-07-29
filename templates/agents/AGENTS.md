@@ -54,21 +54,17 @@
 
 ## 💰 Model-tier discipline
 
-Every shipped prompt carries an explicit `model:` frontmatter default. The rule of thumb:
+Every shipped prompt carries a hardcoded `model:` pin. The rule of thumb:
 
-- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5` → `GPT-5 mini`). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
-- **Design / reasoning → smart tier** (`Claude Sonnet 4.5` → `GPT-5`). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5`, `haiku` on Claude Code). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (`Claude Sonnet 5`, `sonnet` on Claude Code). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
 
 **Autonomous cycles — delegate model behaviour is platform-specific.**
 - **Claude Code**: each delegate has its own `model:` boundary (skills via `SKILL.md`, slash-commands via `.md` frontmatter), so a cheap-tier delegate invoked from a smart-tier orchestrator (`create-github-pr` → `core-review`) runs on the delegate's own pin for that turn. Do **not** force the orchestrator's tier onto delegated steps.
 - **Copilot**: only `.prompt.md` files establish a `model:` boundary; skills inherit the invoking prompt's model. An inline `core-review` (or any skill) from a smart-tier orchestrator runs on the smart tier too — to keep it cheap, invoke it as a standalone chat (fresh prompt invocation) rather than inline.
-- **Codex**: the session runs one model set by `codex --model` (or `~/.codex/config.toml`); delegate `model:` frontmatter is advisory and cannot switch mid-session. To run a cheap-tier delegate, open a separate `codex --model <cheap>` session for that step.
+- **Codex**: `model:` is ignored; the session runs one model set by `codex --model` (or `~/.codex/config.toml`). To run a cheap-tier delegate, open a separate `codex --model <cheap>` session for that step.
 
-**Overrides.** The `model:` frontmatter pin **wins over the Copilot picker and Claude `/model`** (both are only consulted when no pin is set). To change tier:
-- **Edit the installed file's `model:` frontmatter** directly, or
-- **Reinstall with `--model-pins off`** (strips all pins so the picker / session default wins), or
-- **Reinstall with `.agents-toolkit.json` `models` overrides** (remaps per tier project-wide).
-- **Codex** has no per-prompt field yet, so `codex --model …` or `~/.codex/config.toml` `model = "…"` is the effective session-level override.
+**To change a tier, edit the `model:` line in the installed file.** There is no tier config and no CLI flag — the pin is the whole mechanism. On Copilot and Claude Code the pin wins over the picker and `/model` respectively (both are consulted only when no pin is set); on Codex use `codex --model`.
 
 ---
 

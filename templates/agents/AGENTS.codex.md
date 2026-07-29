@@ -50,14 +50,14 @@
 
 ## 💰 Model-tier discipline
 
-Every shipped prompt carries an explicit `model:` frontmatter default (used by Copilot; Codex sessions honour the recommendation by running `codex --model`). The rule of thumb:
+Every shipped prompt carries a hardcoded `model:` pin. **Codex ignores it** — the field exists for Copilot and Claude Code, and Codex reads the same files. Treat it as a recommendation and set the session model with `codex --model`. The rule of thumb:
 
-- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5` → `GPT-5 mini`). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
-- **Design / reasoning → smart tier** (`Claude Sonnet 4.5` → `GPT-5`). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+- **Checklist / mechanical work → cheap tier** (pinned `Claude Haiku 4.5`). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (pinned `Claude Sonnet 5`). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
 
-**Codex is session-wide, so delegates cannot switch mid-session.** Codex has no per-prompt or per-skill `model:` field; the model is set once per session by `codex --model` (or `~/.codex/config.toml`) and every prompt in that session runs on it. Delegate `model:` frontmatter is **advisory-only** here — Codex reads it but cannot honour it inline. To run a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) from a smart-tier session, open a **separate** `codex --model <cheap>` session for that step and relay its output back to the orchestrator's session.
+**Codex is session-wide, so delegates cannot switch mid-session.** Codex has no per-prompt or per-skill `model:` field; the model is set once per session by `codex --model` (or `~/.codex/config.toml`) and every prompt in that session runs on it. To run a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) from a smart-tier session, open a **separate** `codex --model <cheap>` session for that step and relay its output back to the orchestrator's session.
 
-**Overrides for Codex users:** Codex has no per-prompt `model:` field, so the shipped frontmatter is advisory here — `codex --model …` (session-wide) or `~/.codex/config.toml` `model = "…"` is the effective override, and it takes effect for every prompt in the session. On Copilot and Claude Code the `model:` pin **wins over the picker / `/model`** (both are only consulted when no pin is set); those users must edit the installed file's frontmatter or reinstall with `--model-pins off` / `.agents-toolkit.json` `models` overrides.
+Because Codex does not recognise `model:` as a prompt field, your editor's linter may flag it as an unknown key. That warning is **expected and non-blocking** — the field is inert on Codex, not invalid.
 
 ---
 

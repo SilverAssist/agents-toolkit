@@ -63,21 +63,18 @@ Custom slash commands are available in `.claude/commands/`:
 
 ## Model-tier discipline
 
-Every shipped slash command carries an explicit `model:` frontmatter default (after the CLI's Copilot→Claude alias remap). The rule of thumb:
+Every shipped slash command carries a hardcoded `model:` pin (the installer rewrites the Copilot model name to the matching Claude alias). Aliases rather than pinned version IDs, so they track the current generation without maintenance. The rule of thumb:
 
 - **Checklist / mechanical work → `haiku`.** Commands: `/quality-check`, `/review-code`, `/fix-issues`, `/add-tests`, `/prepare-pr`, `/finalize-*`, `/analyze-*`, `/audit-ai-seo`, `/prepare-github-release`, `/new-wp-*`.
 - **Design / reasoning → `sonnet` (explicit, not inherited).** Commands: `/create-plan`, `/work-ticket`, `/work-github-issue`, `/create-pr`, `/create-github-pr`, `/resolve-github-reviews`.
 
 **Autonomous cycles honour each callee's own pin.** A smart-tier command that delegates to a cheap-tier skill or command lets the delegate's `model:` win for that turn — skills honour `model:` only while active, so the outer chat's model is preserved when the delegate finishes.
 
-**Override.** The `model:` pin **wins over `/model`** — Claude Code only consults `/model` when the invoked command has no `model:` frontmatter. To change tier:
-- **Edit the installed command's `model:` frontmatter** in `.claude/commands/*.md` directly, or
-- **Reinstall with `--model-pins off`** (strips every pin so `/model` and the session default take effect), or
-- **Reinstall with `.agents-toolkit.json` `models` overrides** (remaps `haiku`/`sonnet` per tier project-wide).
+**To change a tier, edit the `model:` line in `.claude/commands/<command>.md`.** There is no tier config and no CLI flag. The pin **wins over `/model`** — Claude Code consults `/model` only when the invoked command has no `model:` frontmatter, so editing the file is the only way to change a pinned command's tier.
 
 For subagent spawns specifically, `CLAUDE_CODE_SUBAGENT_MODEL` in your shell forces a specific model for every subagent regardless of the calling command's pin.
 
-**When to escalate `sonnet` → `opus`.** `sonnet` is the default smart tier because it matches or beats `opus` on `SWE-Bench Verified` (the agentic-code benchmark) while costing **5× less** per token ($3/$15 vs $15/$75 per MTok). The 6 orchestrator commands are checklist-driven — the prompt itself provides the structure — so `sonnet` executes them as well as `opus` would. Reach for `opus` only when the task requires **long, unstructured reasoning**: novel architecture design that touches many layers at once, cross-repository renames whose blast radius is not knowable upfront, or multi-hour research where the model is genuinely inventing the plan (not following one). Persist the escalation project-wide by setting `.agents-toolkit.json` → `"models": { "claude": { "smart": "opus" } }`; the next install rewrites every smart-tier command's frontmatter accordingly. For a **one-off escalation** without touching config, edit the installed command's frontmatter directly (`.claude/commands/<command>.md` → `model: opus`) before invoking it and revert afterward — `/model opus` **cannot** override a `model: sonnet` pin (the pin is only consulted when no frontmatter model is set).
+**When to escalate `sonnet` → `opus`.** `sonnet` is the default smart tier because the 6 orchestrator commands are checklist-driven — the prompt itself supplies the structure — so a heavier model buys little. Reach for `opus` only when the task requires **long, unstructured reasoning**: novel architecture spanning many layers, cross-repository renames whose blast radius is not knowable upfront, or research where the model is genuinely inventing the plan rather than following one. Edit the command's `model:` line to `opus` before invoking it and revert afterward; `/model opus` **cannot** override a `model: sonnet` pin.
 
 ## Key Technologies & Frameworks
 

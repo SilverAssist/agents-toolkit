@@ -1,14 +1,12 @@
 ---
 agent: agent
 description: Finalize a pull request after approval and prepare for merge
-model:
-  - Claude Haiku 4.5 (copilot)
-  - GPT-5 mini (copilot)
+model: Claude Haiku 4.5 (copilot)
 ---
 
 # Finalize GitHub Pull Request
 
-> **Model:** Default cheap tier (`Claude Haiku 4.5` → `GPT-5 mini`). The `model:` pin wins over the Copilot picker and Claude `/model` (both are only consulted when no `model:` is set). To change it, edit this file's frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (validation plus `git`/`gh` mechanics). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Finalize PR for GitHub issue **#{issue-number}** after approval and prepare for merge.
 

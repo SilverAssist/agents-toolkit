@@ -1,14 +1,12 @@
 ---
 agent: agent
 description: Fetch, respond to, resolve, and close GitHub PR review comments (Copilot or human)
-model:
-  - Claude Sonnet 4.5 (copilot)
-  - GPT-5.5 (copilot)
+model: Claude Sonnet 5 (copilot)
 ---
 
 # Resolve GitHub PR Reviews
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the *fix step* may need real reasoning. The whole invocation runs on the pinned tier; there is **no per-turn switch during a single run** because `model:` locks the model for the invocation (neither the Copilot picker nor Claude `/model` can override it). To run the mechanical fetch/reply/resolve phases on the cheap tier instead, you have three options: (a) edit this file's `model:` frontmatter to the cheap-tier value before running and revert after, (b) reinstall the toolkit with `--model-pins off` so the Copilot picker / Claude `/model` / session default takes effect, or (c) run the fetch/reply/resolve `gh`/GraphQL commands standalone from a cheap-tier chat and invoke this prompt only for the fix step. On Codex there is no per-prompt field, so `codex --model` is the effective session-level switch.
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (the fix step needs real reasoning). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Clear a pull request's review threads end-to-end: **fetch → address → reply → resolve → verify `0` unresolved**.
 Works for both **Copilot** and **human** reviews.
@@ -19,9 +17,8 @@ Works for both **Copilot** and **human** reviews.
 > for the whole invocation** (see paragraph above), you cannot switch mid-run to make the
 > mechanical phases cheap. To run those phases cheap, take one of the pre-invocation options:
 > (a) invoke the `gh`/GraphQL commands from a separate cheap-tier chat/session and use this
-> prompt only for the fix step; (b) edit this file's `model:` frontmatter to the cheap-tier
-> value before running and revert after; or (c) reinstall the toolkit with `--model-pins off`
-> so the Copilot picker / Claude `/model` / Codex session default takes effect.
+> prompt only for the fix step; or (b) edit this file's `model:` line to the cheap-tier value
+> before running and revert after.
 >
 > The `core-review` pass invoked from Step 3 pins itself cheap **only on Claude Code** (its
 > `SKILL.md model: haiku` frontmatter is honoured per-turn there). On **Copilot** skills

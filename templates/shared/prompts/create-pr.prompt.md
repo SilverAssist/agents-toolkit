@@ -1,14 +1,12 @@
 ---
 agent: agent
 description: Create a pull request for the current branch
-model:
-  - Claude Sonnet 4.5 (copilot)
-  - GPT-5.5 (copilot)
+model: Claude Sonnet 5 (copilot)
 ---
 
 # Create Pull Request
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — the `prepare-pr` delegate runs on its own cheap-tier pin. To change tier, edit this file's `model:` frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides; the Copilot picker and Claude `/model` cannot override a `model:` pin. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (PR authoring). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Create a pull request for the current branch linked to Jira ticket **{ticket-id}**.
 
@@ -68,23 +66,29 @@ The planning document created by `work-ticket` or `create-plan` (shipped pattern
 `docs/<feature-name>-plan.md`) has served its purpose. Delete it now, **at PR creation (not at
 finalization)**, so it stays out of the base branch after merge.
 
-The step below is **self-discovering** — it removes every `docs/*plan*.md` (and
-`docs/**/*plan*.md`) file that was **added on this branch** vs `$BASE_BRANCH`, so it works even
-when the executor cannot resolve `{feature-name}` from context. It never touches plan docs that
-existed before the branch. Do **not** replace the glob with a literal file name — an
-unsubstituted `[ -f docs/{feature-name}-plan.md ]` silently matches nothing and skips the
-`git rm`.
+The step below is **self-discovering** — it removes every `docs/*-plan.md` file that was
+**added on this branch** vs `$BASE_BRANCH`, so it works even when the executor cannot resolve
+`{feature-name}` from context. It never touches plan docs that existed before the branch. Do
+**not** replace the glob with a literal file name — an unsubstituted
+`[ -f docs/{feature-name}-plan.md ]` silently matches nothing and skips the `git rm`.
+
+Two details are load-bearing. The pattern requires the `-plan.md` **suffix**, not the substring
+`plan`: `docs/*plan*.md` also matches `explanation.md` and `planet.md`, and would delete a
+legitimate new doc. And the list is passed **NUL-delimited**, because a path containing a space
+word-splits under `xargs` and makes `git rm` abort without removing anything.
 
 ```bash
-PLAN_DOCS=$(git diff "$BASE_BRANCH" --name-only --diff-filter=A -- 'docs/*plan*.md' 'docs/**/*plan*.md' 2>/dev/null)
-if [ -n "$PLAN_DOCS" ]; then
-  echo "Removing planning docs added on this branch:"
-  printf '  %s\n' $PLAN_DOCS
-  # xargs so a git rm failure (permissions, unmerged path) surfaces — no `|| true` mask.
-  echo "$PLAN_DOCS" | xargs git rm
-  git commit -m "docs: Remove planning doc for {ticket-id} ahead of PR"
+# `--quiet` exits 0 when nothing matched, so xargs never runs on an empty list.
+if git diff --quiet "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md'; then
+  echo "No planning docs to remove (nothing added on this branch matches docs/*-plan.md)."
 else
-  echo "No planning docs to remove (nothing added on this branch matches docs/*plan*.md)."
+  echo "Removing planning docs added on this branch:"
+  git diff --name-only "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md' | sed 's/^/  /'
+  # -z / -0 so a path containing spaces survives. No `|| true` mask: a real
+  # git rm failure (permissions, unmerged path) must surface.
+  git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md' \
+    | xargs -0 git rm --
+  git commit -m "docs: Remove planning doc for {ticket-id} ahead of PR"
 fi
 ```
 

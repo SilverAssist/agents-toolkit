@@ -1,14 +1,12 @@
 ---
 agent: agent
 description: Create a detailed implementation plan for a feature
-model:
-  - Claude Sonnet 4.5 (copilot)
-  - GPT-5.5 (copilot)
+model: Claude Sonnet 5 (copilot)
 ---
 
 # Create Implementation Plan
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — planning requires reasoning. To change tier, edit this file's `model:` frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides; the Copilot picker and Claude `/model` cannot override a `model:` pin. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (planning is real design reasoning). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Create a detailed implementation plan for: **{feature-description}**
 

@@ -43,20 +43,6 @@ const DEFAULT_CONFIG = {
   pr: {
     targetBranch: 'dev',
     template: 'default'
-  },
-  // Cheap-first model pins shipped with each prompt (see docs/subagent-cost-
-  // optimization-plan.md §5.2G). Override per-project or per-user by editing
-  // these values; the CLI substitutes them into `model:` frontmatter at
-  // install time. Setting a value to null preserves the shipped default.
-  models: {
-    copilot: {
-      cheap: 'Claude Haiku 4.5 (copilot)',
-      smart: 'Claude Sonnet 4.5 (copilot)'
-    },
-    claude: {
-      cheap: 'haiku',
-      smart: 'sonnet'
-    }
   }
 };
 
@@ -400,11 +386,9 @@ function linkSkill(canonicalSkillDir, agentSkillLinkPath, options = {}) {
  * @param {boolean} [params.dryRun] - Only report planned changes
  * @param {boolean} [params.copy] - Copy instead of symlink
  * @param {(name: string) => boolean} [params.dirFilter] - Skill folder filter
- * @param {'on'|'off'} [params.modelPins] - When `'off'`, strip `model:` from every `SKILL.md` (honours `--model-pins off`)
- * @param {{ cheap?: string, smart?: string }} [params.claudeModels] - When set, substitutes `haiku`/`sonnet`/`opus` in `SKILL.md` `model:` with the configured value
  * @returns {{ written: number, planned: number, installedSkills: Record<string, { canonicalDir: string }> }} Aggregated change counters and installed skill metadata
  */
-function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun = false, copy = false, dirFilter = null, modelPins = 'on', claudeModels = null }) {
+function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun = false, copy = false, dirFilter = null }) {
   const totals = { written: 0, planned: 0, installedSkills: {} };
   const skillsSrc = path.join(TEMPLATES_DIR, 'shared', 'skills');
   const canonicalDir = getAgentsSkillsDir(isGlobal);
@@ -413,22 +397,10 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
     return totals;
   }
 
-  // Build a per-file transform for SKILL.md frontmatter (`model:` rewrite/strip).
-  // Applied when populating the canonical store so every agent symlink inherits
-  // the transformed bytes. Non-SKILL.md files in a skill folder (assets,
-  // examples, scripts) pass through unchanged because `transformSkillFrontmatter`
-  // is a no-op on content without a `---` frontmatter block.
-  const shippedClaude = DEFAULT_CONFIG.models.claude;
-  const resolvedClaude = claudeModels || shippedClaude;
-  const transformNeeded = modelPins === 'off'
-    || resolvedClaude.cheap !== shippedClaude.cheap
-    || resolvedClaude.smart !== shippedClaude.smart;
-  const transformContent = transformNeeded
-    ? (content) => transformSkillFrontmatter(content, { claudeModels: resolvedClaude, stripModel: modelPins === 'off' })
-    : null;
-
-  // 1. Populate the canonical store once (filtered by stack).
-  const canonicalResult = copyDir(skillsSrc, canonicalDir, { force, dryRun, dirFilter, transformContent });
+  // 1. Populate the canonical store once (filtered by stack). Skills ship their
+  // `model:` pin verbatim — it is a Claude Code field, and the canonical store is
+  // shared by every agent through symlinks, so there is nothing to rewrite here.
+  const canonicalResult = copyDir(skillsSrc, canonicalDir, { force, dryRun, dirFilter });
   totals.written += canonicalResult.written;
   totals.planned += canonicalResult.planned;
 
@@ -452,148 +424,54 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
 }
 
 /**
- * Strip GitHub Copilot frontmatter from a prompt file.
- * Removes the ---\nagent: ...\ndescription: ...\n--- block wholesale.
- * Prefer {@link transformFrontmatterForClaude} for the Claude install path so
- * `model:` pins survive as Claude aliases.
- * @param {string} content - File content
- * @returns {string} Content without Copilot frontmatter
- */
-function stripCopilotFrontmatter(content) {
-  return content.replace(/^---\n(?:[\s\S]*?\n)?---\n\n?/, '');
-}
-
-/**
- * Extract the first Claude model alias from a Copilot frontmatter block.
- * Recognized substrings (case-insensitive, first match wins):
- *   - "haiku"  → "haiku"
- *   - "sonnet" → "sonnet"
- *   - "opus"   → "opus"
- * Non-Claude entries (e.g. `GPT-5 mini (copilot)`) are ignored so the fallback
- * chain "Claude Haiku 4.5 (copilot)" → "GPT-5 mini (copilot)" collapses to
- * `haiku` when copied into a Claude Code target.
+ * Map a Copilot model name to the equivalent Claude Code alias.
+ *
+ * Copilot names a specific version (`Claude Haiku 4.5 (copilot)`); Claude Code
+ * takes a generation-independent alias (`haiku`) and resolves it to whatever is
+ * current. Matching on the family substring is therefore deliberate — it keeps
+ * a Copilot version bump from needing a matching change here.
+ *
+ * A non-Claude pin (`GPT-5 mini (copilot)`) has no Claude equivalent and yields
+ * `null`, which installs the command with no `model:` at all so Claude falls
+ * back to the session model.
+ *
  * @param {string} frontmatterBody - Raw frontmatter body without --- delimiters
- * @returns {string|null} Claude alias or null if none matched
+ * @returns {string|null} Claude alias, or null when the pin is not a Claude model
  */
 function extractClaudeAlias(frontmatterBody) {
-  const scalarMatch = frontmatterBody.match(/^model:[ \t]+([^\n]+)$/m);
-  const arrayMatch = frontmatterBody.match(/^model:[ \t]*\n((?:[ \t]*-[ \t]*[^\n]+\n?)+)/m);
+  const match = frontmatterBody.match(/^model:[ \t]+([^\n]+)$/m);
+  const value = match?.[1]?.trim();
+  if (!value) return null;
 
-  const values = [];
-  if (scalarMatch && scalarMatch[1].trim()) {
-    values.push(scalarMatch[1].trim());
-  } else if (arrayMatch) {
-    for (const line of arrayMatch[1].split('\n')) {
-      const item = line.match(/^[ \t]*-[ \t]*(.+?)[ \t]*$/);
-      if (item) values.push(item[1]);
-    }
-  }
-
-  for (const value of values) {
-    if (/haiku/i.test(value)) return 'haiku';
-    if (/sonnet/i.test(value)) return 'sonnet';
-    if (/opus/i.test(value)) return 'opus';
-  }
+  if (/haiku/i.test(value)) return 'haiku';
+  if (/sonnet/i.test(value)) return 'sonnet';
+  if (/opus/i.test(value)) return 'opus';
+  if (/fable/i.test(value)) return 'fable';
   return null;
 }
 
 /**
  * Transform Copilot prompt frontmatter into Claude Code frontmatter.
  * - Strips Copilot-only fields (`agent`, `description`, `tools`).
- * - Reads the `model:` block (scalar or prioritized array) and remaps the
- *   first recognized Copilot vendor-qualified name to a Claude alias via
- *   {@link extractClaudeAlias}.
- * - If a Claude alias survives, emits `---\nmodel: <alias>\n---\n\n` before
- *   the body; otherwise strips the frontmatter entirely so Claude falls back
- *   to the inherited session model.
- * Optionally overrides the resolved alias with a user-configured value from
- * `.agents-toolkit.json` `models.claude.{cheap,smart}` (M4 config surface).
+ * - Rewrites the `model:` pin to the matching Claude alias via
+ *   {@link extractClaudeAlias}, so `Claude Haiku 4.5 (copilot)` — meaningless
+ *   to Claude Code — installs as `model: haiku`.
+ * - When no Claude alias applies, strips the frontmatter entirely so Claude
+ *   falls back to the inherited session model.
  * @param {string} content - Original file content (Copilot .prompt.md)
- * @param {Object} [options] - Transform options
- * @param {{ cheap?: string, smart?: string }} [options.claudeModels] - Aliases
- *   from `.agents-toolkit.json` `models.claude.{cheap,smart}`. When present,
- *   `haiku` is remapped to `models.claude.cheap` and `sonnet`/`opus` to
- *   `models.claude.smart`.
- * @param {boolean} [options.stripModel] - When true, drops the `model:` line
- *   even if a Claude alias survives (honours `--model-pins off`).
  * @returns {string} Content with Claude-compatible frontmatter
  */
-function transformFrontmatterForClaude(content, options = {}) {
-  const { claudeModels, stripModel = false } = options;
+function transformFrontmatterForClaude(content) {
   const match = content.match(/^---\n([\s\S]*?)\n---\n\n?/);
   if (!match) return content;
 
   const frontmatterBody = match[1];
   const body = content.slice(match[0].length);
 
-  if (stripModel) return body;
-
   const alias = extractClaudeAlias(frontmatterBody);
   if (!alias) return body;
 
-  let resolved = alias;
-  if (claudeModels) {
-    if (alias === 'haiku' && claudeModels.cheap) resolved = claudeModels.cheap;
-    else if ((alias === 'sonnet' || alias === 'opus') && claudeModels.smart) resolved = claudeModels.smart;
-  }
-  return `---\nmodel: ${resolved}\n---\n\n${body}`;
-}
-
-/**
- * Rewrite the `model:` line inside a `SKILL.md` frontmatter without destroying
- * the other npx-skills-standard fields (`name`, `description`, `allowed-tools`,
- * etc.). Skills use scalar `model: haiku` (per the `npx skills` standard),
- * and this transform mirrors {@link transformFrontmatterForClaude} for that
- * single field:
- *   - `stripModel: true` → remove the `model:` line (honours `--model-pins off`)
- *   - `claudeModels.cheap` set → substitute `haiku` with the configured value
- *   - `claudeModels.smart` set → substitute `sonnet`/`opus` with the configured value
- *   - Otherwise → return content unchanged
- *
- * The skill's `model:` field is a **Claude Code-only concern** — Copilot and
- * Codex do not read `model:` from a skill's frontmatter, they inherit the
- * invoking prompt's model. So this transform is applied when populating the
- * canonical `.agents/skills/` store regardless of the requesting agent; the
- * Copilot symlinks reference the same bytes and simply ignore the field.
- * @param {string} content - Original SKILL.md content
- * @param {Object} [options] - Transform options
- * @param {{ cheap?: string, smart?: string }} [options.claudeModels] - Aliases from `.agents-toolkit.json` `models.claude`
- * @param {boolean} [options.stripModel] - When true, drop `model:` entirely
- * @returns {string} Content with rewritten (or stripped) `model:` line, or the original content if no `model:` was present
- */
-function transformSkillFrontmatter(content, options = {}) {
-  const { claudeModels, stripModel = false } = options;
-  const match = content.match(/^---\n([\s\S]*?)\n---\n(\n?)/);
-  if (!match) return content;
-
-  const frontmatterBody = match[1];
-  const trailingBlank = match[2];
-  const body = content.slice(match[0].length);
-
-  const modelLineRegex = /^model:[ \t]+([^\n]+)\n?/m;
-  const modelMatch = frontmatterBody.match(modelLineRegex);
-  if (!modelMatch) return content;
-
-  if (stripModel) {
-    const stripped = frontmatterBody
-      .replace(modelLineRegex, '')
-      .replace(/\n{3,}/g, '\n\n')
-      .replace(/\n+$/, '');
-    return `---\n${stripped}\n---\n${trailingBlank}${body}`;
-  }
-
-  const currentValue = modelMatch[1].trim();
-  let alias = null;
-  if (/haiku/i.test(currentValue)) alias = 'cheap';
-  else if (/sonnet|opus/i.test(currentValue)) alias = 'smart';
-  if (!alias) return content;
-  if (!claudeModels) return content;
-
-  const resolved = alias === 'cheap' ? claudeModels.cheap : claudeModels.smart;
-  if (!resolved || resolved === currentValue) return content;
-
-  const rewrittenBody = frontmatterBody.replace(modelLineRegex, `model: ${resolved}\n`).replace(/\n+$/, '');
-  return `---\n${rewrittenBody}\n---\n${trailingBlank}${body}`;
+  return `---\nmodel: ${alias}\n---\n\n${body}`;
 }
 
 /**
@@ -908,102 +786,6 @@ function installAgentsFile(options = {}) {
   return result;
 }
 
-/**
- * Rewrite Copilot / Codex prompt frontmatter to honour user-configured model
- * pins from `.agents-toolkit.json` `models.copilot.{cheap,smart}` or strip
- * the pins entirely when `--model-pins off`.
- *
- * The shipped defaults are:
- *   - cheap tier: `Claude Haiku 4.5 (copilot)` → `GPT-5 mini (copilot)`
- *   - smart tier: `Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)`
- *
- * The tier of a given prompt is inferred from the first entry in its `model:`
- * array (`*Haiku*` = cheap, `*Sonnet*`/`*Opus*` = smart). When the resolved
- * cheap/smart matches the shipped default, the content is returned unchanged
- * (fast path — no rewrite for the common case).
- *
- * When `stripModel` is true (`--model-pins off`), the entire `model:` block
- * (scalar line or block-scalar array) is removed from the frontmatter so
- * every prompt falls back to Copilot's picker default.
- *
- * @param {string} content - Original .prompt.md content
- * @param {Object} [options] - Transform options
- * @param {{cheap:string,smart:string}} [options.copilotModels] - Resolved user
- *   overrides. Defaults to the shipped values.
- * @param {boolean} [options.stripModel] - When true, drop `model:` entirely.
- * @returns {string} Content with rewritten (or stripped) frontmatter
- */
-function transformFrontmatterForCopilot(content, options = {}) {
-  const { copilotModels, stripModel = false } = options;
-  const match = content.match(/^---\n([\s\S]*?)\n---\n(\n?)/);
-  if (!match) return content;
-
-  const frontmatterBody = match[1];
-  const trailingBlank = match[2];
-  const body = content.slice(match[0].length);
-
-  const arrayBlockRegex = /^model:[ \t]*\n((?:[ \t]*-[ \t]*[^\n]+\n?)+)/m;
-  const scalarBlockRegex = /^model:[ \t]+[^\n]+\n?/m;
-  const arrayBlockMatch = frontmatterBody.match(arrayBlockRegex);
-  const scalarBlockMatch = arrayBlockMatch ? null : frontmatterBody.match(scalarBlockRegex);
-
-  if (stripModel) {
-    let stripped = frontmatterBody;
-    if (arrayBlockMatch) {
-      stripped = stripped.replace(arrayBlockRegex, '').replace(/\n{2,}/g, '\n').replace(/\n+$/, '');
-    } else if (scalarBlockMatch) {
-      stripped = stripped.replace(scalarBlockRegex, '').replace(/\n{2,}/g, '\n').replace(/\n+$/, '');
-    } else {
-      return content;
-    }
-    return `---\n${stripped}\n---\n${trailingBlank}${body}`;
-  }
-
-  if (!arrayBlockMatch && !scalarBlockMatch) return content;
-  if (!copilotModels) return content;
-
-  const shippedCheap = DEFAULT_CONFIG.models.copilot.cheap;
-  const shippedSmart = DEFAULT_CONFIG.models.copilot.smart;
-  if (copilotModels.cheap === shippedCheap && copilotModels.smart === shippedSmart) {
-    return content;
-  }
-
-  const values = [];
-  if (arrayBlockMatch) {
-    for (const line of arrayBlockMatch[1].split('\n')) {
-      const item = line.match(/^[ \t]*-[ \t]*(.+?)[ \t]*$/);
-      if (item) values.push(item[1]);
-    }
-  } else {
-    values.push(scalarBlockMatch[0].replace(/^model:[ \t]+/, '').trim());
-  }
-
-  if (!values.length) return content;
-
-  let tier = null;
-  const primary = values[0];
-  if (/haiku/i.test(primary)) tier = 'cheap';
-  else if (/sonnet|opus/i.test(primary)) tier = 'smart';
-  if (!tier) return content;
-
-  const shipped = tier === 'cheap' ? shippedCheap : shippedSmart;
-  const resolved = tier === 'cheap' ? copilotModels.cheap : copilotModels.smart;
-  if (!resolved || resolved === shipped) return content;
-
-  const rewritten = values.map((v) => (v === shipped ? resolved : v));
-  const newBlock = rewritten.length === 1
-    ? `model: ${rewritten[0]}`
-    : `model:\n${rewritten.map((v) => `  - ${v}`).join('\n')}`;
-
-  let newFrontmatter;
-  if (arrayBlockMatch) {
-    newFrontmatter = frontmatterBody.replace(arrayBlockRegex, `${newBlock}\n`).replace(/\n+$/, '');
-  } else {
-    newFrontmatter = frontmatterBody.replace(scalarBlockRegex, `${newBlock}\n`).replace(/\n+$/, '');
-  }
-  return `---\n${newFrontmatter}\n---\n${trailingBlank}${body}`;
-}
-
 function installGitBasedTarget(options = {}, target = 'copilot') {
   const {
     force = false,
@@ -1012,8 +794,6 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     copy = false,
     global: isGlobal = false,
     filters = { stack: 'all', tracker: 'all' },
-    modelPins = 'on',
-    models = DEFAULT_CONFIG.models,
   } = options;
   const isCodex = target === 'codex';
   const targetDir = getTargetDir(isGlobal);
@@ -1029,14 +809,6 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   const promptsFilter = makeFilter('prompts');
   const partialsFilter = makeFilter('partials');
-  const shippedCopilot = DEFAULT_CONFIG.models.copilot;
-  const copilotModels = models?.copilot || shippedCopilot;
-  const copilotTransformNeeded = modelPins === 'off'
-    || copilotModels.cheap !== shippedCopilot.cheap
-    || copilotModels.smart !== shippedCopilot.smart;
-  const copilotTransform = copilotTransformNeeded
-    ? (content) => transformFrontmatterForCopilot(content, { copilotModels, stripModel: modelPins === 'off' })
-    : undefined;
 
   log(isCodex ? '\n⚡ Codex Installer\n' : isGlobal ? '\n🌐 Agents Toolkit Global Installer\n' : '\n📦 Agents Toolkit Installer\n', 'bright');
 
@@ -1050,7 +822,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallPrompts) {
     info('Installing prompts...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun, filter: promptsFilter, partialsFilter, transformContent: copilotTransform });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun, filter: promptsFilter, partialsFilter });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -1077,8 +849,6 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
       dryRun,
       copy,
       dirFilter: makeFilter('skills'),
-      modelPins,
-      claudeModels: models?.claude,
     });
     totalChanges += getChangeCount(result, dryRun);
     // Merge installed skills for lockfile (agent dir = .github/skills or ~/.copilot/skills).
@@ -1183,8 +953,6 @@ function installClaude(options = {}) {
     copy = false,
     global: isGlobal = false,
     filters = { stack: 'all', tracker: 'all' },
-    modelPins = 'on',
-    models = DEFAULT_CONFIG.models,
     noAgentOverrides = false,
   } = options;
   const scope = getInstallScope(options);
@@ -1201,12 +969,7 @@ function installClaude(options = {}) {
 
   const promptsFilter = makeFilter('prompts');
   const partialsFilter = makeFilter('partials');
-  const claudeTransform = (content) => adaptPathsForClaude(
-    transformFrontmatterForClaude(content, {
-      claudeModels: models.claude,
-      stripModel: modelPins === 'off',
-    })
-  );
+  const claudeTransform = (content) => adaptPathsForClaude(transformFrontmatterForClaude(content));
 
   log('\n🤖 Claude Code Installer\n', 'bright');
 
@@ -1265,8 +1028,6 @@ function installClaude(options = {}) {
       dryRun,
       copy,
       dirFilter: makeFilter('skills'),
-      modelPins,
-      claudeModels: models?.claude,
     });
     totalChanges += getChangeCount(result, dryRun);
     for (const [name, meta] of Object.entries(result.installedSkills)) {
@@ -1373,12 +1134,6 @@ function restore(options = {}) {
     return shouldIncludeFile(basename, category, filters);
   };
 
-  // Re-resolve model settings from the config file chain so restore re-applies
-  // the same `SKILL.md` `model:` transforms as install (canonical skills are
-  // overwritten on every restore; without this the transformed frontmatter
-  // would be reverted to the shipped defaults).
-  const { modelPins, models } = resolveModelSettings({});
-
   // Determine which agent dirs were recorded in the lockfile.
   const agentDirs = new Set();
   for (const meta of Object.values(lockfile.skills || {})) {
@@ -1398,8 +1153,6 @@ function restore(options = {}) {
       dryRun,
       copy,
       dirFilter: makeFilter('skills'),
-      modelPins,
-      claudeModels: models?.claude,
     });
     totalRestored += dryRun ? result.planned : result.written;
   }
@@ -1598,7 +1351,6 @@ function showHelp() {
   console.log('  --skills-only       Only install skills');
   console.log('  --hooks-only        Only install hooks (PostToolUse validation scripts)');
   console.log('  --copy              Copy skills instead of symlinking to .agents/skills/');
-  console.log('  --model-pins <val>  Ship `model:` frontmatter: on | off (default: on)');
   console.log('  --no-agent-overrides  Skip installing .claude/agents/ overrides (Claude only)');
   console.log('  --dry-run           Show what would be installed');
 
@@ -1634,7 +1386,6 @@ function parseArgs() {
   let target = null;
   let stack = null;
   let tracker = null;
-  let modelPins = null;
   for (let i = 0; i < flags.length; i++) {
     const arg = flags[i];
     if (arg === '--target') {
@@ -1667,16 +1418,6 @@ function parseArgs() {
       }
     } else if (arg.startsWith('--tracker=')) {
       tracker = arg.split('=').slice(1).join('=');
-    } else if (arg === '--model-pins') {
-      const value = flags[i + 1];
-      if (value && !value.startsWith('-')) {
-        modelPins = value;
-        i++;
-      } else {
-        modelPins = '';
-      }
-    } else if (arg.startsWith('--model-pins=')) {
-      modelPins = arg.split('=').slice(1).join('=');
     }
   }
 
@@ -1697,7 +1438,6 @@ function parseArgs() {
     target,
     stack,
     tracker,
-    modelPins,
   };
   
   return { command, options };
@@ -1814,68 +1554,6 @@ function resolveFilters(options = {}) {
 }
 
 /**
- * Read the `models` block and `modelPins` toggle from the resolved config
- * chain (global → project → CLI flag).
- * `--model-pins off` strips shipped `model:` frontmatter during install so
- * every prompt falls back to the agent's globally-configured default.
- * `--model-pins on` (default) keeps the shipped pins and applies any user
- * overrides from `.agents-toolkit.json` `models.{copilot,claude}.{cheap,smart}`.
- * @param {Object} [options] - Parsed CLI options
- * @returns {{ modelPins: 'on'|'off', models: { copilot: {cheap:string,smart:string}, claude: {cheap:string,smart:string} } }}
- */
-function resolveModelSettings(options = {}) {
-  const validPins = ['on', 'off'];
-  let modelPins = 'on';
-  const models = {
-    copilot: { ...DEFAULT_CONFIG.models.copilot },
-    claude: { ...DEFAULT_CONFIG.models.claude },
-  };
-
-  const applyConfigFile = (configPath) => {
-    if (!fs.existsSync(configPath)) return;
-    try {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-      if (config.modelPins && validPins.includes(config.modelPins)) {
-        modelPins = config.modelPins;
-      }
-      if (config.models && typeof config.models === 'object') {
-        for (const agent of ['copilot', 'claude']) {
-          const agentModels = config.models[agent];
-          if (agentModels && typeof agentModels === 'object') {
-            if (typeof agentModels.cheap === 'string' && agentModels.cheap.trim()) {
-              models[agent].cheap = agentModels.cheap.trim();
-            }
-            if (typeof agentModels.smart === 'string' && agentModels.smart.trim()) {
-              models[agent].smart = agentModels.smart.trim();
-            }
-          }
-        }
-      }
-    } catch {
-      // Ignore invalid config.
-    }
-  };
-
-  applyConfigFile(path.join(getHomeDir(), '.agents-toolkit.json'));
-  applyConfigFile(path.join(process.cwd(), '.agents-toolkit.json'));
-
-  if (options.modelPins !== null && options.modelPins !== undefined) {
-    const value = options.modelPins.trim().toLowerCase();
-    if (!value) {
-      error('Missing value for --model-pins. Use on or off.');
-      process.exit(1);
-    }
-    if (!validPins.includes(value)) {
-      error(`Invalid --model-pins value: ${options.modelPins}. Use on or off.`);
-      process.exit(1);
-    }
-    modelPins = value;
-  }
-
-  return { modelPins, models };
-}
-
-/**
  * Main CLI entry point
  */
 function main() {
@@ -1886,10 +1564,7 @@ function main() {
   const filters = (command === 'install' || command === 'update')
     ? resolveFilters(options)
     : { stack: 'all', tracker: 'all' };
-  const modelSettings = (command === 'install' || command === 'update')
-    ? resolveModelSettings(options)
-    : { modelPins: 'on', models: DEFAULT_CONFIG.models };
-  const installOptions = { ...options, filters, ...modelSettings };
+  const installOptions = { ...options, filters };
 
   switch (command) {
     case 'install':

@@ -51,12 +51,12 @@ prompts/
 
 ## Model tiers
 
-Every shipped prompt carries an explicit `model:` frontmatter default so a fresh install runs cost-optimally without configuration. **The pin wins over the Copilot picker and Claude `/model`** (both are only consulted when no `model:` is set) — permanent overrides require editing the installed file's frontmatter, reinstalling the toolkit with `--model-pins off` (strips all pins so the picker/session default wins), or reinstalling with `.agents-toolkit.json` `models` overrides (remaps per tier). Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
+Every shipped prompt carries an explicit `model:` pin so a fresh install runs cost-optimally with no configuration at all. The pins are **hardcoded in the files** — there is no tier config, no CLI flag, and nothing to resolve at install time. **To change a tier, edit the `model:` line in the installed file.** That is the whole mechanism, and it is deliberate: a model picker spanning three agents whose model catalogues move independently would cost more to maintain than it saves.
 
-| Tier | Copilot default | Claude alias | When to keep it | When to override to smart |
-| --- | --- | --- | --- | --- |
-| **Cheap** | `Claude Haiku 4.5 (copilot)` → `GPT-5 mini (copilot)` | `haiku` | Checklist / mechanical work (see table below) | Rare — only if the cheap model can't complete the task |
-| **Smart** | `Claude Sonnet 4.5 (copilot)` → `GPT-5 (copilot)` | `sonnet` | Design / reasoning work | Always the default for the 6 orchestrator prompts below |
+| Tier | Copilot / Codex | Claude Code | Used for |
+| --- | --- | --- | --- |
+| **Cheap** | `Claude Haiku 4.5 (copilot)` | `haiku` | Checklist / mechanical work — 13 prompts |
+| **Smart** | `Claude Sonnet 5 (copilot)` | `sonnet` | Design / reasoning work — 6 prompts |
 
 | Prompt | Tier | Rationale |
 | --- | --- | --- |
@@ -65,14 +65,17 @@ Every shipped prompt carries an explicit `model:` frontmatter default so a fresh
 | `new-wp-component`, `new-wp-plugin`, `quality-check` | Cheap | Scaffolding / tool runs |
 | `prepare-pr`, `prepare-github-release`, `finalize-pr`, `finalize-github-pr` | Cheap | Validation + git/gh mechanics |
 | `create-plan` | Smart | Real design reasoning |
-| `work-ticket`, `work-github-issue` | Smart | Implementation orchestration (see "Autonomous cycles" note below — delegate behaviour is platform-specific) |
-| `create-pr`, `create-github-pr` | Smart | PR authoring + review orchestration (see "Autonomous cycles" note below — delegate behaviour is platform-specific) |
-| `resolve-github-reviews` | Smart | The *fix* step may need reasoning. The fetch/reply mechanics run on the pinned smart tier during a single invocation because `model:` locks the model for the run — to run those phases cheap you must invoke them from a separate cheap-tier chat, edit the installed `model:` before running, or reinstall with `--model-pins off`. |
+| `work-ticket`, `work-github-issue` | Smart | Implementation orchestration |
+| `create-pr`, `create-github-pr` | Smart | PR authoring + review orchestration |
+| `resolve-github-reviews` | Smart | The *fix* step needs reasoning |
 
-**Autonomous cycles — delegate model behaviour is platform-specific.**
-- **Claude Code**: each delegate has its own `model:` boundary (skills via `SKILL.md`, slash-commands via `.md` frontmatter), so a cheap-tier delegate invoked from a smart-tier orchestrator runs on the delegate's own pin for that turn. Orchestrators must not force their tier onto delegated steps.
-- **Copilot**: only `.prompt.md` files establish a `model:` boundary; skills inherit the invoking prompt's model. An inline delegate skill (like `core-review`) called from a smart-tier orchestrator therefore runs on the smart tier too — to force it cheap on Copilot, invoke the delegate as a **standalone chat** (fresh prompt invocation) rather than inline.
-- **Codex**: the session runs one model set by `codex --model`; delegate `model:` is advisory-only and cannot switch mid-session. Open a separate `codex --model <cheap>` session for cheap-tier delegate steps.
+### How each agent reads the pin
+
+- **Claude Code** — the installer rewrites the Copilot model name to the matching alias, so `Claude Haiku 4.5 (copilot)` installs as `model: haiku`. Aliases track the current generation, so they do not go stale. The pin **wins over `/model`**, which is only consulted when no `model:` is set.
+- **Copilot** — the pin is used as shipped. It **wins over the picker**, which is only consulted when no `model:` is set. Note that only `.prompt.md` files establish a model boundary: skills inherit the invoking prompt's model, so an inline `core-review` from a smart-tier orchestrator runs smart. Invoke the skill as a standalone chat to keep it cheap.
+- **Codex** — `model:` is **ignored entirely**; the session runs whatever `codex --model` set. The field is left in place because Codex reads the same files through symlinks; it produces a non-blocking lint warning and nothing else.
+
+Because the pin is a single scalar, an unavailable model falls back to the agent's own default rather than to a second entry — the toolkit does not ship fallback chains. A prioritized `model:` array is undocumented for prompt files and is rejected outright by GitHub Copilot CLI.
 
 ## Workflow Stages
 

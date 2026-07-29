@@ -1,14 +1,12 @@
 ---
 agent: agent
 description: Create a pull request for the current branch linked to a GitHub issue
-model:
-  - Claude Sonnet 4.5 (copilot)
-  - GPT-5.5 (copilot)
+model: Claude Sonnet 5 (copilot)
 ---
 
 # Create GitHub Pull Request
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`). **Delegate model behaviour is platform-specific**: on **Claude Code** the delegates (`prepare-pr`, `core-review`) run on their own cheap-tier pins because `SKILL.md`/slash-command frontmatter establishes a per-turn model boundary; on **Copilot** only `.prompt.md` files establish a `model:` boundary — skills inherit the invoking prompt, so an inline `core-review` from this smart-tier prompt runs on the smart tier too (invoke `core-review` as a standalone chat if you want it cheap); on **Codex** the entire session runs one model set by `codex --model`, so delegate `model:` is advisory and cannot switch mid-session. To change this prompt's tier, edit its `model:` frontmatter, reinstall with `--model-pins off` (strips all pins so the picker/session default wins), or set `.agents-toolkit.json` `models.{copilot,claude}` overrides. The Copilot picker and Claude `/model` cannot override a `model:` pin; on Codex `codex --model` is the session-level override.
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (PR authoring and review orchestration). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Create a pull request for the current branch linked to GitHub issue **#{issue-number}**.
 
@@ -76,24 +74,31 @@ accumulating in `docs/` after the merge. Do this **before** the review below, so
 the *final* branch state and catches any now-stale reference to the removed file (links,
 indexes, mentions).
 
-The step below is **self-discovering** — it removes every `docs/*plan*.md` (and
-`docs/**/*plan*.md`) file that was **added on this branch** vs `$BASE_BRANCH`, so it works even
-when the executor cannot resolve `{feature-name}` from context (a plain `[ -f docs/{feature-name}-plan.md ]`
-with an unsubstituted placeholder silently matches nothing and skips the `git rm`). It never
-touches plan docs that existed before the branch. Do **not** replace the glob with a literal
-file name — that re-introduces the silent-skip bug.
+The step below is **self-discovering** — it removes every `docs/*-plan.md` file that was
+**added on this branch** vs `$BASE_BRANCH`, so it works even when the executor cannot resolve
+`{feature-name}` from context (a plain `[ -f docs/{feature-name}-plan.md ]` with an
+unsubstituted placeholder silently matches nothing and skips the `git rm`). It never touches
+plan docs that existed before the branch. Do **not** replace the glob with a literal file name
+— that re-introduces the silent-skip bug.
+
+Two details are load-bearing. The pattern requires the `-plan.md` **suffix**, not the substring
+`plan`: `docs/*plan*.md` also matches `explanation.md` and `planet.md`, and would delete a
+legitimate new doc. And the list is passed **NUL-delimited**, because a path containing a space
+word-splits under `xargs` and makes `git rm` abort without removing anything.
 
 ```bash
-# Discover planning docs added on THIS branch (vs the base branch). Handles both the shipped
+# Discover planning docs added on THIS branch (vs the base branch). Matches the shipped
 # `docs/<feature-name>-plan.md` pattern and any nested variant under `docs/`.
-PLAN_DOCS=$(git diff "$BASE_BRANCH" --name-only --diff-filter=A -- 'docs/*plan*.md' 'docs/**/*plan*.md' 2>/dev/null)
-if [ -n "$PLAN_DOCS" ]; then
-  echo "Removing planning docs added on this branch:"
-  printf '  %s\n' $PLAN_DOCS
-  # xargs so a git rm failure (permissions, unmerged path) surfaces — no `|| true` mask.
-  echo "$PLAN_DOCS" | xargs git rm
+# `--quiet` exits 0 when nothing matched, so xargs never runs on an empty list.
+if git diff --quiet "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md'; then
+  echo "No planning docs to remove (nothing added on this branch matches docs/*-plan.md)."
 else
-  echo "No planning docs to remove (nothing added on this branch matches docs/*plan*.md)."
+  echo "Removing planning docs added on this branch:"
+  git diff --name-only "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md' | sed 's/^/  /'
+  # -z / -0 so a path containing spaces survives. No `|| true` mask: a real
+  # git rm failure (permissions, unmerged path) must surface.
+  git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md' \
+    | xargs -0 git rm --
 fi
 ```
 

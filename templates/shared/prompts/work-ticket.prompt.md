@@ -1,14 +1,12 @@
 ---
 agent: agent
 description: Start working on a Jira ticket with full workflow setup
-model:
-  - Claude Sonnet 4.5 (copilot)
-  - GPT-5.5 (copilot)
+model: Claude Sonnet 5 (copilot)
 ---
 
 # Work on Jira Ticket
 
-> **Model:** Default smart tier (`Claude Sonnet 4.5` → `GPT-5`) — orchestrator delegates run on their own cheap-tier pins. To change tier, edit this file's `model:` frontmatter or reinstall with `--model-pins off` (strips all pins so the picker/session default wins) or `.agents-toolkit.json` `models.{copilot,claude}` overrides; the Copilot picker and Claude `/model` cannot override a `model:` pin. Codex has no per-prompt field, so `codex --model` is the effective session-level override there.
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (implementation orchestration). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Start working on Jira ticket **{ticket-id}** with complete workflow setup.
 

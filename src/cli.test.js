@@ -763,8 +763,36 @@ test('claude install remaps smart-tier Copilot model to `sonnet` alias', (t) => 
   const content = fs.readFileSync(file, 'utf-8');
 
   assert.match(content, /^---\nmodel: sonnet\n---\n\n/, 'expected sonnet alias frontmatter');
-  assert.doesNotMatch(content, /Claude Sonnet 4\.5 \(copilot\)/, 'Copilot vendor name must not leak into Claude commands');
-  assert.doesNotMatch(content, /GPT-5 \(copilot\)/, 'GPT-5 fallback must be dropped for Claude');
+  assert.doesNotMatch(content, /Claude Sonnet 5 \(copilot\)/, 'Copilot vendor name must not leak into Claude commands');
+});
+
+test('every shipped prompt pins `model:` as a scalar, never a list', () => {
+  // A prioritized array is undocumented for .prompt.md files and GitHub Copilot
+  // CLI rejects it outright ("model: Expected string, received array"). If the
+  // array form silently loses, the prompt falls back to the picker and the whole
+  // cost optimization becomes a no-op — so guard the scalar form here.
+  const dir = path.join(process.cwd(), 'templates', 'shared', 'prompts');
+  const prompts = fs.readdirSync(dir).filter((f) => f.endsWith('.prompt.md'));
+  assert.ok(prompts.length > 0, 'expected shipped prompts');
+
+  for (const name of prompts) {
+    const content = fs.readFileSync(path.join(dir, name), 'utf-8');
+    assert.match(content, /^model: \S[^\n]*$/m, `${name} must carry a scalar model: pin`);
+    assert.doesNotMatch(content, /^model:[ \t]*\n[ \t]*-/m, `${name} must not use the array model: form`);
+  }
+});
+
+test('copilot install ships the prompt pin verbatim', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  // No transform runs on the Copilot path any more — the installed file must be
+  // byte-identical to the shipped template.
+  const installed = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md'), 'utf-8');
+  const shipped = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', 'quality-check.prompt.md'), 'utf-8');
+  assert.equal(installed, shipped, 'copilot prompts must install byte-identical to the template');
+  assert.match(installed, /^model: Claude Haiku 4\.5 \(copilot\)$/m, 'cheap tier pin must survive');
 });
 
 test('claude install preserves the > **Model:** blockquote body text', (t) => {
@@ -773,16 +801,17 @@ test('claude install preserves the > **Model:** blockquote body text', (t) => {
   assert.equal(status, 0, stderr);
 
   const content = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'quality-check.md'), 'utf-8');
-  assert.match(content, /> \*\*Model:\*\* Default cheap tier/, 'body-level model note must survive the transform');
+  assert.match(content, /> \*\*Model:\*\* Cheap tier/, 'body-level model note must survive the transform');
 });
 
-// ─── #39 M4: --model-pins + models config + agent overrides + --budget ────────
+// ─── #39: agent overrides + --budget ─────────────────────────────────────────
 
-test('help shows --model-pins and --no-agent-overrides flags', () => {
+test('help shows --no-agent-overrides and no model-selection flags', () => {
   const { status, stdout } = runCli(['help'], process.cwd());
   assert.equal(status, 0);
-  assert.match(stdout, /--model-pins <val>/);
   assert.match(stdout, /--no-agent-overrides/);
+  // Model pins are hardcoded in the templates; there is no CLI surface for them.
+  assert.doesNotMatch(stdout, /--model-pins/);
 });
 
 test('claude install copies Explore subagent override by default', (t) => {
@@ -806,79 +835,6 @@ test('--no-agent-overrides skips .claude/agents/ install', (t) => {
   assert.equal(fs.existsSync(agentsDir), false, '.claude/agents/ must not be created with --no-agent-overrides');
 });
 
-test('invalid --model-pins value fails with a clear error', (t) => {
-  const tempDir = createTempProject(t);
-  const { status, stdout } = runCli(['install', '--model-pins', 'yes'], tempDir);
-  assert.equal(status, 1);
-  assert.match(stdout, /Invalid --model-pins value/);
-});
-
-test('--model-pins off strips model: from copilot prompts', (t) => {
-  const tempDir = createTempProject(t);
-  const { status, stderr } = runCli(['install', '--prompts-only', '--model-pins', 'off'], tempDir);
-  assert.equal(status, 0, stderr);
-
-  const file = path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md');
-  const content = fs.readFileSync(file, 'utf-8');
-  assert.doesNotMatch(content, /^model:/m, 'model: block must be stripped from copilot prompts with --model-pins off');
-  assert.doesNotMatch(content, /Claude Haiku 4\.5 \(copilot\)/, 'cheap-tier vendor name must be gone');
-  // Frontmatter block itself still exists (agent/description/tools stay).
-  assert.match(content, /^---\n[\s\S]*?agent: agent/m, 'other frontmatter fields must survive --model-pins off');
-});
-
-test('--model-pins off strips model: from claude commands', (t) => {
-  const tempDir = createTempProject(t);
-  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only', '--model-pins', 'off'], tempDir);
-  assert.equal(status, 0, stderr);
-
-  const file = path.join(tempDir, '.claude', 'commands', 'quality-check.md');
-  const content = fs.readFileSync(file, 'utf-8');
-  assert.doesNotMatch(content, /^---\nmodel:/m, 'claude commands must have no model frontmatter with --model-pins off');
-});
-
-test('models.copilot config overrides substitute into copilot prompt frontmatter', (t) => {
-  const tempDir = createTempProject(t);
-  fs.writeFileSync(
-    path.join(tempDir, '.agents-toolkit.json'),
-    JSON.stringify({
-      models: {
-        copilot: { cheap: 'GPT-5 mini (copilot)', smart: 'Claude Opus 4.7 (copilot)' },
-      },
-    }, null, 2)
-  );
-
-  const { status, stderr } = runCli(['install', '--prompts-only', '--force'], tempDir);
-  assert.equal(status, 0, stderr);
-
-  // Cheap-tier prompt: primary entry rewritten from Haiku to GPT-5 mini.
-  const cheap = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md'), 'utf-8');
-  assert.match(cheap, /- GPT-5 mini \(copilot\)/, 'cheap-tier primary must be rewritten');
-  assert.doesNotMatch(cheap, /- Claude Haiku 4\.5 \(copilot\)/, 'shipped Haiku pin must be replaced');
-
-  // Smart-tier prompt: primary entry rewritten from Sonnet to Opus.
-  const smart = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'create-plan.prompt.md'), 'utf-8');
-  assert.match(smart, /- Claude Opus 4\.7 \(copilot\)/, 'smart-tier primary must be rewritten to Opus');
-  assert.doesNotMatch(smart, /- Claude Sonnet 4\.5 \(copilot\)/, 'shipped Sonnet pin must be replaced');
-});
-
-test('models.claude config overrides substitute alias in claude commands', (t) => {
-  const tempDir = createTempProject(t);
-  fs.writeFileSync(
-    path.join(tempDir, '.agents-toolkit.json'),
-    JSON.stringify({ models: { claude: { smart: 'opus' } } }, null, 2)
-  );
-
-  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
-  assert.equal(status, 0, stderr);
-
-  // Cheap tier keeps haiku (no override), smart tier uses configured opus.
-  const cheap = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'quality-check.md'), 'utf-8');
-  assert.match(cheap, /^---\nmodel: haiku\n---/, 'unoverridden cheap tier must stay haiku');
-
-  const smart = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'create-plan.md'), 'utf-8');
-  assert.match(smart, /^---\nmodel: opus\n---/, 'smart tier must be rewritten to configured opus alias');
-});
-
 test('core-review skill ships model: haiku and --budget hint', () => {
   const skillPath = path.join(process.cwd(), 'templates', 'shared', 'skills', 'core-review', 'SKILL.md');
   const content = fs.readFileSync(skillPath, 'utf-8');
@@ -887,40 +843,70 @@ test('core-review skill ships model: haiku and --budget hint', () => {
   assert.match(content, /## `--budget \{quick,medium,thorough\}`/, 'core-review must document the budget scoping');
 });
 
-test('--model-pins off strips model: from installed SKILL.md frontmatter', (t) => {
-  const tempDir = createTempProject(t);
-  const { status, stderr } = runCli(['install', '--skills-only', '--model-pins', 'off'], tempDir);
-  assert.equal(status, 0, stderr);
-
-  const canonical = fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'core-review', 'SKILL.md'), 'utf-8');
-  assert.doesNotMatch(canonical, /^model:/m, 'model: line must be stripped from canonical SKILL.md with --model-pins off');
-  // Other npx-skills-standard fields must survive (name, description, argument-hint, allowed-tools).
-  assert.match(canonical, /^name: core-review$/m, 'name: field must survive --model-pins off');
-  assert.match(canonical, /^description:/m, 'description: field must survive --model-pins off');
-  assert.match(canonical, /^argument-hint:/m, 'argument-hint: field must survive --model-pins off');
-});
-
-test('models.claude.cheap override substitutes haiku in installed SKILL.md frontmatter', (t) => {
-  const tempDir = createTempProject(t);
-  fs.writeFileSync(
-    path.join(tempDir, '.agents-toolkit.json'),
-    JSON.stringify({ models: { claude: { cheap: 'sonnet' } } }, null, 2)
-  );
-
-  const { status, stderr } = runCli(['install', '--target', 'claude', '--skills-only'], tempDir);
-  assert.equal(status, 0, stderr);
-
-  const canonical = fs.readFileSync(path.join(tempDir, '.agents', 'skills', 'core-review', 'SKILL.md'), 'utf-8');
-  assert.match(canonical, /^model: sonnet$/m, 'core-review model: must be rewritten from haiku to configured cheap value');
-  assert.doesNotMatch(canonical, /^model: haiku$/m, 'shipped haiku pin must be replaced');
-  // Other frontmatter fields must survive the substitution.
-  assert.match(canonical, /^name: core-review$/m, 'name: field must survive cheap-tier substitution');
-  assert.match(canonical, /^description:/m, 'description: field must survive cheap-tier substitution');
-});
-
 test('orchestrator prompts pass explicit --budget to core-review', () => {
   const preview = (name) => fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
   assert.match(preview('create-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget medium`/, 'create-github-pr must pass --budget medium');
   assert.match(preview('finalize-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'finalize-github-pr must pass --budget quick');
   assert.match(preview('resolve-github-reviews.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'resolve-github-reviews must pass --budget quick');
 });
+
+// ─── Planning-doc removal: the shipped shell block must not eat other docs ────
+
+/**
+ * Extract the first fenced bash block that contains the planning-doc removal
+ * logic from a shipped prompt.
+ * @param {string} promptName - File name under templates/shared/prompts
+ * @returns {string} The bash source
+ */
+function planDocBlock(promptName) {
+  const content = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', promptName), 'utf-8');
+  // Scan each fenced block separately — a single regex spanning the file would
+  // glue several blocks (and the prose between them) into one script.
+  const blocks = [...content.matchAll(/```bash\n((?:(?!```)[\s\S])*)```/g)].map((m) => m[1]);
+  const block = blocks.find((b) => b.includes('-plan.md') && b.includes('git rm'));
+  assert.ok(block, `${promptName} must ship a bash block that removes *-plan.md`);
+  return block;
+}
+
+const bashAvailable = spawnSync('bash', ['-c', 'command -v git'], { encoding: 'utf-8' }).status === 0;
+
+for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) {
+  test(`${promptName} plan-doc removal spares unrelated docs and survives spaces`, { skip: !bashAvailable && 'bash/git unavailable' }, (t) => {
+    const repo = createTempProject(t);
+    const git = (...args) => spawnSync('git', args, { cwd: repo, encoding: 'utf-8' });
+
+    git('init', '-q', '.');
+    git('config', 'user.email', 'test@example.com');
+    git('config', 'user.name', 'Test');
+    fs.mkdirSync(path.join(repo, 'docs', 'nested'), { recursive: true });
+    fs.writeFileSync(path.join(repo, 'docs', 'pre-existing-plan.md'), 'old\n');
+    git('add', '-A');
+    git('commit', '-qm', 'base');
+    git('branch', '-M', 'main');
+    git('checkout', '-qb', 'feat');
+
+    // "explanation" and "planet" both contain the substring "plan" — a
+    // `*plan*.md` glob would delete them. A path with a space word-splits under
+    // xargs and aborts the whole `git rm`, leaving the real plan doc behind.
+    for (const name of ['explanation.md', 'planet.md', 'auth-plan.md', 'my feature-plan.md']) {
+      fs.writeFileSync(path.join(repo, 'docs', name), 'x\n');
+    }
+    fs.writeFileSync(path.join(repo, 'docs', 'nested', 'deep-plan.md'), 'x\n');
+    git('add', '-A');
+    git('commit', '-qm', 'add docs');
+
+    // The block references $BASE_BRANCH, set by an earlier step in the prompt.
+    // create-pr's block also commits, which needs the identity configured above.
+    const script = `set -e\nBASE_BRANCH=main\n${planDocBlock(promptName)}`;
+    const run = spawnSync('bash', ['-c', script], { cwd: repo, encoding: 'utf-8' });
+    assert.equal(run.status, 0, `block failed: ${run.stderr}`);
+
+    const exists = (...p) => fs.existsSync(path.join(repo, 'docs', ...p));
+    assert.ok(exists('explanation.md'), 'explanation.md must survive — it only contains the substring "plan"');
+    assert.ok(exists('planet.md'), 'planet.md must survive');
+    assert.ok(exists('pre-existing-plan.md'), 'a plan doc that predates the branch must survive');
+    assert.ok(!exists('auth-plan.md'), 'the branch-added plan doc must be removed');
+    assert.ok(!exists('my feature-plan.md'), 'a plan doc whose path contains a space must be removed');
+    assert.ok(!exists('nested', 'deep-plan.md'), 'a nested plan doc must be removed');
+  });
+}
