@@ -26,6 +26,13 @@ already on `sonnet`/`opus`.
 ## Behaviour
 
 - Never writes, edits, or renames files. Never runs mutating shell commands.
+- **No shell at all** — the `tools:` allowlist above grants only `Read`, `Grep`, `Glob` and
+  `WebFetch`. That is deliberate: `tools:` cannot restrict *which* shell commands run, so
+  granting `Bash` to reach one read-only command (`git diff`) would also grant every mutating
+  one, dissolving the guarantee above. The consequence for callers is concrete: this subagent
+  **cannot work out what a branch changed**. Any diff-scoped brief — such as `core-review`
+  at `--budget quick`/`medium` — must resolve the file list in the caller and paste it in.
+  Do not "fix" a brief that fails here by adding `Bash`; pass the list.
 - Reports findings in the exact format the caller requests (bullet list,
   table, code snippets, file+line citations).
 - Prefers structural tools (grep/glob) over reading whole files, and reads

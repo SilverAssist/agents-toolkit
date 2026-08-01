@@ -79,12 +79,25 @@ optimization, never a requirement**:
   (or your provider's cheap tier) for this pass — the checklist is deterministic.
 - **Claude Code** — the shipped skill frontmatter already pins `model: haiku` for the duration
   of this pass, so the outer chat's smart tier is preserved. *Optionally* delegate the pass to
-  a read-only **subagent** (`Explore` or `general-purpose`) with the brief: "Review the file
-  set matching the caller's `--budget` (`quick` → the diff vs the base branch plus the files
-  it directly touches; `medium` → diff plus one-hop neighbours — importers/consumers, sibling
-  files, docs/indexes that list the changed symbol; `thorough` → the whole repository) against
-  the core-review checklist; report findings as `severity | file:line | problem | suggested fix`;
-  do not edit any files." Relay its findings back to the main flow. Running it inline works too.
+  a read-only **subagent** (`Explore` or `general-purpose`).
+
+  **Resolve the file set in the caller and paste it into the brief.** The shipped `Explore`
+  override declares `tools: Read, Grep, Glob, WebFetch` — no shell, deliberately, so the
+  subagent stays read-only — which means it cannot run `git diff` to work out what changed. A
+  brief that only names a budget leaves it with no way to find the diff:
+
+  ```bash
+  # quick    → exactly this list
+  # medium   → this list plus its one-hop neighbours (importers/consumers, sibling files,
+  #            docs/indexes that name the changed symbol), resolved by the caller
+  # thorough → send no list; ask for the whole repository
+  git diff --name-only "$BASE_BRANCH"
+  ```
+
+  Then brief it: "Review these files — `<paste the resolved list>` — against the core-review
+  checklist; report findings as `severity | file:line | problem | suggested fix`; do not edit
+  any files." Relay its findings back to the main flow. Running the pass **inline** works too,
+  and needs none of this: the inline pass has the caller's own tools and resolves the diff itself.
 
 Whichever agent, the contract is identical: **read-only in, prioritized findings out**, then the
 caller fixes and re-runs until clean.

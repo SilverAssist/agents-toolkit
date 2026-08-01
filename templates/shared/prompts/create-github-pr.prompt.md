@@ -129,12 +129,16 @@ differs (subagents are a Claude-Code-only optimization, not a requirement):
 - **GitHub Copilot / Codex** — no subagents; run the checklist **inline as a distinct pass** over
   the scope defined by `--budget medium` (diff + one-hop neighbours), producing the prioritized
   findings list.
-- **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`)
-  with the brief "review the diff plus one-hop neighbours (importers/consumers, sibling files,
-  docs/indexes that list the changed symbol or asset) against the core-review checklist;
-  report `severity | file:line | problem | suggested fix`; do not edit files." Match the
-  `--budget medium` scope above — do **not** ask the subagent for a whole-repo pass here, or
-  Claude runs `thorough` while Copilot/Codex run `medium`.
+- **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).
+  **Resolve the file list here first and paste it into the brief** — the shipped `Explore`
+  override has no shell (`tools: Read, Grep, Glob, WebFetch`, so it stays read-only) and cannot
+  run `git diff` itself. Reuse the `git diff --name-only "$BASE_BRANCH"` output from Step 2 and
+  add its one-hop neighbours (importers/consumers, sibling files, docs/indexes that list the
+  changed symbol or asset). Then brief it: "review these files — `<list>` — against the
+  core-review checklist; report `severity | file:line | problem | suggested fix`; do not edit
+  files." Passing an explicit list is also what keeps this at `--budget medium`: do **not** ask
+  the subagent for a whole-repo pass here, or Claude runs `thorough` while Copilot/Codex run
+  `medium`.
 
 Apply every `critical` and `warning` finding — including any stale reference exposed by removing
 the planning doc — re-run the checks from Step 4, then **commit the fixes and the doc removal and
