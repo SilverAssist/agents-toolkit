@@ -16,8 +16,9 @@ model: haiku
 > `Explore` on its default (smart) tier — defeating this file's purpose. This is
 > a Claude Code protocol requirement, not a stylistic choice.
 
-Project-local override that pins the built-in `Explore` subagent to the cheap
-tier (`haiku`). Rationale: `Explore` runs during nearly every planning /
+Override that pins the built-in `Explore` subagent to the cheap tier (`haiku`).
+Installs to `.claude/agents/` in the project by default, or to `~/.claude/agents/`
+with `--global`; the override applies wherever it lands. Rationale: `Explore` runs during nearly every planning /
 review / PR cycle and does only **read-only** searches — the smart tier is
 unnecessary and would drive up token cost when the parent conversation is
 already on `sonnet`/`opus`.

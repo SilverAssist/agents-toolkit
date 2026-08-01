@@ -73,7 +73,7 @@ Every shipped prompt carries an explicit `model:` pin so a fresh install runs co
 
 - **Claude Code** — the installer rewrites the Copilot model name to the matching alias, so `Claude Haiku 4.5` installs as `model: haiku`. Aliases track the current generation, so they do not go stale. The pin **wins over `/model`**, which is only consulted when no `model:` is set.
 - **Copilot** — the pin is used as shipped. It **wins over the picker**, which is only consulted when no `model:` is set. Note that only `.prompt.md` files establish a model boundary: skills inherit the invoking prompt's model, so an inline `core-review` from a smart-tier orchestrator runs smart. Invoke the skill as a standalone chat to keep it cheap.
-- **Codex** — `model:` is **ignored entirely**; the session runs whatever `codex --model` set. The field is left in place because Codex reads the same files through symlinks; it produces a non-blocking lint warning and nothing else.
+- **Codex** — `model:` is **ignored entirely**; the session runs whatever `codex --model` set. The field is left in place because the Codex installer copies these same shared templates into the same `.github/prompts/` directory Copilot uses, so the frontmatter Copilot needs is simply along for the ride; it produces a non-blocking lint warning and nothing else.
 
 Because the pin is a single scalar, an unavailable model falls back to the agent's own default rather than to a second entry — the toolkit does not ship fallback chains. A prioritized `model:` array is undocumented for prompt files and is rejected outright by GitHub Copilot CLI.
 

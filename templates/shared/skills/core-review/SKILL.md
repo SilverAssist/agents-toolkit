@@ -1,6 +1,6 @@
 ---
 name: core-review
-description: Run a thorough, whole-repo consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Use when about to push a branch for review or to push a batch of review fixes.
+description: Run a consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Scope follows `--budget`: the diff (`quick`), the diff plus one-hop neighbours (`medium`, the default), or the whole repository (`thorough`). Use when about to push a branch for review or to push a batch of review fixes.
 model: haiku
 argument-hint: --budget quick|medium|thorough
 ---
@@ -23,9 +23,10 @@ argument-hint: --budget quick|medium|thorough
 
 # Silver Assist — Core Review (Pre-Review)
 
-A **pre-emptive, whole-repo consistency review** that runs *before* a reviewer (Copilot or a
-human) ever sees the branch. It catches the classes of issues that trigger multi-round review
-loops — doc↔code drift, invalid code examples, broken links, stale indexes — so they are fixed
+A **pre-emptive consistency review** that runs *before* a reviewer (Copilot or a
+human) ever sees the branch, over a file set the caller scopes with `--budget` (diff →
+one-hop neighbours → whole repo; see the budget table below). It catches the classes of
+issues that trigger multi-round review loops — doc↔code drift, invalid code examples, broken links, stale indexes — so they are fixed
 in the first push instead of round 5.
 
 This skill is the reviewer's knowledge; the **action** (run the review, apply the findings) is
@@ -41,7 +42,7 @@ Run this review at **two integration points**:
    **before** pushing each batch of fixes, so a fix does not leave (or introduce) an adjacent
    issue that triggers yet another reviewer round.
 
-## Why whole-repo, not just the diff
+## Why look beyond the diff
 
 Copilot re-reviews **entire files**, not just your hunks — and each push opens a fresh round.
 In recent work the rounds went `18 → 2 → 3 → 1 → 9 → 3 → 1 → 1 …`: every push surfaced new,
