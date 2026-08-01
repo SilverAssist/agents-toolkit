@@ -946,6 +946,13 @@ for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) 
       path.join(repo, 'docs', 'conventions.md'),
       `# Conventions\n\nPlanning docs carry ${PLAN_MARKER.trim()} on line 1.\n`,
     );
+    // First line, but not the marker: a substring match would delete this.
+    fs.writeFileSync(path.join(repo, 'docs', 'heading.md'), '# agents-toolkit:planning-doc notes\n\nbody\n');
+    // A Jira-style id contains a hyphen — the marker pattern must still accept it.
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'jira-plan.md'),
+      '<!-- agents-toolkit:planning-doc ticket=WEB-1111 -->\n\nbody\n',
+    );
     git('add', '-A');
     git('commit', '-qm', 'add docs');
 
@@ -965,6 +972,8 @@ for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) 
     assert.ok(!exists('nested', 'deep-plan.md'), 'a nested marked plan doc must be removed');
     assert.ok(!exists('design.md'), 'a marked doc is removed regardless of its filename');
     assert.ok(exists('conventions.md'), 'a doc that only mentions the marker below line 1 must survive');
+    assert.ok(exists('heading.md'), 'a first-line heading that merely names the token must survive');
+    assert.ok(!exists('jira-plan.md'), 'a marker carrying a hyphenated Jira id must still be removed');
   });
 
   test(`${promptName} removes nothing when no doc carries the marker`, { skip: !bashAvailable && 'bash/git unavailable' }, (t) => {

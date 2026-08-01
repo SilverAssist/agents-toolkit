@@ -12,6 +12,9 @@ corresponding source directory in `templates/shared/`:
   (excluding `README.md`), with the `.md` suffix stripped, sorted A–Z.
 - `HOOKS`: one entry per `.json` file under `templates/shared/hooks/`, with the `.json`
   suffix stripped, sorted A–Z.
+- `AGENTS`: one entry per `.md` file under `templates/shared/agents/`, with the `.md` suffix
+  stripped, sorted A–Z. Entries keep the file's exact casing — Claude Code resolves subagent
+  overrides by filename stem, so `Explore` and `explore` are different subagents.
 - `PROMPTS.workflow` and `PROMPTS.utility`: together must cover every `.prompt.md` file
   under `templates/shared/prompts/` (excluding `_partials/`), with the `.prompt.md`
   suffix stripped.

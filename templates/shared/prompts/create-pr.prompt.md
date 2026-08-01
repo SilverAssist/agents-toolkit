@@ -90,10 +90,12 @@ use. The `while read -d ''` form works on bash 3.2 (macOS's system bash) and nee
 MARKER='agents-toolkit:planning-doc'
 PLANS=()
 while IFS= read -r -d '' f; do
-  # First line only. A whole-file grep would also match a legitimate document
-  # that merely *mentions* the marker — a contributing guide describing this
-  # very convention — and delete it.
-  head -n 1 "$f" 2>/dev/null | grep -q -- "$MARKER" && PLANS+=("$f")
+  # First line only, and the *complete* HTML comment — not the bare token.
+  # A whole-file grep would match a contributing guide that merely mentions the
+  # convention, and a substring match would still catch a heading like
+  # `# agents-toolkit:planning-doc notes`. `([[:space:]].*)?` must allow `-`,
+  # since Jira ticket ids (`ticket=WEB-1111`) contain one.
+  head -n 1 "$f" 2>/dev/null | grep -qE "^<!--[[:space:]]*${MARKER}([[:space:]].*)?-->[[:space:]]*$" && PLANS+=("$f")
 done < <(git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*.md' 'docs/**/*.md')
 
 if [ ${#PLANS[@]} -eq 0 ]; then
