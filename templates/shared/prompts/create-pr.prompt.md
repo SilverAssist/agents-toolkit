@@ -90,7 +90,10 @@ use. The `while read -d ''` form works on bash 3.2 (macOS's system bash) and nee
 MARKER='agents-toolkit:planning-doc'
 PLANS=()
 while IFS= read -r -d '' f; do
-  grep -q -- "$MARKER" "$f" 2>/dev/null && PLANS+=("$f")
+  # First line only. A whole-file grep would also match a legitimate document
+  # that merely *mentions* the marker — a contributing guide describing this
+  # very convention — and delete it.
+  head -n 1 "$f" 2>/dev/null | grep -q -- "$MARKER" && PLANS+=("$f")
 done < <(git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*.md' 'docs/**/*.md')
 
 if [ ${#PLANS[@]} -eq 0 ]; then

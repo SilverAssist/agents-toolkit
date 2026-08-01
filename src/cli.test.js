@@ -921,6 +921,12 @@ for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) 
     fs.writeFileSync(path.join(repo, 'docs', 'nested', 'deep-plan.md'), `${PLAN_MARKER}x\n`);
     // The marker, not the extension, is what identifies a plan.
     fs.writeFileSync(path.join(repo, 'docs', 'design.md'), `${PLAN_MARKER}x\n`);
+    // A legitimate doc that merely *documents* the convention. The marker is
+    // contractually the first line, so a whole-file grep would delete this.
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'conventions.md'),
+      `# Conventions\n\nPlanning docs carry ${PLAN_MARKER.trim()} on line 1.\n`,
+    );
     git('add', '-A');
     git('commit', '-qm', 'add docs');
 
@@ -939,6 +945,7 @@ for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) 
     assert.ok(!exists('my feature-plan.md'), 'a marked plan doc whose path contains a space must be removed');
     assert.ok(!exists('nested', 'deep-plan.md'), 'a nested marked plan doc must be removed');
     assert.ok(!exists('design.md'), 'a marked doc is removed regardless of its filename');
+    assert.ok(exists('conventions.md'), 'a doc that only mentions the marker below line 1 must survive');
   });
 
   test(`${promptName} removes nothing when no doc carries the marker`, { skip: !bashAvailable && 'bash/git unavailable' }, (t) => {
