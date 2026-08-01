@@ -128,12 +128,27 @@ confirm a clean worktree** (`git status`) so they are included in the push. **Re
 pass reports zero findings** before continuing. See the skill for the full checklist.
 
 ```bash
-# No `|| true`: a failed commit (hooks, signing, identity) must stop the flow, not be masked —
-# otherwise Step 6 would push without the planning-doc removal or the review fixes.
-git commit -m "docs: Remove planning doc for #{issue-number} ahead of PR (+ review fixes)"
+# Stage before committing: `git rm` staged the planning-doc deletion, but the review fixes
+# you just applied are unstaged working-tree edits — and a fix that *creates* a file (a new
+# test, a snapshot) is untracked, which no `git diff` variant reports. `git status
+# --porcelain` covers modifications, additions, and deletions alike.
+#
+# Conditional because a clean branch reaches here legitimately: no planning doc to remove and
+# a review pass with zero findings leaves nothing to commit, and an unconditional `git commit`
+# would abort that flow with "nothing to commit".
+if [ -n "$(git status --porcelain)" ]; then
+  git add -A
+  # No `|| true`: a failed commit (hooks, signing, identity) must stop the flow, not be masked —
+  # otherwise Step 6 would push without the planning-doc removal or the review fixes.
+  git commit -m "docs: Remove planning doc for #{issue-number} ahead of PR (+ review fixes)"
+fi
 
-# The worktree must be clean before pushing — this must print nothing.
-git status --porcelain
+# Enforce, don't just report: the push must never carry uncommitted work.
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Worktree still dirty after commit — resolve before pushing:" >&2
+  git status --porcelain >&2
+  exit 1
+fi
 ```
 
 ### 6. Push Branch

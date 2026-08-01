@@ -70,7 +70,7 @@ optimization, never a requirement**:
   Copilot** — it is honoured only when the invoking prompt is itself cheap-pinned (e.g.
   `finalize-github-pr`, which is a cheap-tier orchestrator) or when this skill is invoked
   standalone from a fresh chat. Smart-tier orchestrators (`create-github-pr`,
-  `resolve-github-reviews`, `work-github-issue`) run their inline `core-review` pass on the
+  `resolve-github-reviews`) run their inline `core-review` pass on the
   smart tier on Copilot; to keep the pass cheap there, invoke this skill as a **standalone
   chat** with the picker set to a cheap model.
 - **Codex** — no subagents either; the same **inline pass**, scoped by the caller's `--budget`

@@ -108,8 +108,12 @@ if [ -n "$(git status --porcelain)" ]; then
   git commit -m "{ticket-id}: Apply pre-PR validation fixes"
 fi
 
-# The worktree must be clean before pushing — this must print nothing.
-git status --porcelain
+# Enforce, don't just report: the push must never carry uncommitted work.
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Worktree still dirty after commit — resolve before pushing:" >&2
+  git status --porcelain >&2
+  exit 1
+fi
 ```
 
 ### 6. Push Branch
