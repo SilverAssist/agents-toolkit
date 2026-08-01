@@ -31,9 +31,22 @@ Create a detailed implementation plan for: **{feature-description}**
 
 Save to: `docs/{feature-name}-plan.md`
 
+**The first line must be the removal marker**, exactly:
+
+```markdown
+<!-- agents-toolkit:planning-doc ticket={ticket-id} -->
+```
+
+`create-pr` / `create-github-pr` delete the plan at PR time by grepping for this marker, and
+they delete **nothing** without it — a plan written without the marker survives into the base
+branch. The marker, not the filename, is what identifies the file as temporary, so a legitimate
+deliverable like `docs/rollout-plan.md` is never at risk.
+
 Include these sections:
 
 ---
+
+<!-- agents-toolkit:planning-doc ticket={ticket-id} -->
 
 # {Feature Name} Implementation Plan
 

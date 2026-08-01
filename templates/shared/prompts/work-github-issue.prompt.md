@@ -46,7 +46,20 @@ Search codebase for:
 
 ### 4. Create Work Plan
 
-Create planning document at `docs/{feature-name}-plan.md`:
+Create planning document at `docs/{feature-name}-plan.md`.
+
+**Its first line must be the removal marker**, exactly:
+
+```markdown
+<!-- agents-toolkit:planning-doc issue={issue-number} -->
+```
+
+`create-github-pr` deletes the plan at PR time by grepping for this marker, and deletes
+**nothing** without it — a plan written without the marker survives into the base branch. The
+marker, not the filename, is what identifies the file as temporary, so a legitimate deliverable
+like `docs/rollout-plan.md` is never at risk.
+
+Then the body:
 - Problem statement
 - Current architecture
 - Proposed changes

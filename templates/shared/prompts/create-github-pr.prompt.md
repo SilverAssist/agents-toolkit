@@ -74,31 +74,40 @@ accumulating in `docs/` after the merge. Do this **before** the review below, so
 the *final* branch state and catches any now-stale reference to the removed file (links,
 indexes, mentions).
 
-The step below is **self-discovering** — it removes every `docs/*-plan.md` file that was
-**added on this branch** vs `$BASE_BRANCH`, so it works even when the executor cannot resolve
-`{feature-name}` from context (a plain `[ -f docs/{feature-name}-plan.md ]` with an
-unsubstituted placeholder silently matches nothing and skips the `git rm`). It never touches
-plan docs that existed before the branch. Do **not** replace the glob with a literal file name
-— that re-introduces the silent-skip bug.
+A file is removed only when it satisfies **both** conditions: it was **added on this branch**
+vs `$BASE_BRANCH`, and it **carries the planning-doc marker** that `work-github-issue` /
+`create-plan` write as the first line:
 
-Two details are load-bearing. The pattern requires the `-plan.md` **suffix**, not the substring
-`plan`: `docs/*plan*.md` also matches `explanation.md` and `planet.md`, and would delete a
-legitimate new doc. And the list is passed **NUL-delimited**, because a path containing a space
-word-splits under `xargs` and makes `git rm` abort without removing anything.
+```markdown
+<!-- agents-toolkit:planning-doc issue={issue-number} -->
+```
+
+The marker — not the filename — is what identifies a temporary plan. Filename patterns cannot:
+`docs/*-plan.md` also matches a legitimate deliverable such as `docs/rollout-plan.md`, and
+`docs/*plan*.md` additionally matches `explanation.md` (ex-**plan**-ation). A plan written
+without the marker is simply **not deleted**. That bias is deliberate: leaving a plan doc behind
+is a trivial cleanup, while deleting someone's deliverable is not recoverable from the PR.
+
+Two portability details are load-bearing. The loop reads `git diff -z` output **NUL-delimited**,
+because a path containing a space word-splits and makes `git rm` abort without removing
+anything. And it deliberately avoids `grep -lZ | xargs -0`: BSD `grep` on macOS does **not**
+NUL-terminate `-l` output, which silently breaks that chain on the platform many contributors
+use. The `while read -d ''` form works on bash 3.2 (macOS's system bash) and needs no `mapfile`.
 
 ```bash
-# Discover planning docs added on THIS branch (vs the base branch). Matches the shipped
-# `docs/<feature-name>-plan.md` pattern and any nested variant under `docs/`.
-# `--quiet` exits 0 when nothing matched, so xargs never runs on an empty list.
-if git diff --quiet "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md'; then
-  echo "No planning docs to remove (nothing added on this branch matches docs/*-plan.md)."
+MARKER='agents-toolkit:planning-doc'
+PLANS=()
+while IFS= read -r -d '' f; do
+  grep -q -- "$MARKER" "$f" 2>/dev/null && PLANS+=("$f")
+done < <(git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*.md' 'docs/**/*.md')
+
+if [ ${#PLANS[@]} -eq 0 ]; then
+  echo "No marked planning docs added on this branch — nothing to remove."
 else
   echo "Removing planning docs added on this branch:"
-  git diff --name-only "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md' | sed 's/^/  /'
-  # -z / -0 so a path containing spaces survives. No `|| true` mask: a real
-  # git rm failure (permissions, unmerged path) must surface.
-  git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*-plan.md' 'docs/**/*-plan.md' \
-    | xargs -0 git rm --
+  printf '  %s\n' "${PLANS[@]}"
+  # No `|| true` mask: a real git rm failure (permissions, unmerged path) must surface.
+  git rm -- "${PLANS[@]}"
 fi
 ```
 
