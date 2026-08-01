@@ -30,20 +30,20 @@ const DEFAULT_CONFIG = {
   tracker: 'all',
   jira: {
     projectKey: 'PROJECT',
-    baseUrl: 'https://your-org.atlassian.net'
+    baseUrl: 'https://your-org.atlassian.net',
   },
   git: {
     defaultBranch: 'dev',
     branchPrefix: {
       feature: 'feature/',
       bugfix: 'bugfix/',
-      hotfix: 'hotfix/'
-    }
+      hotfix: 'hotfix/',
+    },
   },
   pr: {
     targetBranch: 'dev',
-    template: 'default'
-  }
+    template: 'default',
+  },
 };
 
 /**
@@ -51,7 +51,16 @@ const DEFAULT_CONFIG = {
  */
 const FILE_CATEGORIES = {
   instructions: {
-    react: ['caching', 'css-styling', 'react-components', 'seo-ai-optimization', 'server-actions', 'tests', 'tsdoc-standards', 'typescript'],
+    react: [
+      'caching',
+      'css-styling',
+      'react-components',
+      'seo-ai-optimization',
+      'server-actions',
+      'tests',
+      'tsdoc-standards',
+      'typescript',
+    ],
     wordpress: ['php-standards', 'wordpress-plugin-architecture', 'testing-standards'],
     universal: ['documentation-language', 'github-workflow'],
   },
@@ -59,13 +68,30 @@ const FILE_CATEGORIES = {
     react: [],
     wordpress: ['new-wp-component', 'new-wp-plugin', 'quality-check'],
     universal: [
-      'analyze-ticket', 'work-ticket', 'analyze-github-issue', 'work-github-issue',
-      'create-plan', 'create-pr', 'prepare-pr', 'finalize-pr',
-      'create-github-pr', 'finalize-github-pr', 'resolve-github-reviews',
-      'review-code', 'fix-issues', 'add-tests', 'prepare-github-release',
+      'analyze-ticket',
+      'work-ticket',
+      'analyze-github-issue',
+      'work-github-issue',
+      'create-plan',
+      'create-pr',
+      'prepare-pr',
+      'finalize-pr',
+      'create-github-pr',
+      'finalize-github-pr',
+      'resolve-github-reviews',
+      'review-code',
+      'fix-issues',
+      'add-tests',
+      'prepare-github-release',
     ],
     jira: ['analyze-ticket', 'work-ticket', 'create-pr', 'finalize-pr'],
-    github: ['analyze-github-issue', 'work-github-issue', 'create-github-pr', 'finalize-github-pr', 'resolve-github-reviews'],
+    github: [
+      'analyze-github-issue',
+      'work-github-issue',
+      'create-github-pr',
+      'finalize-github-pr',
+      'resolve-github-reviews',
+    ],
   },
   partials: {
     react: ['release-node'],
@@ -350,7 +376,9 @@ function linkSkill(canonicalSkillDir, agentSkillLinkPath, options = {}) {
   totals.planned++;
 
   if (dryRun) {
-    info(copy ? `Would copy skill: ${rel(agentSkillLinkPath)}` : `Would link: ${rel(agentSkillLinkPath)} -> ${relTarget}`);
+    info(
+      copy ? `Would copy skill: ${rel(agentSkillLinkPath)}` : `Would link: ${rel(agentSkillLinkPath)} -> ${relTarget}`,
+    );
     return totals;
   }
 
@@ -388,7 +416,14 @@ function linkSkill(canonicalSkillDir, agentSkillLinkPath, options = {}) {
  * @param {(name: string) => boolean} [params.dirFilter] - Skill folder filter
  * @returns {{ written: number, planned: number, installedSkills: Record<string, { canonicalDir: string }> }} Aggregated change counters and installed skill metadata
  */
-function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun = false, copy = false, dirFilter = null }) {
+function installSkillsStandard({
+  isGlobal,
+  agentSkillsDir,
+  force = false,
+  dryRun = false,
+  copy = false,
+  dirFilter = null,
+}) {
   const totals = { written: 0, planned: 0, installedSkills: {} };
   const skillsSrc = path.join(TEMPLATES_DIR, 'shared', 'skills');
   const canonicalDir = getAgentsSkillsDir(isGlobal);
@@ -601,9 +636,7 @@ function finalizeHookConfigs(hooksDest, isGlobal) {
   // Global installs have no workspace anchor → use the absolute hooks path.
   // Project installs use a path relative to the workspace root so the config
   // stays portable/committable across machines and teammates.
-  const cwd = isGlobal
-    ? hooksDest
-    : path.relative(process.cwd(), hooksDest).split(path.sep).join('/');
+  const cwd = isGlobal ? hooksDest : path.relative(process.cwd(), hooksDest).split(path.sep).join('/');
 
   const jsonFiles = fs.readdirSync(hooksDest).filter((f) => f.endsWith('.json'));
   for (const file of jsonFiles) {
@@ -635,7 +668,7 @@ function installHooks({ targetDir, force = false, dryRun = false, global: isGlob
   if (!dryRun) {
     const scriptsDir = path.join(hooksDest, 'scripts');
     if (fs.existsSync(scriptsDir)) {
-      const scripts = fs.readdirSync(scriptsDir).filter(f => f.endsWith('.sh'));
+      const scripts = fs.readdirSync(scriptsDir).filter((f) => f.endsWith('.sh'));
       for (const script of scripts) {
         const scriptPath = path.join(scriptsDir, script);
         fs.chmodSync(scriptPath, 0o755);
@@ -725,16 +758,14 @@ function getAgentsTemplateBody(templateContent) {
     return templateContent;
   }
 
-  return lines.slice(dividerIndex + 1).join('\n').trimStart();
+  return lines
+    .slice(dividerIndex + 1)
+    .join('\n')
+    .trimStart();
 }
 
 function installAgentsFile(options = {}) {
-  const {
-    templatePath,
-    force = false,
-    append = false,
-    dryRun = false,
-  } = options;
+  const { templatePath, force = false, append = false, dryRun = false } = options;
 
   const result = { written: 0, planned: 0 };
   const agentsPath = path.join(process.cwd(), 'AGENTS.md');
@@ -810,7 +841,14 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
   const promptsFilter = makeFilter('prompts');
   const partialsFilter = makeFilter('partials');
 
-  log(isCodex ? '\n⚡ Codex Installer\n' : isGlobal ? '\n🌐 Agents Toolkit Global Installer\n' : '\n📦 Agents Toolkit Installer\n', 'bright');
+  log(
+    isCodex
+      ? '\n⚡ Codex Installer\n'
+      : isGlobal
+        ? '\n🌐 Agents Toolkit Global Installer\n'
+        : '\n📦 Agents Toolkit Installer\n',
+    'bright',
+  );
 
   if (isGlobal) {
     info(`Target: ${targetDir}\n`);
@@ -822,7 +860,12 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallPrompts) {
     info('Installing prompts...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), { force, dryRun, filter: promptsFilter, partialsFilter });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'prompts'), path.join(targetDir, 'prompts'), {
+      force,
+      dryRun,
+      filter: promptsFilter,
+      partialsFilter,
+    });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -832,7 +875,11 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   if (scope.shouldInstallInstructions) {
     info('Installing instructions...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(targetDir, 'instructions'), { force, dryRun, filter: makeFilter('instructions') });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(targetDir, 'instructions'), {
+      force,
+      dryRun,
+      filter: makeFilter('instructions'),
+    });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -1011,7 +1058,11 @@ function installClaude(options = {}) {
 
   if (scope.shouldInstallInstructions) {
     info('Installing instructions...');
-    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(githubDir, 'instructions'), { force, dryRun, filter: makeFilter('instructions') });
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'instructions'), path.join(githubDir, 'instructions'), {
+      force,
+      dryRun,
+      filter: makeFilter('instructions'),
+    });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
@@ -1137,7 +1188,7 @@ function restore(options = {}) {
   // Determine which agent dirs were recorded in the lockfile.
   const agentDirs = new Set();
   for (const meta of Object.values(lockfile.skills || {})) {
-    for (const agentDir of (meta.agents || [])) {
+    for (const agentDir of meta.agents || []) {
       agentDirs.add(agentDir);
     }
   }
@@ -1169,7 +1220,9 @@ function restore(options = {}) {
     const canonicalSkillDir = path.join(canonicalDir, name);
     const hash = computeSkillHash(canonicalSkillDir);
     if (hash !== meta.computedHash) {
-      warn(`Hash mismatch for skill "${name}" — expected ${meta.computedHash?.slice(0, 12)}… got ${hash?.slice(0, 12)}…`);
+      warn(
+        `Hash mismatch for skill "${name}" — expected ${meta.computedHash?.slice(0, 12)}… got ${hash?.slice(0, 12)}…`,
+      );
       allMatch = false;
     }
   }
@@ -1259,18 +1312,30 @@ function list() {
   log('\n📋 Available Prompts\n', 'bright');
 
   const promptsDir = path.join(TEMPLATES_DIR, 'shared', 'prompts');
-  
+
   if (!fs.existsSync(promptsDir)) {
     error('Templates directory not found');
     return;
   }
 
-  const prompts = fs.readdirSync(promptsDir)
-    .filter(f => f.endsWith('.prompt.md'))
-    .map(f => f.replace('.prompt.md', ''));
+  const prompts = fs
+    .readdirSync(promptsDir)
+    .filter((f) => f.endsWith('.prompt.md'))
+    .map((f) => f.replace('.prompt.md', ''));
 
   log('Workflow Prompts:', 'cyan');
-  const workflowPrompts = ['analyze-ticket', 'create-plan', 'work-ticket', 'prepare-pr', 'create-pr', 'finalize-pr', 'analyze-github-issue', 'work-github-issue', 'create-github-pr', 'finalize-github-pr'];
+  const workflowPrompts = [
+    'analyze-ticket',
+    'create-plan',
+    'work-ticket',
+    'prepare-pr',
+    'create-pr',
+    'finalize-pr',
+    'analyze-github-issue',
+    'work-github-issue',
+    'create-github-pr',
+    'finalize-github-pr',
+  ];
   workflowPrompts.forEach((p, i) => {
     if (prompts.includes(p)) {
       console.log(`  ${i + 1}. ${p}`);
@@ -1279,8 +1344,8 @@ function list() {
 
   console.log('');
   log('Utility Prompts:', 'cyan');
-  const utilityPrompts = prompts.filter(p => !workflowPrompts.includes(p));
-  utilityPrompts.forEach(p => {
+  const utilityPrompts = prompts.filter((p) => !workflowPrompts.includes(p));
+  utilityPrompts.forEach((p) => {
     console.log(`  • ${p}`);
   });
 
@@ -1288,9 +1353,8 @@ function list() {
   log('Partials:', 'cyan');
   const partialsDir = path.join(promptsDir, '_partials');
   if (fs.existsSync(partialsDir)) {
-    const partials = fs.readdirSync(partialsDir)
-      .filter(f => f.endsWith('.md') && f !== 'README.md');
-    partials.forEach(p => {
+    const partials = fs.readdirSync(partialsDir).filter((f) => f.endsWith('.md') && f !== 'README.md');
+    partials.forEach((p) => {
       console.log(`  • ${p.replace('.md', '')}`);
     });
   }
@@ -1299,10 +1363,11 @@ function list() {
   log('Skills:', 'cyan');
   const skillsDir = path.join(TEMPLATES_DIR, 'shared', 'skills');
   if (fs.existsSync(skillsDir)) {
-    const skills = fs.readdirSync(skillsDir, { withFileTypes: true })
-      .filter(d => d.isDirectory())
-      .map(d => d.name);
-    skills.forEach(s => {
+    const skills = fs
+      .readdirSync(skillsDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+    skills.forEach((s) => {
       console.log(`  • ${s}`);
     });
   }
@@ -1311,9 +1376,8 @@ function list() {
   log('Hooks:', 'cyan');
   const hooksDir = path.join(TEMPLATES_DIR, 'shared', 'hooks');
   if (fs.existsSync(hooksDir)) {
-    const hooks = fs.readdirSync(hooksDir)
-      .filter(f => f.endsWith('.json'));
-    hooks.forEach(h => {
+    const hooks = fs.readdirSync(hooksDir).filter((f) => f.endsWith('.json'));
+    hooks.forEach((h) => {
       console.log(`  • ${h.replace('.json', '')}`);
     });
   }
@@ -1326,7 +1390,7 @@ function list() {
 function showHelp() {
   log('\n📦 Agents Toolkit\n', 'bright');
   console.log('Usage: agents-toolkit <command> [options]\n');
-  
+
   log('Commands:', 'cyan');
   console.log('  install     Install prompts (default target: copilot)');
   console.log('  restore     Restore skills from agents-toolkit-lock.json');
@@ -1334,7 +1398,7 @@ function showHelp() {
   console.log('  update      Update existing prompts and refresh the lockfile');
   console.log('  list        List available prompts');
   console.log('  help        Show this help message');
-  
+
   console.log('');
   log('Options:', 'cyan');
   console.log('  --force, -f         Overwrite existing files');
@@ -1439,7 +1503,7 @@ function parseArgs() {
     stack,
     tracker,
   };
-  
+
   return { command, options };
 }
 
@@ -1558,6 +1622,7 @@ function resolveFilters(options = {}) {
  */
 function main() {
   const { command, options } = parseArgs();
+<<<<<<< HEAD
   const target = (command === 'install' || command === 'update')
     ? resolveInstallTarget(options)
     : null;
@@ -1565,6 +1630,11 @@ function main() {
     ? resolveFilters(options)
     : { stack: 'all', tracker: 'all' };
   const installOptions = { ...options, filters };
+=======
+  const target = command === 'install' || command === 'update' ? resolveInstallTarget(options) : null;
+  const filters =
+    command === 'install' || command === 'update' ? resolveFilters(options) : { stack: 'all', tracker: 'all' };
+>>>>>>> c8b39b8 (build: Add husky, lint-staged, prettier and markdownlint quality gate)
 
   switch (command) {
     case 'install':

@@ -203,10 +203,13 @@ test('invalid --tracker value fails with a clear error', (t) => {
 
 test('config file stack/tracker values are used when no flags provided', (t) => {
   const tempDir = createTempProject(t);
-  fs.writeFileSync(path.join(tempDir, '.agents-toolkit.json'), JSON.stringify({
-    stack: 'react',
-    tracker: 'github',
-  }));
+  fs.writeFileSync(
+    path.join(tempDir, '.agents-toolkit.json'),
+    JSON.stringify({
+      stack: 'react',
+      tracker: 'github',
+    }),
+  );
 
   const { status, stdout } = runCli(['install', '--dry-run'], tempDir);
   assert.equal(status, 0);
@@ -332,8 +335,14 @@ test('--global --hooks-only installs hooks to ~/.copilot/hooks/', (t) => {
   const hooksDir = path.join(tempDir, '.copilot', 'hooks');
   assert.ok(fs.existsSync(path.join(hooksDir, 'validate-tsx.json')), 'validate-tsx.json should exist in global hooks');
   assert.ok(fs.existsSync(path.join(hooksDir, 'lint-format.json')), 'lint-format.json should exist in global hooks');
-  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'validate-tsx.sh')), 'validate-tsx.sh should exist in global hooks');
-  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'lint-format.sh')), 'lint-format.sh should exist in global hooks');
+  assert.ok(
+    fs.existsSync(path.join(hooksDir, 'scripts', 'validate-tsx.sh')),
+    'validate-tsx.sh should exist in global hooks',
+  );
+  assert.ok(
+    fs.existsSync(path.join(hooksDir, 'scripts', 'lint-format.sh')),
+    'lint-format.sh should exist in global hooks',
+  );
 
   // Verify the JSON configs use relative command paths (work for both project and global)
   const config = JSON.parse(fs.readFileSync(path.join(hooksDir, 'lint-format.json'), 'utf-8'));
@@ -573,9 +582,10 @@ test('status exits 1 when a skill is missing', (t) => {
 
   // Delete one skill from the canonical store.
   const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
-  const skills = fs.readdirSync(agentsSkillsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
+  const skills = fs
+    .readdirSync(agentsSkillsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
   assert.ok(skills.length > 0, 'at least one skill should exist');
   fs.rmSync(path.join(agentsSkillsDir, skills[0]), { recursive: true, force: true });
 
@@ -591,9 +601,10 @@ test('status exits 1 when a skill is modified', (t) => {
 
   // Modify one skill's SKILL.md in the canonical store.
   const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
-  const skills = fs.readdirSync(agentsSkillsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
+  const skills = fs
+    .readdirSync(agentsSkillsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
   assert.ok(skills.length > 0, 'at least one skill should exist');
   const skillMdPath = path.join(agentsSkillsDir, skills[0], 'SKILL.md');
   fs.appendFileSync(skillMdPath, '\n<!-- modified -->');
@@ -668,12 +679,12 @@ test('successive installs to multiple targets accumulate lockfile entries', (t) 
   // Every skill should have BOTH .github/skills and .claude/skills in its agents array.
   for (const [name, meta] of Object.entries(lock.skills)) {
     assert.ok(
-      meta.agents.some(a => a.includes('.github')),
-      `skill "${name}" should have a .github/skills agent entry after copilot install`
+      meta.agents.some((a) => a.includes('.github')),
+      `skill "${name}" should have a .github/skills agent entry after copilot install`,
     );
     assert.ok(
-      meta.agents.some(a => a.includes('.claude')),
-      `skill "${name}" should have a .claude/skills agent entry after claude install`
+      meta.agents.some((a) => a.includes('.claude')),
+      `skill "${name}" should have a .claude/skills agent entry after claude install`,
     );
   }
 });

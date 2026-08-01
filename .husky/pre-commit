@@ -1,0 +1,14 @@
+# Hooks are a local convenience; CI runs `npm run check` as the real gate.
+[ -n "$CI" ] && exit 0
+
+branch=$(git branch --show-current)
+case "$branch" in
+  main|master)
+    echo "Refusing to commit directly to '$branch'." >&2
+    echo "Create a branch first:  git switch -c feature/<description>" >&2
+    echo "Override (rarely right):  git commit --no-verify" >&2
+    exit 1
+    ;;
+esac
+
+npx lint-staged
