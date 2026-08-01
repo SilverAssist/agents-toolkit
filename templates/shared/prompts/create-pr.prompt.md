@@ -92,6 +92,26 @@ else
 fi
 ```
 
+Note that the commit above only captures what `git rm` staged. Any file you edited while
+fixing the Step 4 validations is still an unstaged working-tree change, and when the branch
+has no planning doc the `else` branch never runs, so nothing is committed at all. Both cases
+push a branch that is missing the fixes. Stage and commit them unconditionally:
+
+```bash
+# Runs whether or not a planning doc existed. Tested against `git status --porcelain`
+# rather than `git diff --quiet`, because a fix that *creates* a file (a new test, a
+# snapshot) leaves it untracked, and no `git diff` variant reports untracked paths.
+if [ -n "$(git status --porcelain)" ]; then
+  git add -A
+  # No `|| true`: a failed commit (hooks, signing, identity) must stop the flow, not be
+  # masked — otherwise Step 6 pushes without the validation fixes.
+  git commit -m "{ticket-id}: Apply pre-PR validation fixes"
+fi
+
+# The worktree must be clean before pushing — this must print nothing.
+git status --porcelain
+```
+
 ### 6. Push Branch
 
 ```bash
