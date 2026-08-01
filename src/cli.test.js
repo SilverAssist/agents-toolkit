@@ -878,7 +878,26 @@ test('plan-doc generators instruct writing the removal marker', () => {
   for (const name of ['work-ticket.prompt.md', 'work-github-issue.prompt.md', 'create-plan.prompt.md']) {
     const content = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
     assert.match(content, /<!-- agents-toolkit:planning-doc /, `${name} must tell the agent to write the planning-doc marker`);
+    assert.match(content, /first line/i, `${name} must state that the marker goes on the first line`);
   }
+});
+
+test('create-plan template starts with the marker, not a separator', () => {
+  // Presence is not enough: the removal step reads only `head -n 1`, so a template
+  // that shows `---` (or anything else) above the marker produces plans that are
+  // never cleaned up — the generator and the remover would silently disagree.
+  const content = fs.readFileSync(
+    path.join(process.cwd(), 'templates', 'shared', 'prompts', 'create-plan.prompt.md'),
+    'utf-8',
+  );
+  const blocks = [...content.matchAll(/```markdown\n((?:(?!```)[\s\S])*)```/g)].map((m) => m[1]);
+  const template = blocks.find((b) => b.includes('# {Feature Name} Implementation Plan'));
+  assert.ok(template, 'create-plan must ship the plan template in a fenced markdown block');
+  assert.match(
+    template.split('\n')[0],
+    /^<!-- agents-toolkit:planning-doc /,
+    'the first line of the plan template must be the removal marker',
+  );
 });
 
 /**

@@ -42,10 +42,11 @@ they delete **nothing** without it — a plan written without the marker survive
 branch. The marker, not the filename, is what identifies the file as temporary, so a legitimate
 deliverable like `docs/rollout-plan.md` is never at risk.
 
-Include these sections:
+Write exactly this, starting at line 1 — the marker must be the **first** line of the file,
+with no separator, blank line, or frontmatter above it. The removal step reads only `head -n 1`,
+so a plan whose first line is anything else is never cleaned up:
 
----
-
+```markdown
 <!-- agents-toolkit:planning-doc ticket={ticket-id} -->
 
 # {Feature Name} Implementation Plan
@@ -125,8 +126,7 @@ How to revert changes if issues arise.
 - External dependencies
 - Internal dependencies
 - Team coordination needed
-
----
+```
 
 ### 4. Commit Plan
 
