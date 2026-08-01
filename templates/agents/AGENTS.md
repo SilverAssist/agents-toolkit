@@ -2,7 +2,7 @@
 
 > **IMPORTANT**: Prefer retrieval-led reasoning over pre-training-led reasoning.
 > Always read relevant instruction files from `.github/instructions/` before implementing changes.
-
+>
 > **CRITICAL**: This file contains mandatory instructions for the GitHub Copilot Coding Agent.
 > The agent MUST follow these rules when working on issues in this repository.
 > This file should be placed at the project root per Vercel recommendations.
@@ -11,7 +11,7 @@
 
 ## 📚 Project Documentation Index
 
-```
+```text
 [Instructions]|root:.github/instructions
 |caching.instructions.md             → Next.js caching: read-vs-mutation fetch, ISR tiers, CDN invalidation
 |css-styling.instructions.md         → CSS/Tailwind patterns, cn() utility, responsive design
@@ -89,7 +89,7 @@ Every shipped prompt carries a hardcoded `model:` pin. The rule of thumb:
 | **Exports** | `export default function ComponentName` (default export, PascalCase) |
 | **Props** | Interface inside file, before function, named `{Component}Props` |
 
-```
+```text
 ✅ components/user-card/index.tsx
 ❌ components/UserCard.tsx
 ❌ components/userCard/index.tsx
@@ -207,7 +207,7 @@ const isMutation = mutation || method === "PUT" || method === "DELETE";
 
 ### Quality Checklist
 
-```
+```text
 Before ANY push to dev/staging/main:
 □ All TypeScript errors resolved
 □ All ESLint warnings addressed

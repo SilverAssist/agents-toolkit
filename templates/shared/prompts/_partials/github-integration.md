@@ -56,6 +56,7 @@ Include these steps in prompts that require GitHub integration.
    - Use Markdown formatting for readability
 
 2. **Comment templates**:
+
    ```markdown
    ## Development Started
    - Branch: `feature/<number>-description`

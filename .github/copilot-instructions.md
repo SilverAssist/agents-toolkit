@@ -42,6 +42,7 @@ All arrays must be sorted alphabetically.
 ## 5. CLI Flags Consistency
 
 When adding a new CLI flag:
+
 - Add it to the `help` command output.
 - Add a corresponding test asserting `help shows --flag-name option`.
 - Honor `force`, `dryRun`, and `global` flags in the new code path.

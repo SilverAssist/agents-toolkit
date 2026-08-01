@@ -13,6 +13,7 @@ Include these steps in prompts that require Git operations.
 ### Step: Resolve Base Branch
 
 1. **Read base branch from config**:
+
    ```bash
    BASE_BRANCH=$(node -e "try{const c=require('./.agents-toolkit.json');console.log(c.pr?.targetBranch||c.git?.defaultBranch||'main')}catch{console.log('main')}")
    echo "$BASE_BRANCH"
@@ -43,12 +44,14 @@ Include these steps in prompts that require Git operations.
 ### Step: Create Working Branch
 
 1. **Ensure on latest base branch**:
+
    ```bash
    git checkout "$BASE_BRANCH"
    git pull origin "$BASE_BRANCH"
    ```
 
 2. **Create new branch**:
+
    ```bash
    git checkout -b feature/[TICKET-ID]-short-description
    # or
@@ -60,6 +63,7 @@ Include these steps in prompts that require Git operations.
 ### Step: Push Branch
 
 1. **Push to remote**:
+
    ```bash
    git push -u origin <branch-name>
    ```
@@ -74,11 +78,13 @@ Include these steps in prompts that require Git operations.
 ### Step: Sync with Base Branch
 
 1. **Fetch latest**:
+
    ```bash
    git fetch origin
    ```
 
 2. **Rebase on base branch**:
+
    ```bash
    git rebase "origin/${BASE_BRANCH}"
    ```
@@ -89,6 +95,7 @@ Include these steps in prompts that require Git operations.
    - Continue rebase: `git rebase --continue`
 
 4. **Push updated branch**:
+
    ```bash
    git push --force-with-lease
    ```
@@ -100,6 +107,7 @@ Include these steps in prompts that require Git operations.
 ### Step: Review Commits
 
 1. **View recent commits**:
+
    ```bash
    git log --oneline -5
    ```
@@ -117,16 +125,19 @@ Include these steps in prompts that require Git operations.
 ### Step: View Changes
 
 1. **Summary of changes**:
+
    ```bash
    git diff --stat
    ```
 
 2. **List changed files**:
+
    ```bash
    git diff "$BASE_BRANCH" --name-only
    ```
 
 3. **Detailed diff**:
+
    ```bash
    git diff "$BASE_BRANCH"
    ```
@@ -138,16 +149,19 @@ Include these steps in prompts that require Git operations.
 ### Step: Post-Merge Cleanup
 
 1. **Delete local branch**:
+
    ```bash
    git branch -d <branch-name>
    ```
 
 2. **Delete remote branch**:
+
    ```bash
    git push origin --delete <branch-name>
    ```
 
 3. **Prune stale branches**:
+
    ```bash
    git remote prune origin
    ```
@@ -165,6 +179,7 @@ Include these steps in prompts that require Git operations.
 ## Protected Branches
 
 These branches require PRs and cannot receive direct commits:
+
 - `main` - Production
 - `dev` - Development
 - `stg` - Staging

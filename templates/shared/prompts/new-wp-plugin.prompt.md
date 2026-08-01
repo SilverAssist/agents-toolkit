@@ -18,6 +18,7 @@ Scaffold a new Silver Assist WordPress plugin with the standard architecture, qu
 ## Inputs
 
 Ask the user:
+
 1. **Plugin name** — Human-readable name (e.g., "Silver Assist Cache Manager")
 2. **Plugin slug** — Kebab-case slug (e.g., `silver-assist-cache-manager`)
 3. **Brief description** — One-line description of the plugin's purpose
@@ -37,6 +38,7 @@ Follow the plugin-creation skill instructions completely. The skill has the full
 8. **Git setup** — `.gitignore`, initial commit
 
 After scaffolding, run quality checks to verify everything works:
+
 ```bash
 composer install
 ./scripts/run-quality-checks.sh --skip-wp-setup phpcs phpstan

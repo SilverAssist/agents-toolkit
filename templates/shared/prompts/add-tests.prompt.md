@@ -11,6 +11,7 @@ model: Claude Haiku 4.5
 Add tests for **{target-file}** or **{component-name}**.
 
 ## Prerequisites
+
 - Reference: `.github/instructions/tests.instructions.md`
 
 ## Steps
@@ -18,6 +19,7 @@ Add tests for **{target-file}** or **{component-name}**.
 ### 1. Analyze Target
 
 Read the target file to understand:
+
 - Exported functions/components
 - Props and interfaces
 - Dependencies and imports
@@ -26,6 +28,7 @@ Read the target file to understand:
 ### 2. Determine Test Location
 
 Based on project structure:
+
 - Components: `src/components/{name}/__tests__/{name}.test.tsx`
 - Hooks: `src/hooks/__tests__/{hook-name}.test.ts`
 - Utils: `src/lib/__tests__/{util-name}.test.ts`
@@ -92,26 +95,31 @@ describe('ComponentName', () => {
 Include tests for:
 
 #### Rendering
+
 - [ ] Renders without crashing
 - [ ] Renders all expected elements
 - [ ] Conditional rendering works
 
 #### Props
+
 - [ ] Default props work
 - [ ] Custom props applied correctly
 - [ ] Required props validated
 
 #### User Interactions
+
 - [ ] Click handlers work
 - [ ] Form inputs update
 - [ ] Keyboard navigation
 
 #### State Changes
+
 - [ ] Initial state correct
 - [ ] State updates properly
 - [ ] Side effects trigger
 
 #### Edge Cases
+
 - [ ] Empty data handled
 - [ ] Null/undefined handled
 - [ ] Error states displayed
@@ -136,16 +144,19 @@ npm run test -- --coverage
 ## Output
 
 ### Test Summary
+
 - Tests created: N
 - Passing: N
 - Coverage: X%
 
 ### Test Cases
+
 1. ✅ Test case 1
 2. ✅ Test case 2
 3. ✅ Test case 3
 
 ### Coverage Report
+
 | Metric | Coverage |
 |--------|----------|
 | Statements | X% |

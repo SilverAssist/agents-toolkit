@@ -30,7 +30,7 @@ This skill covers adding new components to an existing Silver Assist WordPress p
 
 ## Directory Structure
 
-```
+```text
 includes/
 ├── Core/                    # Priority 10 — Bootstrap & lifecycle
 │   ├── Plugin.php           # Main plugin bootstrap (singleton)
@@ -573,6 +573,7 @@ private function get_components(): array {
 ```
 
 **Rules:**
+
 - Group by priority tier with comments.
 - Keep entries alphabetically within each group.
 - Only add classes that implement `LoadableInterface`.
@@ -672,13 +673,14 @@ vendor/bin/phpunit --filter ServiceNameTest
 
 The correct data flow in Silver Assist plugins is:
 
-```
+```text
 User Request → Controller → Service → Repository/WordPress API
                    ↓
               View::render($data)  ← Static call with prepared data
 ```
 
 **Rules:**
+
 1. **Controller** receives the request, calls Service methods, prepares data, passes to View.
 2. **Service** contains business logic, calls Repositories or WordPress APIs.
 3. **View** renders HTML using ONLY the data passed as parameters.
@@ -686,6 +688,7 @@ User Request → Controller → Service → Repository/WordPress API
 5. **Repository** handles database operations, returns Models.
 
 **Anti-patterns to avoid:**
+
 - ❌ View instantiating a Service: `$service = ServiceName::instance();`
 - ❌ View making database queries directly.
 - ❌ Controller containing business logic (should delegate to Service).

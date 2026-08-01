@@ -15,6 +15,7 @@ Include these steps in prompts that require code validation before proceeding.
 Before running checks, inspect `package.json` scripts and use project-supported commands.
 
 Use this order:
+
 - Lint: `npm run lint` (if script exists)
 - TypeScript: `npm run type-check` (if script exists), otherwise `npx tsc --noEmit` when `tsconfig.json` exists
 - Tests: `npm run test` (if script exists)

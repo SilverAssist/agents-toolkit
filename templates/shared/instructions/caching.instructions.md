@@ -33,6 +33,7 @@ the others.
    need nothing extra.
 
 2b. **Make a POST-read page cacheable at the rendering/edge layer.** Pick one (lowest risk first):
+
    - **CDN edge override (current/default):** `src/proxy.ts` matches city/community paths and sets
      `Cache-Control: public, s-maxage=2592000, stale-while-revalidate=2592000` — the same header ISR
      pages emit (see rule 7 `expireTime`), so the CDN policy is uniform. Origin stays dynamic; the CDN

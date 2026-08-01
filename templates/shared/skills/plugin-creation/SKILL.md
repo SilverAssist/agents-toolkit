@@ -30,7 +30,7 @@ This skill covers scaffolding a brand-new Silver Assist WordPress plugin from ze
 
 Every Silver Assist plugin follows this structure:
 
-```
+```text
 plugin-name/
 ├── plugin-name.php              # Main plugin file
 ├── composer.json                # Composer dependencies & autoloading
@@ -107,11 +107,13 @@ Namespace: `SilverAssist\PluginName\`
 ### LoadableInterface Priority System
 
 All components implement `LoadableInterface` with three methods:
+
 - `init()` — Initialize the component
 - `get_priority()` — Loading order (lower = first)
 - `should_load()` — Conditional loading
 
 Priority values:
+
 - **10**: Core components (Plugin, Activator, critical services)
 - **20**: Services (business logic, API clients)
 - **30**: Admin components (controllers, settings pages)
@@ -281,6 +283,7 @@ register_activation_hook(
 ```
 
 **Key Elements:**
+
 - Prefixed global variables (`$plugin_prefix_*`) for WPCS compliance
 - Security validation for Composer autoloader path (prevents path traversal)
 - Graceful degradation with admin notice if autoloader missing
@@ -820,6 +823,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## PHP Requirements & Coding Standards
 
 ### PHP Version
+
 - **Minimum**: PHP 8.2
 - **Recommended**: PHP 8.3+
 - Use modern PHP: enums, readonly properties, union types, named arguments
@@ -837,6 +841,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security Standards
 
 **Input Sanitization:**
+
 ```php
 $text  = \sanitize_text_field( \wp_unslash( $_POST['field_name'] ) );
 $email = \sanitize_email( $_POST['email'] );
@@ -845,6 +850,7 @@ $int   = \absint( $_POST['number'] );
 ```
 
 **Output Escaping:**
+
 ```php
 echo \esc_html( $text );
 echo '<div class="' . \esc_attr( $class ) . '">';
@@ -852,6 +858,7 @@ echo '<a href="' . \esc_url( $url ) . '">';
 ```
 
 **Nonce Verification:**
+
 ```php
 \wp_nonce_field( 'plugin_action', 'plugin_nonce' );
 if ( ! isset( $_POST['plugin_nonce'] ) || ! \wp_verify_nonce( $_POST['plugin_nonce'], 'plugin_action' ) ) {
@@ -860,6 +867,7 @@ if ( ! isset( $_POST['plugin_nonce'] ) || ! \wp_verify_nonce( $_POST['plugin_non
 ```
 
 **Capability Checks:**
+
 ```php
 if ( ! \current_user_can( 'manage_options' ) ) {
     \wp_die( \esc_html__( 'Insufficient permissions.', 'plugin-text-domain' ) );
@@ -931,6 +939,7 @@ wp i18n make-pot . languages/plugin-text-domain.pot --domain=plugin-text-domain
 ```
 
 **Rules:**
+
 - ALWAYS use literal text domain strings (never variables/constants)
 - ALWAYS use ordered placeholders for multiple args with translator comments
 
@@ -1043,6 +1052,7 @@ class SettingsView {
 Keep concise (~100-150 lines max). Move details to Instructions or Skills.
 
 Should contain:
+
 - Project overview (name, namespace, PHP version, WP version, standards)
 - Architecture summary (LoadableInterface priorities, key directories)
 - Critical rules (pre-PR checklist commands)

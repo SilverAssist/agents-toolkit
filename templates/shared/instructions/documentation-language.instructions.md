@@ -25,6 +25,7 @@ applyTo: "**"
 - Code variable/function names
 
 **Exception — Spanish allowed:**
+
 - User-facing content in WordPress admin (translation files `.pot`, `.po`)
 - Content entered by end users
 
@@ -41,7 +42,7 @@ applyTo: "**"
 ### Markdown Best Practices
 
 - One `# H1` per file (document title)
-- Specify language in code blocks (```php, ```bash)
+- Specify language in code blocks (`php`, `bash`)
 - Use `**Bold**` for important terms, `` `code` `` for inline code
 - Use numbered lists for sequential steps, bullet lists for non-sequential
 
@@ -60,7 +61,7 @@ applyTo: "**"
 
 ### Format
 
-```
+```text
 type(scope): brief description
 
 Detailed explanation (optional)
@@ -86,7 +87,8 @@ Closes #issue-number (if applicable)
 ### Examples
 
 **Good:**
-```
+
+```text
 feat: Add unresolved errors filter with resolved badge
 
 - Add "Unresolved" tab in logs table
@@ -97,7 +99,8 @@ Closes #56
 ```
 
 **Bad:**
-```
+
+```text
 updates
 Fixed bug
 Added new feature
@@ -111,7 +114,7 @@ For WordPress website backend projects (aa-wp, familyassets-wp, osa-wp, assisted
 
 ### Format
 
-```
+```text
 WEB-XXX: Brief description
 ```
 
@@ -132,7 +135,7 @@ WEB-726 (missing colon)
 
 ### Branch Naming
 
-```
+```text
 feature/WEB-XXX-description  # New features
 bugfix/WEB-XXX-description   # Bug fixes
 ```

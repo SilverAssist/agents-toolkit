@@ -13,7 +13,7 @@ Each skill lives in its own folder with a `SKILL.md` file. Following the
 are installed **once** into a canonical `.agents/skills/` store, and each agent's
 skills directory contains symlinks to it (single source of truth):
 
-```
+```text
 .agents/skills/                       # canonical store (real files)
 ├── ai-seo-optimization/
 │   └── SKILL.md
@@ -80,7 +80,7 @@ description: When to use this skill. Agents use this to decide relevance.
 
 Skills are automatically picked up by agents when relevant to your question. You can also reference them explicitly:
 
-```
+```text
 @workspace Use the component-architecture skill to create a new payment form component
 ```
 

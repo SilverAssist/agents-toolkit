@@ -8,7 +8,7 @@ description: Optimize websites for Google's generative AI features and browser a
 Comprehensive guide for optimizing Next.js sites for Google's generative AI features (AI Overviews, AI Mode) and emerging browser agent interactions.
 
 > **Framework note**: Although examples use Next.js conventions (e.g., `generateMetadata`), all checklist items apply to any web framework. For non-Next.js sites, substitute framework-equivalent SSR and metadata APIs.
-
+>
 > **Source**: [Google AI Optimization Guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
 > **Companion**: [Build Agent-Friendly Websites](https://web.dev/articles/ai-agent-site-ux)
 > **Verify current guidance**: These references reflect guidance as of the skill's authoring date. Always verify current Google documentation before advising clients.
@@ -31,6 +31,7 @@ Google's generative AI features use **Retrieval-Augmented Generation (RAG)**:
 4. Citations link back to source pages
 
 **Requirements for inclusion:**
+
 - Page MUST be indexed (verify in Search Console)
 - Page MUST allow snippets (no `nosnippet` meta directive)
 - Content MUST be server-rendered (not client-only JavaScript)
@@ -156,6 +157,7 @@ Google's AI features prefer content that provides unique value. Assess content a
 ### Content Upgrade Strategy
 
 For existing commodity content, improve by adding:
+
 1. **Unique data points** from proprietary sources
 2. **Expert commentary** with attribution
 3. **Real examples** with specifics (names, dates, outcomes)

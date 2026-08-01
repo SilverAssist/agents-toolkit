@@ -18,6 +18,7 @@ Scaffold a new component in the current Silver Assist plugin following the Loada
 ## Inputs
 
 Ask the user:
+
 1. **Component type** — Service, Controller, View, Model, or Repository?
 2. **Component name** — e.g., `EmailNotification`, `ReportGenerator`
 3. **Category/subdirectory** — e.g., `Admin`, `Frontend`, `Email` (optional)
@@ -41,6 +42,7 @@ Ask the user:
    - Include `@group` and `@coversDefaultClass` PHPDoc annotations
 
 5. **Verify** — Run PHPCS and PHPStan on the new file:
+
    ```bash
    vendor/bin/phpcs path/to/NewFile.php
    vendor/bin/phpstan analyse path/to/NewFile.php --memory-limit=1G

@@ -1,0 +1,39 @@
+{
+  // `templates/` is the product: it ships to consumers as Markdown, so it is the
+  // main thing this lint exists to protect.
+  "globs": ["**/*.md"],
+  "ignores": [
+    "node_modules",
+    // Installed copies of the templates, produced by `agents-toolkit install/update`.
+    // They are refreshed wholesale from `templates/`, so a fix applied here is
+    // overwritten on the next refresh — lint the source, not the artifact.
+    ".github/prompts",
+    ".github/instructions",
+    ".github/skills",
+    ".claude/commands",
+    ".claude/skills",
+    ".claude/agents",
+    ".agents/skills"
+  ],
+  "config": {
+    // Prose is hard-wrapped at widths chosen per file; an 80-column rule would
+    // flag ~1,150 lines that are deliberately formatted.
+    "MD013": false,
+    // Table pipe padding is purely cosmetic and would rewrite ~550 lines.
+    "MD060": false,
+    // A CHANGELOG repeats "Added"/"Changed"/"Fixed" under every release heading.
+    // `siblings_only` still catches a genuine duplicate within one section.
+    "MD024": { "siblings_only": true },
+    // Tabs inside fenced blocks are sample output (git status, Makefiles) and
+    // must be preserved byte-for-byte.
+    "MD010": { "code_blocks": false },
+    // MD029 and MD007 are disabled for their --fix behaviour, not their intent.
+    // Renumbering an ordered list breaks prose that cites items by number
+    // (nextjs-caching/SKILL.md refers to "strategy 1/2/3" in surrounding text),
+    // and re-indenting flattens nested bullets into siblings. Both rewrites are
+    // silent and change meaning, so the rules stay off rather than risk a
+    // contributor running --fix.
+    "MD029": false,
+    "MD007": false
+  }
+}

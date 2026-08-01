@@ -12,11 +12,12 @@ Include these templates when creating or reviewing pull requests. Choose the for
 
 ### PR Title Format
 
-```
+```text
 type: Short description of changes
 ```
 
 Examples:
+
 - `feat: Add rate limiting middleware`
 - `fix: Resolve CORS headers for image requests`
 - `refactor: Extract validation into middleware`
@@ -61,11 +62,12 @@ Closes #ISSUE_NUMBER
 
 ### PR Title Format
 
-```
+```text
 {TICKET-ID}: Short description of changes
 ```
 
 Examples:
+
 - `WEB-726: Add font size accessibility controls`
 - `WEB-734: Fix responsive logo sizing in mobile header`
 - `WEB-800: Refactor contact form validation`
@@ -155,27 +157,8 @@ Any special deployment considerations:
 | Medium | 6-15 files | ⚠️ Acceptable |
 | Large | 16+ files | ❌ Consider splitting |
 
----
-
-## PR Merge Checklist
-
-Before merging:
-- [ ] All review comments addressed
-- [ ] CI/CD pipeline passes
-- [ ] Branch is up-to-date with target
-- [ ] No merge conflicts
-- [ ] Documentation complete
-- [ ] Issue linked and will auto-close
-
-## PR Size Guidelines
-
-| Size | Files Changed | Recommendation |
-|------|---------------|----------------|
-| Small | 1-5 files | ✅ Ideal |
-| Medium | 6-15 files | ⚠️ Acceptable |
-| Large | 16+ files | ❌ Consider splitting |
-
 **Tips for large PRs**:
+
 - Split into multiple smaller PRs
 - Create base branch for related changes
 - Use feature flags for partial releases
@@ -185,6 +168,7 @@ Before merging:
 ## Common PR Comments
 
 ### Request Changes
+
 ```markdown
 **Suggestion:** Consider using X instead of Y because...
 
@@ -194,6 +178,7 @@ Before merging:
 ```
 
 ### Approval
+
 ```markdown
 ✅ LGTM! 
 
@@ -208,9 +193,11 @@ Reviewed:
 ## PR Merge Checklist
 
 Before merging:
+
 - [ ] All review comments addressed
 - [ ] CI/CD pipeline passes
 - [ ] Branch is up-to-date with target
 - [ ] No merge conflicts
 - [ ] Documentation complete
-- [ ] Jira ticket updated
+- [ ] Issue linked and will auto-close *(Format A — GitHub Issues)*
+- [ ] Jira ticket updated *(Format B — Jira)*

@@ -75,6 +75,7 @@ export default function UserCard({ user, showEmail }: UserCardProps) {
 Location: `docs/{feature-name}-plan.md`
 
 Template:
+
 ```markdown
 # {Feature Name} Implementation Plan
 
@@ -115,6 +116,7 @@ How to revert if issues arise?
 Location: `docs/{feature-name}.md`
 
 Template:
+
 ```markdown
 # {Feature Name}
 
@@ -129,19 +131,24 @@ Brief description of the feature.
 ```
 
 ### Advanced Usage
+
 ```typescript
 // More complex example
 ```
 
 ## Configuration
+
 Any configuration options.
 
 ## API Reference
+
 If applicable, API details.
 
 ## Troubleshooting
+
 Common issues and solutions.
-```
+
+```text
 
 ---
 
@@ -175,6 +182,7 @@ Common issues and solutions.
    - Delete planning document if no longer needed
 
 2. **Commit documentation**:
+
    ```bash
    git add docs/
    git commit -m "TICKET-ID: Add {feature} documentation"
@@ -185,18 +193,21 @@ Common issues and solutions.
 ## Documentation Checklist
 
 ### Code Documentation
+
 - [ ] JSDoc on all public functions
 - [ ] Props interfaces documented
 - [ ] Complex logic has comments
 - [ ] Type definitions have descriptions
 
 ### Project Documentation
+
 - [ ] Feature documented in `docs/`
 - [ ] README updated if needed
 - [ ] CHANGELOG updated
 - [ ] Migration guide if breaking changes
 
 ### PR Documentation
+
 - [ ] Clear PR title with ticket ID
 - [ ] Description explains changes
 - [ ] Testing notes included

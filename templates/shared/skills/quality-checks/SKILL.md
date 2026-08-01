@@ -58,6 +58,7 @@ composer test
 File: `phpcs.xml` — standard across all Silver Assist plugins.
 
 **Base Standard**: `WordPress-Extra` with these exclusions:
+
 - `Generic.Arrays.DisallowShortArraySyntax` — short arrays allowed (`[]` not `array()`)
 - `WordPress.Files.FileName.NotHyphenatedLowercase` — PSR-4 PascalCase filenames
 - `WordPress.Files.FileName.InvalidClassFileName` — PSR-4 class filenames
@@ -65,6 +66,7 @@ File: `phpcs.xml` — standard across all Silver Assist plugins.
 - `Generic.Classes.OpeningBraceSameLine` — same-line braces allowed
 
 **Additional Standards Enforced**:
+
 - `WordPress-Docs` — PHPDoc coverage
 - `WordPress.NamingConventions.PrefixAllGlobals` — plugin-specific prefixes
 - `Generic.CodeAnalysis.UnusedFunctionParameter`
@@ -204,6 +206,7 @@ parameters:
 ### Level 8 Requirements
 
 Level 8 is the strictest level. It requires:
+
 - No unused variables
 - Strict type checking on all operations
 - Full PHPDoc coverage with accurate types
@@ -333,7 +336,7 @@ vendor/bin/phpunit --testdox
 
 PHPUnit tests extend `WP_UnitTestCase` which requires the WordPress Test Suite. If not installed:
 
-```
+```text
 Warning: WordPress Test Suite not found. Tests will run with limited functionality.
 ```
 
@@ -449,6 +452,7 @@ vendor/bin/phpstan analyse --memory-limit=1G
 ### PHPUnit: "Class WP_UnitTestCase not found"
 
 The WordPress Test Suite is not installed. Either:
+
 1. Install it: `bash scripts/install-wp-tests.sh wordpress_test root 'root' localhost latest true`
 2. Run in CI where it's automatically set up
 3. Use `--skip-wp-setup` flag with the quality check script for local non-test checks

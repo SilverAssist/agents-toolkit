@@ -7,7 +7,7 @@ applyTo: "**/components/**/*.tsx"
 
 **✅ ALWAYS use folder structure** with `index.tsx`:
 
-```
+```text
 components/
 └── domain/                    # Domain folder (auth, checkout, etc.)
     ├── index.ts               # Barrel export for domain
