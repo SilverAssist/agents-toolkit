@@ -150,9 +150,17 @@ pass reports zero findings** before continuing. See the skill for the full check
 # would abort that flow with "nothing to commit".
 if [ -n "$(git status --porcelain)" ]; then
   git add -A
+  # This block also runs when there was no planning doc and the review produced fixes, so
+  # the message is derived from what actually happened rather than assuming a removal.
+  # `PLANS` comes from the removal block above; `${#PLANS[@]}` is 0 when it never ran.
+  if [ "${#PLANS[@]}" -gt 0 ]; then
+    MSG="docs: Remove planning doc for #{issue-number} ahead of PR (+ review fixes)"
+  else
+    MSG="chore: Apply pre-PR review fixes for #{issue-number}"
+  fi
   # No `|| true`: a failed commit (hooks, signing, identity) must stop the flow, not be masked —
   # otherwise Step 6 would push without the planning-doc removal or the review fixes.
-  git commit -m "docs: Remove planning doc for #{issue-number} ahead of PR (+ review fixes)"
+  git commit -m "$MSG"
 fi
 
 # Enforce, don't just report: the push must never carry uncommitted work.
