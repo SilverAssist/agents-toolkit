@@ -48,7 +48,6 @@ Cheap-first model-tier discipline on Copilot and Claude Code ([#39](https://gith
 - **Measurement follow-up.** After this ships, run a 5-working-day window with 2 heavy users (one primarily on Claude Code, one on Copilot). Per user per day: input/output tokens, prompts invoked by tier, and cheap-tier failures (tasks re-run on the smart tier). **Demotion policy:** a prompt that fails ≥ 2 of 5 runs on the same class of task moves back to the smart tier in a patch release. No attempt at a perfect up-front classification.
 - **64 tests passing** in `src/cli.test.js`, including the Claude alias remap, byte-identical Copilot installs, the scalar-pin guard, `Explore` install/skip, `--budget` wiring, the marker-based plan-doc removal (both directions, plus the no-marker path), and a guard that the generators still emit the marker.
 
-
 ## [2.6.0] - 2026-07-26
 
 ### Added

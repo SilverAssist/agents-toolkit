@@ -18,6 +18,10 @@ Create a pull request for the current branch linked to Jira ticket **{ticket-id}
 
 ## Steps
 
+### 0. Validate ticket ID
+
+Verify that `{ticket-id}` has been replaced with a real ticket identifier (e.g. `WEB-1234`). If the literal string `{ticket-id}` is still present, stop and ask the user to provide the ticket ID.
+
 ### 1. Verify Current State
 
 ```bash
@@ -58,43 +62,21 @@ npm run test --if-present
 npm run build --if-present
 ```
 
-Fix any issues before proceeding.
+Fix any issues before proceeding. If a validation command fails and the fix is not straightforward (e.g. requires business logic decisions or takes more than one iteration), stop and report the failure to the user with the exact error output before attempting further changes.
 
 ### 5. Remove the planning document
 
-The planning document created by `work-ticket` or `create-plan` (shipped pattern:
-`docs/<feature-name>-plan.md`) has served its purpose. Delete it now, **at PR creation (not at
-finalization)**, so it stays out of the base branch after merge.
+The planning document created by `work-ticket` or `create-plan` has served its purpose. Delete it now so it stays out of the base branch after merge.
 
-A file is removed only when it satisfies **both** conditions: it was **added on this branch**
-vs `$BASE_BRANCH`, and it **carries the planning-doc marker** that `work-ticket` / `create-plan`
-write as the first line:
-
-```markdown
-<!-- agents-toolkit:planning-doc -->
-```
-
-The marker — not the filename — is what identifies a temporary plan. Filename patterns cannot:
-`docs/*-plan.md` also matches a legitimate deliverable such as `docs/rollout-plan.md`, and
-`docs/*plan*.md` additionally matches `explanation.md` (ex-**plan**-ation). A plan written
-without the marker is simply **not deleted**. That bias is deliberate: leaving a plan doc behind
-is a trivial cleanup, while deleting someone's deliverable is not recoverable from the PR.
-
-Two portability details are load-bearing. The loop reads `git diff -z` output **NUL-delimited**,
-because a path containing a space word-splits and makes `git rm` abort without removing
-anything. And it deliberately avoids `grep -lZ | xargs -0`: BSD `grep` on macOS does **not**
-NUL-terminate `-l` output, which silently breaks that chain on the platform many contributors
-use. The `while read -d ''` form works on bash 3.2 (macOS's system bash) and needs no `mapfile`.
+1. Find `docs/*.md` files **added on this branch** vs `$BASE_BRANCH`.
+2. Keep only files whose **first line** is `<!-- agents-toolkit:planning-doc -->`.
+3. `git rm` matching files and commit. If none match, skip.
+4. Stage and commit any remaining working-tree changes, then verify the tree is clean.
 
 ```bash
 MARKER='agents-toolkit:planning-doc'
 PLANS=()
 while IFS= read -r -d '' f; do
-  # First line only, and the *complete* HTML comment — not the bare token.
-  # A whole-file grep would match a contributing guide that merely mentions the
-  # convention, and a substring match would still catch a heading like
-  # `# agents-toolkit:planning-doc notes`. `([[:space:]].*)?` must allow `-`,
-  # since Jira ticket ids (`ticket=WEB-1111`) contain one.
   head -n 1 "$f" 2>/dev/null | grep -qE "^<!--[[:space:]]*${MARKER}([[:space:]].*)?-->[[:space:]]*$" && PLANS+=("$f")
 done < <(git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*.md' 'docs/**/*.md')
 
@@ -103,35 +85,34 @@ if [ ${#PLANS[@]} -eq 0 ]; then
 else
   echo "Removing planning docs added on this branch:"
   printf '  %s\n' "${PLANS[@]}"
-  # No `|| true` mask: a real git rm failure (permissions, unmerged path) must surface.
   git rm -- "${PLANS[@]}"
   git commit -m "docs: Remove planning doc for {ticket-id} ahead of PR"
 fi
 ```
 
-Note that the commit above only captures what `git rm` staged. Any file you edited while
-fixing the Step 4 validations is still an unstaged working-tree change, and when the branch
-has no planning doc the `else` branch never runs, so nothing is committed at all. Both cases
-push a branch that is missing the fixes. Stage and commit them unconditionally:
-
 ```bash
-# Runs whether or not a planning doc existed. Tested against `git status --porcelain`
-# rather than `git diff --quiet`, because a fix that *creates* a file (a new test, a
-# snapshot) leaves it untracked, and no `git diff` variant reports untracked paths.
 if [ -n "$(git status --porcelain)" ]; then
   git add -A
-  # No `|| true`: a failed commit (hooks, signing, identity) must stop the flow, not be
-  # masked — otherwise Step 6 pushes without the validation fixes.
   git commit -m "{ticket-id}: Apply pre-PR validation fixes"
 fi
 
-# Enforce, don't just report: the push must never carry uncommitted work.
 if [ -n "$(git status --porcelain)" ]; then
   echo "Worktree still dirty after commit — resolve before pushing:" >&2
   git status --porcelain >&2
   exit 1
 fi
 ```
+
+<details>
+<summary>Why these exact commands?</summary>
+
+**Marker over filename**: `docs/*-plan.md` also matches legitimate deliverables like `docs/rollout-plan.md`, and `docs/*plan*.md` additionally matches `explanation.md` (ex-**plan**-ation). The marker is what `work-ticket`/`create-plan` write as line 1; a plan without it is simply not deleted. Leaving a plan behind is trivial to clean up; deleting a deliverable is not recoverable.
+
+**NUL-delimited paths**: `git diff -z` NUL-delimits output so paths containing spaces don't word-split and break `git rm`. `grep -lZ | xargs -0` is avoided because BSD `grep` on macOS does not NUL-terminate `-l` output, silently breaking that chain. The `while read -d ''` form works on bash 3.2 (macOS's system bash) and needs no `mapfile`.
+
+**`git status --porcelain` over `git diff --quiet`**: A fix that creates a new file (e.g. a new test or snapshot) leaves it untracked; no `git diff` variant reports untracked paths. `git status --porcelain` catches them all. No `|| true` on `git commit`: a failed commit (hooks, signing, identity) must stop the flow, not be masked.
+
+</details>
 
 ### 6. Push Branch
 
@@ -187,7 +168,7 @@ Brief description of what this PR accomplishes.
 #### PR Settings
 - **Source**: Current branch
 - **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
-- **Reviewers**: Based on changed files
+- **Reviewers**: Read `.github/CODEOWNERS` and map changed files to owners. If no CODEOWNERS file exists, leave the reviewers field empty and note it in the Output report.
 
 ### 8. Link PR to Jira
 
