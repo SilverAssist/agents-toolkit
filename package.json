@@ -47,7 +47,7 @@
     "format:check": "prettier --check .",
     "validate:prompts": "node scripts/validate-prompts.mjs",
     "check": "npm run format:check && npm run lint:md && npm run validate:prompts && npm test",
-    "prepare": "husky || true"
+    "prepare": "node -e \"if(!process.env.CI&&process.env.NODE_ENV!=='production')require('child_process').execSync('husky',{stdio:'inherit'})\""
   },
   "engines": {
     "node": ">=18.0.0"

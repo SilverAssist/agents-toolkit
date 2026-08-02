@@ -21,8 +21,15 @@
  * Exits non-zero with a per-file report on the first failing rule set.
  */
 import fs from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
+
+// Resolve js-yaml from the script's own location so it works even when the
+// validator is invoked with a different CWD (e.g. from tests in a temp dir).
+const require = createRequire(import.meta.url);
+const jsYaml = require('js-yaml');
 
 const PROMPTS_DIR = path.join(process.cwd(), 'templates', 'shared', 'prompts');
 
@@ -38,7 +45,8 @@ const SCALAR_ONLY_KEYS = ['description', 'agent', 'model', 'name'];
  * @returns {{ lines: string[] } | { error: string }} Parsed block or a failure reason
  */
 function extractFrontmatter(source) {
-  const lines = source.split('\n');
+  // Normalise CRLF so Windows checkouts don't leave \r on the delimiters.
+  const lines = source.split(/\r?\n/);
   if (lines[0] !== '---') {
     return { error: 'file must open with a `---` frontmatter delimiter on line 1' };
   }
@@ -59,37 +67,53 @@ function validate(file) {
   const block = extractFrontmatter(fs.readFileSync(file, 'utf-8'));
   if ('error' in block) return [block.error];
 
+  // Parse the block as YAML to catch malformed syntax (unclosed quotes, inline
+  // arrays, orphan list items) before inspecting individual values.
+  let parsed;
+  try {
+    parsed = jsYaml.load(block.lines.join('\n')) ?? {};
+  } catch (e) {
+    return [`frontmatter is not valid YAML: ${e.message}`];
+  }
+
+  // Scalar-only keys must hold a string/number/boolean, never a list or mapping
+  // (flow or block). Checking the parsed value catches both `model: [a, b]` and
+  // the multi-line `model:\n  - a\n  - b` forms.
+  for (const key of SCALAR_ONLY_KEYS) {
+    const val = parsed[key];
+    if (val === undefined) continue;
+    if (Array.isArray(val) || (typeof val === 'object' && val !== null)) {
+      problems.push(`\`${key}\` must be a single scalar value, not a list or mapping`);
+    }
+  }
+
+  // Raw line scan — catches tabs and duplicate keys (yaml.load is last-one-wins
+  // for duplicate keys, so it silently discards earlier values).
   const seen = new Map();
   for (const [index, line] of block.lines.entries()) {
     if (line.trim() === '') continue;
     if (line.includes('\t')) {
       problems.push(`line ${index + 2}: tab character — YAML indentation must use spaces`);
     }
-    // List items belong to the key above them; they are validated via that key.
     if (/^\s*-\s/.test(line)) continue;
     const match = line.match(/^([A-Za-z_][A-Za-z0-9_-]*):(.*)$/);
     if (!match) {
       problems.push(`line ${index + 2}: not a \`key: value\` pair — ${JSON.stringify(line)}`);
       continue;
     }
-    const [, key, rest] = match;
+    const [, key] = match;
     if (seen.has(key)) {
       problems.push(`duplicate key \`${key}\` (line ${index + 2} overrides line ${seen.get(key)})`);
     }
     seen.set(key, index + 2);
-    // A key with an empty value followed by `- item` lines is a list.
-    const isList = rest.trim() === '' && /^\s*-\s/.test(block.lines[index + 1] ?? '');
-    if (SCALAR_ONLY_KEYS.includes(key)) {
-      if (isList) {
-        problems.push(`\`${key}\` must be a single scalar value, not a list`);
-      } else if (rest.trim() === '') {
-        problems.push(`\`${key}\` is declared but empty`);
-      }
-    }
   }
 
+  // Required keys must be present and non-empty in the parsed output.
   for (const key of REQUIRED_KEYS) {
-    if (!seen.has(key)) problems.push(`missing required key \`${key}\``);
+    const val = parsed[key];
+    if (val === undefined || val === null || String(val).trim() === '') {
+      problems.push(`missing or empty required key \`${key}\``);
+    }
   }
   return problems;
 }

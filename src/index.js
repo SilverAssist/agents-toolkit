@@ -74,7 +74,7 @@ export const SKILLS = [
   'tsdoc-standards',
 ];
 
-export const HOOKS = ['validate-tsx', 'lint-format'];
+export const HOOKS = ['lint-format', 'validate-tsx'];
 
 // Skills follow the `npx skills` standard: a single canonical copy lives in
 // .agents/skills/ and each agent's skills directory symlinks to it.
