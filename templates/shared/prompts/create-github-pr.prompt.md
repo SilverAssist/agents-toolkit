@@ -101,8 +101,8 @@ while IFS= read -r -d '' f; do
   # First line only, and the *complete* HTML comment — not the bare token.
   # A whole-file grep would match a contributing guide that merely mentions the
   # convention, and a substring match would still catch a heading like
-  # `# agents-toolkit:planning-doc notes`. `([[:space:]].*)?` must allow `-`,
-  # since Jira ticket ids (`ticket=WEB-1111`) contain one.
+  # `# agents-toolkit:planning-doc notes`. `([[:space:]].*)?` allows optional
+  # metadata (e.g. `issue={issue-number}`) including any `-` in its value.
   head -n 1 "$f" 2>/dev/null | grep -qE "^<!--[[:space:]]*${MARKER}([[:space:]].*)?-->[[:space:]]*$" && PLANS+=("$f")
 done < <(git diff --name-only -z "$BASE_BRANCH" --diff-filter=A -- 'docs/*.md' 'docs/**/*.md')
 
