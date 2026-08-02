@@ -117,7 +117,7 @@ Location: `docs/{feature-name}.md`
 
 Template:
 
-```markdown
+````markdown
 # {Feature Name}
 
 ## Overview
@@ -148,7 +148,7 @@ If applicable, API details.
 
 Common issues and solutions.
 
-```text
+````
 
 ---
 
@@ -167,6 +167,7 @@ Common issues and solutions.
    - Testing Strategy
 
 3. **Commit document**:
+
    ```bash
    git add docs/{feature-name}-plan.md
    git commit -m "TICKET-ID: Add {feature} implementation plan"
