@@ -136,9 +136,7 @@ differs (subagents are a Claude-Code-only optimization, not a requirement):
   add its one-hop neighbours (importers/consumers, sibling files, docs/indexes that list the
   changed symbol or asset). Then brief it: "review these files — `<list>` — against the
   core-review checklist; report `severity | file:line | problem | suggested fix`; do not edit
-  files." Passing an explicit list is also what keeps this at `--budget medium`: do **not** ask
-  the subagent for a whole-repo pass here, or Claude runs `thorough` while Copilot/Codex run
-  `medium`.
+  Passing an explicit list is what scopes the pass to `--budget medium`.
 
 Apply every `critical` and `warning` finding — including any stale reference exposed by removing
 the planning doc — re-run the checks from Step 4, then **commit the fixes and the doc removal and
@@ -157,9 +155,9 @@ pass reports zero findings** before continuing. See the skill for the full check
 if [ -n "$(git status --porcelain)" ]; then
   git add -A
   # This block also runs when there was no planning doc and the review produced fixes, so
-  # the message is derived from what actually happened rather than assuming a removal.
-  # `PLANS` comes from the removal block above; `${#PLANS[@]}` is 0 when it never ran.
-  if [ "${#PLANS[@]}" -gt 0 ]; then
+  # the message is derived from git state, not from PLANS (a shell-local variable that is
+  # not available if the removal block ran in a separate shell invocation).
+  if git diff --cached --name-only --diff-filter=D -- 'docs/*.md' 'docs/**/*.md' | grep -q .; then
     MSG="docs: Remove planning doc for #{issue-number} ahead of PR (+ review fixes)"
   else
     MSG="chore: Apply pre-PR review fixes for #{issue-number}"
