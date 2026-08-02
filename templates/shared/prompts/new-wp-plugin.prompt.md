@@ -6,9 +6,12 @@ tools:
   - read_file
   - replace_string_in_file
   - create_file
+model: Claude Haiku 4.5
 ---
 
 # New Plugin
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (scaffolding from a template). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Scaffold a new Silver Assist WordPress plugin with the standard architecture, quality tools, and CI/CD pipeline.
 

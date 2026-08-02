@@ -1,12 +1,31 @@
 ---
 agent: agent
 description: Fetch, respond to, resolve, and close GitHub PR review comments (Copilot or human)
+model: Claude Sonnet 5
 ---
 
 # Resolve GitHub PR Reviews
 
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (the fix step needs real reasoning). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
+
 Clear a pull request's review threads end-to-end: **fetch → address → reply → resolve → verify `0` unresolved**.
 Works for both **Copilot** and **human** reviews.
+
+> **Cost note.** The *fetch*, *reply-formatting*, and *resolve* steps are mechanical — they
+> parse GraphQL / REST responses and post templated replies. The only step that may genuinely
+> need the smart tier is the **code fix** in Step 3. But because `model:` **locks the model
+> for the whole invocation** (see paragraph above), you cannot switch mid-run to make the
+> mechanical phases cheap. To run those phases cheap, take one of the pre-invocation options:
+> (a) invoke the `gh`/GraphQL commands from a separate cheap-tier chat/session and use this
+> prompt only for the fix step; or (b) edit this file's `model:` line to the cheap-tier value
+> before running and revert after.
+>
+> The `core-review` pass invoked from Step 3 pins itself cheap **only on Claude Code** (its
+> `SKILL.md model: haiku` frontmatter is honoured per-turn there). On **Copilot** skills
+> inherit the invoking prompt's model, so `core-review` runs on this prompt's smart tier when
+> invoked inline; to keep that pass cheap on Copilot, invoke `core-review` from a separate
+> cheap-tier chat instead of inline. On **Codex** the pass runs whatever session model is
+> active (`codex --model`).
 
 ## Prerequisites
 - `gh` CLI authenticated (`gh auth status`) with `repo` scope — the GraphQL thread-resolve mutation needs it
@@ -140,20 +159,22 @@ For every unresolved thread from Step 2:
    ```
 
 **Then — once per batch, not per thread** — after **all** the per-thread fixes above are applied,
-run a single **whole-repo** consistency pass (the *core review*) before committing the batch. Use
-the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) as a dedicated read-only pass
-(inline on Copilot/Codex; optionally a subagent on Claude Code). A fix often leaves or introduces
-an adjacent issue (a now-stale doc line, a broken link, a table missing the new asset) that would
-trigger yet another Copilot round. Apply everything the pass flags, re-run the checks above, and
-only then proceed to Step 4. Running this once over the completed batch — rather than per thread —
-keeps the (whole-repo) review cost bounded.
+run a single consistency pass (the *core review*) before committing the batch. Use the
+**`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
+(diff + directly-touched files — the batch is small and scoped, so `medium`/`thorough` would only
+add unrelated noise). Run it as a dedicated read-only pass (inline on Copilot/Codex; optionally
+a subagent on Claude Code). A fix often leaves or introduces an adjacent issue (a now-stale doc
+line, a broken link, a table missing the new asset) that would trigger yet another Copilot round.
+Apply everything the pass flags, re-run the checks above, and only then proceed to Step 4.
+Running this once over the completed batch — rather than per thread — keeps the review cost
+bounded.
 
 ### 4. Commit and push fixes (before replying)
 
 Reply bodies reference the fixing commit SHA, so **commit and push first** — otherwise the SHA
 does not exist on the remote branch yet and the reply link is dead.
 
-> Run the whole-repo **core review** from Step 3 *before* this commit — pushing an adjacent,
+> Run the **core review** from Step 3 *before* this commit — pushing an adjacent,
 > unfixed issue starts a fresh Copilot round and defeats the purpose of resolving in batches.
 
 ```bash

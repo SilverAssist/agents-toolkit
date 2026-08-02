@@ -6,9 +6,12 @@ tools:
   - read_file
   - replace_string_in_file
   - create_file
+model: Claude Haiku 4.5
 ---
 
 # Prepare GitHub Release
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (validation plus release mechanics). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Prepare a new version release and drive it through the **correct GitHub flow** for the current
 project. This prompt is **project-agnostic**: it detects the ecosystem (WordPress plugin vs Node/npm

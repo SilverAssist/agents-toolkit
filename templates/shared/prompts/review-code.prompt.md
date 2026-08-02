@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Quick code review of current changes
+model: Claude Haiku 4.5
 ---
 
 # Quick Code Review
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (a deterministic checklist). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Perform a quick code review of the current changes.
 

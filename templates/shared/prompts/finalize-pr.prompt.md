@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Finalize a pull request after approval and prepare for merge
+model: Claude Haiku 4.5
 ---
 
 # Finalize Pull Request
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (validation plus `git` mechanics). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Finalize PR for Jira ticket **{ticket-id}** after approval and prepare for merge.
 

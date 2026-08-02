@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Fix failing tests and lint errors
+model: Claude Haiku 4.5
 ---
 
 # Fix Code Issues
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (the findings are already identified). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Fix failing tests, lint errors, and type errors in the codebase.
 

@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Start working on a Jira ticket with full workflow setup
+model: Claude Sonnet 5
 ---
 
 # Work on Jira Ticket
+
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (implementation orchestration). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Start working on Jira ticket **{ticket-id}** with complete workflow setup.
 
@@ -45,7 +48,20 @@ Search codebase for:
 
 ### 5. Create Work Plan
 
-Create planning document at `docs/{feature-name}-plan.md`:
+Create planning document at `docs/{feature-name}-plan.md`.
+
+**Its first line must be the removal marker**, exactly:
+
+```markdown
+<!-- agents-toolkit:planning-doc ticket={ticket-id} -->
+```
+
+`create-pr` / `create-github-pr` delete the plan at PR time by grepping for this marker, and
+they delete **nothing** without it — a plan written without the marker survives into the base
+branch. The marker, not the filename, is what identifies the file as temporary, so a legitimate
+deliverable like `docs/rollout-plan.md` is never at risk.
+
+Then the body:
 - Problem statement
 - Current architecture
 - Proposed changes

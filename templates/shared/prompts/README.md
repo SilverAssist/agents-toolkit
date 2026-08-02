@@ -49,6 +49,34 @@ prompts/
     └── quality-check.prompt.md       # Run PHPCS / PHPStan / PHPUnit
 ```
 
+## Model tiers
+
+Every shipped prompt carries an explicit `model:` pin — on Copilot and Claude Code a fresh install therefore runs cost-optimally with no configuration at all. On Codex the field is ignored; select the session tier with `codex --model` instead. The pins are **hardcoded in the files** — there is no tier config, no CLI flag, and nothing to resolve at install time. **To change a tier on Copilot or Claude Code, edit the `model:` line in the installed file.** That is the whole mechanism, and it is deliberate: a model picker spanning three agents whose model catalogues move independently would cost more to maintain than it saves.
+
+| Tier | Copilot / Codex | Claude Code | Used for |
+| --- | --- | --- | --- |
+| **Cheap** | `Claude Haiku 4.5` | `haiku` | Checklist / mechanical work — 13 prompts |
+| **Smart** | `Claude Sonnet 5` | `sonnet` | Design / reasoning work — 6 prompts |
+
+| Prompt | Tier | Rationale |
+| --- | --- | --- |
+| `analyze-ticket`, `analyze-github-issue` | Cheap | Read + summarize |
+| `add-tests`, `audit-ai-seo`, `fix-issues`, `review-code` | Cheap | Deterministic checklists |
+| `new-wp-component`, `new-wp-plugin`, `quality-check` | Cheap | Scaffolding / tool runs |
+| `prepare-pr`, `prepare-github-release`, `finalize-pr`, `finalize-github-pr` | Cheap | Validation + git/gh mechanics |
+| `create-plan` | Smart | Real design reasoning |
+| `work-ticket`, `work-github-issue` | Smart | Implementation orchestration |
+| `create-pr`, `create-github-pr` | Smart | PR authoring + review orchestration |
+| `resolve-github-reviews` | Smart | The *fix* step needs reasoning |
+
+### How each agent reads the pin
+
+- **Claude Code** — the installer rewrites the Copilot model name to the matching alias, so `Claude Haiku 4.5` installs as `model: haiku`. Aliases track the current generation, so they do not go stale. The pin **wins over `/model`**, which is only consulted when no `model:` is set.
+- **Copilot** — the pin is used as shipped. It **wins over the picker**, which is only consulted when no `model:` is set. Note that only `.prompt.md` files establish a model boundary: skills inherit the invoking prompt's model, so an inline `core-review` from a smart-tier orchestrator runs smart. Invoke the skill as a standalone chat to keep it cheap.
+- **Codex** — `model:` is **ignored entirely**; the session runs whatever `codex --model` set. The field is left in place because the Codex installer copies these same shared templates into the same `.github/prompts/` directory Copilot uses, so the frontmatter Copilot needs is simply along for the ride; it produces a non-blocking lint warning and nothing else.
+
+Because the pin is a single scalar, an unavailable model falls back to the agent's own default rather than to a second entry — the toolkit does not ship fallback chains. A prioritized `model:` array is undocumented for prompt files and is rejected outright by GitHub Copilot CLI.
+
 ## Workflow Stages
 
 ```

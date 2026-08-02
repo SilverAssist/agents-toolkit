@@ -14,6 +14,7 @@ Check each array against the filesystem:
 | `PARTIALS` | `templates/shared/prompts/_partials/` | `.md` |
 | `HOOKS` | `templates/shared/hooks/` | `.json` |
 | `PROMPTS.workflow` + `PROMPTS.utility` | `templates/shared/prompts/` | `.prompt.md` |
+| `AGENTS` | `templates/shared/agents/` | `.md` |
 
 Flag any file that exists in `templates/shared/` but is missing from the corresponding export array, and vice versa.
 All arrays must be sorted alphabetically.

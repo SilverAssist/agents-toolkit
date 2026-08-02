@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Create a detailed implementation plan for a feature
+model: Claude Sonnet 5
 ---
 
 # Create Implementation Plan
+
+> **Model:** Smart tier — `Claude Sonnet 5` on Copilot, `sonnet` on Claude Code (planning is real design reasoning). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Create a detailed implementation plan for: **{feature-description}**
 
@@ -28,9 +31,23 @@ Create a detailed implementation plan for: **{feature-description}**
 
 Save to: `docs/{feature-name}-plan.md`
 
-Include these sections:
+**The first line must be the removal marker**, exactly:
 
----
+```markdown
+<!-- agents-toolkit:planning-doc -->
+```
+
+`create-pr` / `create-github-pr` delete the plan at PR time by grepping for this marker, and
+they delete **nothing** without it — a plan written without the marker survives into the base
+branch. The marker, not the filename, is what identifies the file as temporary, so a legitimate
+deliverable like `docs/rollout-plan.md` is never at risk.
+
+Write exactly this, starting at line 1 — the marker must be the **first** line of the file,
+with no separator, blank line, or frontmatter above it. The removal step reads only `head -n 1`,
+so a plan whose first line is anything else is never cleaned up:
+
+```markdown
+<!-- agents-toolkit:planning-doc -->
 
 # {Feature Name} Implementation Plan
 
@@ -109,8 +126,7 @@ How to revert changes if issues arise.
 - External dependencies
 - Internal dependencies
 - Team coordination needed
-
----
+```
 
 ### 4. Commit Plan
 

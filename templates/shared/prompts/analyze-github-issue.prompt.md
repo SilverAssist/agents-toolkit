@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Analyze a GitHub issue without creating branches or making changes
+model: Claude Haiku 4.5
 ---
 
 # Analyze GitHub Issue
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (read and summarize). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Analyze GitHub issue **#{issue-number}** in repository **{owner}/{repo}** and provide a comprehensive assessment without making any code changes.
 

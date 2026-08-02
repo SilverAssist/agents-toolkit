@@ -397,7 +397,9 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
     return totals;
   }
 
-  // 1. Populate the canonical store once (filtered by stack).
+  // 1. Populate the canonical store once (filtered by stack). Skills ship their
+  // `model:` pin verbatim — it is a Claude Code field, and the canonical store is
+  // shared by every agent through symlinks, so there is nothing to rewrite here.
   const canonicalResult = copyDir(skillsSrc, canonicalDir, { force, dryRun, dirFilter });
   totals.written += canonicalResult.written;
   totals.planned += canonicalResult.planned;
@@ -422,13 +424,54 @@ function installSkillsStandard({ isGlobal, agentSkillsDir, force = false, dryRun
 }
 
 /**
- * Strip GitHub Copilot frontmatter from a prompt file
- * Removes the ---\nagent: ...\ndescription: ...\n--- block
- * @param {string} content - File content
- * @returns {string} Content without Copilot frontmatter
+ * Map a Copilot model name to the equivalent Claude Code alias.
+ *
+ * Copilot names a specific version (`Claude Haiku 4.5`); Claude Code
+ * takes a generation-independent alias (`haiku`) and resolves it to whatever is
+ * current. Matching on the family substring is therefore deliberate — it keeps
+ * a Copilot version bump from needing a matching change here.
+ *
+ * A non-Claude pin (`GPT-5 mini`) has no Claude equivalent and yields
+ * `null`, which installs the command with no `model:` at all so Claude falls
+ * back to the session model.
+ *
+ * @param {string} frontmatterBody - Raw frontmatter body without --- delimiters
+ * @returns {string|null} Claude alias, or null when the pin is not a Claude model
  */
-function stripCopilotFrontmatter(content) {
-  return content.replace(/^---\n(?:[\s\S]*?\n)?---\n\n?/, '');
+function extractClaudeAlias(frontmatterBody) {
+  const match = frontmatterBody.match(/^model:[ \t]+([^\n]+)$/m);
+  const value = match?.[1]?.trim();
+  if (!value) return null;
+
+  if (/haiku/i.test(value)) return 'haiku';
+  if (/sonnet/i.test(value)) return 'sonnet';
+  if (/opus/i.test(value)) return 'opus';
+  if (/fable/i.test(value)) return 'fable';
+  return null;
+}
+
+/**
+ * Transform Copilot prompt frontmatter into Claude Code frontmatter.
+ * - Strips Copilot-only fields (`agent`, `description`, `tools`).
+ * - Rewrites the `model:` pin to the matching Claude alias via
+ *   {@link extractClaudeAlias}, so `Claude Haiku 4.5` — meaningless
+ *   to Claude Code — installs as `model: haiku`.
+ * - When no Claude alias applies, strips the frontmatter entirely so Claude
+ *   falls back to the inherited session model.
+ * @param {string} content - Original file content (Copilot .prompt.md)
+ * @returns {string} Content with Claude-compatible frontmatter
+ */
+function transformFrontmatterForClaude(content) {
+  const match = content.match(/^---\n([\s\S]*?)\n---\n\n?/);
+  if (!match) return content;
+
+  const frontmatterBody = match[1];
+  const body = content.slice(match[0].length);
+
+  const alias = extractClaudeAlias(frontmatterBody);
+  if (!alias) return body;
+
+  return `---\nmodel: ${alias}\n---\n\n${body}`;
 }
 
 /**
@@ -904,7 +947,14 @@ function installCodex(options = {}) {
  * @param {Object} options - Install options
  */
 function installClaude(options = {}) {
-  const { force = false, dryRun = false, copy = false, global: isGlobal = false, filters = { stack: 'all', tracker: 'all' } } = options;
+  const {
+    force = false,
+    dryRun = false,
+    copy = false,
+    global: isGlobal = false,
+    filters = { stack: 'all', tracker: 'all' },
+    noAgentOverrides = false,
+  } = options;
   const scope = getInstallScope(options);
   const claudeDir = getClaudeTargetDir(isGlobal);
   const githubDir = getTargetDir(isGlobal);
@@ -919,6 +969,7 @@ function installClaude(options = {}) {
 
   const promptsFilter = makeFilter('prompts');
   const partialsFilter = makeFilter('partials');
+  const claudeTransform = (content) => adaptPathsForClaude(transformFrontmatterForClaude(content));
 
   log('\n🤖 Claude Code Installer\n', 'bright');
 
@@ -934,12 +985,27 @@ function installClaude(options = {}) {
       filter: promptsFilter,
       partialsFilter,
       renameFile: (name) => name.replace(/\.prompt\.md$/, '.md'),
-      transformContent: (content) => adaptPathsForClaude(stripCopilotFrontmatter(content)),
+      transformContent: claudeTransform,
     });
     totalChanges += getChangeCount(result, dryRun);
 
     if (!dryRun && result.written > 0) {
       success(`Installed ${result.written} command files to .claude/commands/`);
+    }
+  }
+
+  // Install Claude Code subagent overrides (e.g. Explore.md → cheap tier).
+  // Skipped when --no-agent-overrides is passed so users can keep Claude's
+  // built-in defaults.
+  if (scope.shouldInstallPrompts && !noAgentOverrides) {
+    const agentsDir = path.join(TEMPLATES_DIR, 'shared', 'agents');
+    if (fs.existsSync(agentsDir)) {
+      info('Installing subagent overrides...');
+      const result = copyDir(agentsDir, path.join(claudeDir, 'agents'), { force, dryRun });
+      totalChanges += getChangeCount(result, dryRun);
+      if (!dryRun && result.written > 0) {
+        success(`Installed ${result.written} agent override(s) to .claude/agents/`);
+      }
     }
   }
 
@@ -1285,6 +1351,7 @@ function showHelp() {
   console.log('  --skills-only       Only install skills');
   console.log('  --hooks-only        Only install hooks (PostToolUse validation scripts)');
   console.log('  --copy              Copy skills instead of symlinking to .agents/skills/');
+  console.log('  --no-agent-overrides  Skip installing .claude/agents/ overrides (Claude only)');
   console.log('  --dry-run           Show what would be installed');
 
   console.log('');
@@ -1367,6 +1434,7 @@ function parseArgs() {
     claude: flags.includes('--claude'),
     codex: flags.includes('--codex'),
     append: flags.includes('--append'),
+    noAgentOverrides: flags.includes('--no-agent-overrides'),
     target,
     stack,
     tracker,
@@ -1496,15 +1564,16 @@ function main() {
   const filters = (command === 'install' || command === 'update')
     ? resolveFilters(options)
     : { stack: 'all', tracker: 'all' };
+  const installOptions = { ...options, filters };
 
   switch (command) {
     case 'install':
       if (target === 'claude') {
-        installClaude({ ...options, filters });
+        installClaude(installOptions);
       } else if (target === 'codex') {
-        installCodex({ ...options, filters });
+        installCodex(installOptions);
       } else {
-        install({ ...options, filters });
+        install(installOptions);
       }
       break;
     case 'restore':
@@ -1515,11 +1584,11 @@ function main() {
       break;
     case 'update':
       if (target === 'claude') {
-        installClaude({ ...options, force: true, filters });
+        installClaude({ ...installOptions, force: true });
       } else if (target === 'codex') {
-        installCodex({ ...options, force: true, filters });
+        installCodex({ ...installOptions, force: true });
       } else {
-        install({ ...options, force: true, filters });
+        install({ ...installOptions, force: true });
       }
       break;
     case 'list':

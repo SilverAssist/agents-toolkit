@@ -45,6 +45,19 @@ For each phase:
 - ✅ **Document as you go** - Update docs with each phase
 - ✅ **Type safety** - Maintain full TypeScript coverage
 
+## Model-tier discipline
+
+Every shipped `.prompt.md` carries a hardcoded `model:` pin, written as a single value. The rule of thumb:
+
+- **Checklist / mechanical work → cheap tier** (`Claude Haiku 4.5`). Prompts: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (`Claude Sonnet 5`). Prompts: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+
+**Model boundaries are prompt-level only on Copilot.** VS Code Copilot honours `model:` on `.prompt.md` files but **not** on skills — skills inherit the invoking prompt's model. So a smart-tier orchestrator invoking `core-review` (or any other skill) inline runs the skill on the smart tier too. When a smart-tier orchestrator chains into another **prompt** that establishes a fresh `model:` boundary (an explicit new invocation of `quality-check.prompt.md`, `prepare-pr.prompt.md`, …), the invoked prompt's own pin wins. To force a cheap-tier delegate, invoke it as a **separate chat / fresh prompt invocation** rather than referencing it inline from the orchestrator.
+
+**To change a tier, edit the `model:` line in `.github/prompts/<name>.prompt.md`.** There is no tier config and no CLI flag. The pin **wins over the picker** — VS Code Copilot consults the picker only when the invoked prompt has no `model:` frontmatter.
+
+**Keep `model:` a single value, not a list.** A prioritized array is undocumented for prompt files and GitHub Copilot CLI rejects it outright (`model: Expected string, received array`). If the pinned model is unavailable, Copilot falls back to its own default — the toolkit does not ship fallback chains.
+
 ## Key Technologies & Frameworks
 
 - **Next.js 15.x** with App Router for modern React development

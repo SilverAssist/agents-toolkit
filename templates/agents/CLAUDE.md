@@ -61,6 +61,21 @@ Custom slash commands are available in `.claude/commands/`:
 | `/fix-issues` | Fix identified code issues |
 | `/add-tests` | Add tests for existing code |
 
+## Model-tier discipline
+
+Every shipped slash command carries a hardcoded `model:` pin (the installer rewrites the Copilot model name to the matching Claude alias). Aliases rather than pinned version IDs, so they track the current generation without maintenance. The rule of thumb:
+
+- **Checklist / mechanical work → `haiku`.** Commands: `/quality-check`, `/review-code`, `/fix-issues`, `/add-tests`, `/prepare-pr`, `/finalize-*`, `/analyze-*`, `/audit-ai-seo`, `/prepare-github-release`, `/new-wp-*`.
+- **Design / reasoning → `sonnet` (explicit, not inherited).** Commands: `/create-plan`, `/work-ticket`, `/work-github-issue`, `/create-pr`, `/create-github-pr`, `/resolve-github-reviews`.
+
+**Autonomous cycles honour each callee's own pin.** A smart-tier command that delegates to a cheap-tier skill or command lets the delegate's `model:` win for that turn — skills honour `model:` only while active, so the outer chat's model is preserved when the delegate finishes.
+
+**To change a tier, edit the `model:` line in `.claude/commands/<command>.md`.** There is no tier config and no CLI flag. The pin **wins over `/model`** — Claude Code consults `/model` only when the invoked command has no `model:` frontmatter, so editing the file is the only way to change a pinned command's tier.
+
+For subagent spawns specifically, `CLAUDE_CODE_SUBAGENT_MODEL` in your shell forces a specific model for every subagent regardless of the calling command's pin.
+
+**When to escalate `sonnet` → `opus`.** `sonnet` is the default smart tier because the 6 orchestrator commands are checklist-driven — the prompt itself supplies the structure — so a heavier model buys little. Reach for `opus` only when the task requires **long, unstructured reasoning**: novel architecture spanning many layers, cross-repository renames whose blast radius is not knowable upfront, or research where the model is genuinely inventing the plan rather than following one. Edit the command's `model:` line to `opus` before invoking it and revert afterward; `/model opus` **cannot** override a `model: sonnet` pin.
+
 ## Key Technologies & Frameworks
 
 - **Next.js 15.x** with App Router for modern React development

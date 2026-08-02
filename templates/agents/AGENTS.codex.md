@@ -48,6 +48,19 @@
 
 ---
 
+## 💰 Model-tier discipline
+
+Every shipped prompt carries a hardcoded `model:` pin. **Codex ignores it** — the field exists for Copilot and Claude Code, and Codex reads the same files. Treat it as a recommendation and set the session model with `codex --model`. The rule of thumb:
+
+- **Checklist / mechanical work → cheap tier** (pinned `Claude Haiku 4.5`). Examples: `quality-check`, `review-code`, `fix-issues`, `add-tests`, `prepare-pr`, `finalize-*`, `analyze-*`, `audit-ai-seo`, `prepare-github-release`, `new-wp-*`.
+- **Design / reasoning → smart tier** (pinned `Claude Sonnet 5`). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
+
+**Codex is session-wide, so delegates cannot switch mid-session.** Codex has no per-prompt or per-skill `model:` field; the model is set once per session by `codex --model` (or `~/.codex/config.toml`) and every prompt in that session runs on it. To run a cheap-tier delegate (`quality-check`, `core-review`, `finalize-pr`, …) from a smart-tier session, open a **separate** `codex --model <cheap>` session for that step and relay its output back to the orchestrator's session.
+
+Because Codex does not recognise `model:` as a prompt field, your editor's linter may flag it as an unknown key. That warning is **expected and non-blocking** — the field is inert on Codex, not invalid.
+
+---
+
 ## ⚙️ Code Conventions (Quick Reference)
 
 | Rule | Standard |

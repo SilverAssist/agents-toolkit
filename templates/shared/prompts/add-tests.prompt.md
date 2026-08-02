@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Add tests for a component or function
+model: Claude Haiku 4.5
 ---
 
 # Add Tests
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (writing tests against an existing pattern is mechanical). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Add tests for **{target-file}** or **{component-name}**.
 

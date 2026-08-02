@@ -1,13 +1,32 @@
 ---
 name: core-review
-description: Run a thorough, whole-repo consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Use when about to push a branch for review or to push a batch of review fixes.
+description: "Run a consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Scope follows `--budget`: the diff (`quick`), the diff plus one-hop neighbours (`medium`, the default), or the whole repository (`thorough`). Use when about to push a branch for review or to push a batch of review fixes."
+model: haiku
+argument-hint: --budget quick|medium|thorough
 ---
+
+<!--
+  Note on the `model: haiku` pin above:
+  - **Claude Code** honours it per-turn — this is why it exists (cheap-tier default so this
+    pass, which runs at least once per PR + once per review round, does not multiply the
+    cost of every autonomous cycle).
+  - **VS Code Copilot's chat-customizations-evaluations linter** flags `model:` as an
+    unsupported skill attribute (its allow-list for skills is: `argument-hint`,
+    `compatibility`, `context`, `description`, `disable-model-invocation`, `license`,
+    `metadata`, `name`, `user-invocable`). That warning in the Problems panel is
+    **expected and cosmetic** — Copilot's runtime silently ignores unknown skill
+    attributes, and skills have no independent `model:` boundary on Copilot anyway (they
+    inherit the invoking prompt's model). Suppress-by-editing is not worth the split-ship
+    complexity: keep the pin so Claude Code stays cheap.
+  - **Codex** has no per-skill `model:` mechanism at all, so this line is inert there.
+-->
 
 # Silver Assist — Core Review (Pre-Review)
 
-A **pre-emptive, whole-repo consistency review** that runs *before* a reviewer (Copilot or a
-human) ever sees the branch. It catches the classes of issues that trigger multi-round review
-loops — doc↔code drift, invalid code examples, broken links, stale indexes — so they are fixed
+A **pre-emptive consistency review** that runs *before* a reviewer (Copilot or a
+human) ever sees the branch, over a file set the caller scopes with `--budget` (diff →
+one-hop neighbours → whole repo; see the budget table below). It catches the classes of
+issues that trigger multi-round review loops — doc↔code drift, invalid code examples, broken links, stale indexes — so they are fixed
 in the first push instead of round 5.
 
 This skill is the reviewer's knowledge; the **action** (run the review, apply the findings) is
@@ -23,7 +42,7 @@ Run this review at **two integration points**:
    **before** pushing each batch of fixes, so a fix does not leave (or introduce) an adjacent
    issue that triggers yet another reviewer round.
 
-## Why whole-repo, not just the diff
+## Why look beyond the diff
 
 Copilot re-reviews **entire files**, not just your hunks — and each push opens a fresh round.
 In recent work the rounds went `18 → 2 → 3 → 1 → 9 → 3 → 1 → 1 …`: every push surfaced new,
@@ -43,18 +62,91 @@ and **Claude Code**; only the *mechanism* differs, and **subagents are a Claude-
 optimization, never a requirement**:
 
 - **GitHub Copilot** — no subagents; run the checklist **inline as a distinct pass** before
-  pushing (not folded into the edit under review), over the **whole repository — not just the
-  diff**. Copilot's built-in code review can help on the diff, but only this whole-repo pass
-  covers the drift that triggers new review rounds.
-- **Codex** — no subagents either; the same **inline whole-repo pass**, producing the same
-  prioritized findings list.
-- **Claude Code** — *optionally* delegate the pass to a read-only **subagent** (`Explore` or
-  `general-purpose`) with the brief: "Review this whole repository against the core-review
-  checklist; report findings as `severity | file:line | problem | suggested fix`; do not edit any
-  files." Relay its findings back to the main flow. Running it inline works too.
+  pushing (not folded into the edit under review). The scope of the pass is set by the
+  caller-supplied `--budget` (see the next section) — `quick` is diff + directly-touched files,
+  `medium` adds one-hop neighbours, `thorough` is the whole repo. On Copilot the effective model
+  for this pass is whatever the *invoking* prompt pins (skills don't have their own model on
+  Copilot), so the shipped `model: haiku` in this skill's frontmatter is **advisory-only on
+  Copilot** — it is honoured only when the invoking prompt is itself cheap-pinned (e.g.
+  `finalize-github-pr`, which is a cheap-tier orchestrator) or when this skill is invoked
+  standalone from a fresh chat. Smart-tier orchestrators (`create-github-pr`,
+  `resolve-github-reviews`) run their inline `core-review` pass on the
+  smart tier on Copilot; to keep the pass cheap there, invoke this skill as a **standalone
+  chat** with the picker set to a cheap model.
+- **Codex** — no subagents either; the same **inline pass**, scoped by the caller's `--budget`
+  (see below). Codex has no per-prompt or per-skill `model:` field, so the model is set
+  session-wide by `codex --model` (or `~/.codex/config.toml`). Consider `codex --model o4-mini`
+  (or your provider's cheap tier) for this pass — the checklist is deterministic.
+- **Claude Code** — the shipped skill frontmatter already pins `model: haiku` for the duration
+  of this pass, so the outer chat's smart tier is preserved. *Optionally* delegate the pass to
+  a read-only **subagent** (`Explore` or `general-purpose`).
+
+  **Resolve the file set in the caller and paste it into the brief.** The shipped `Explore`
+  override declares `tools: Read, Grep, Glob, WebFetch` — no shell, deliberately, so the
+  subagent stays read-only — which means it cannot run `git diff` to work out what changed. A
+  brief that only names a budget leaves it with no way to find the diff:
+
+  ```bash
+  # quick    → exactly this list
+  # medium   → this list plus its one-hop neighbours (importers/consumers, sibling files,
+  #            docs/indexes that name the changed symbol), resolved by the caller
+  # thorough → send no list; ask for the whole repository
+  git diff --name-only "$BASE_BRANCH"
+  ```
+
+  Then brief it: "Review these files — `<paste the resolved list>` — against the core-review
+  checklist; report findings as `severity | file:line | problem | suggested fix`; do not edit
+  any files." Relay its findings back to the main flow. Running the pass **inline** works too,
+  and needs none of this: the inline pass has the caller's own tools and resolves the diff itself.
 
 Whichever agent, the contract is identical: **read-only in, prioritized findings out**, then the
 caller fixes and re-runs until clean.
+
+## `--budget {quick,medium,thorough}` — cost-aware scoping
+
+The review pass is **cheap-tier by default on Claude Code** (the shipped `model: haiku`
+frontmatter is honoured per-turn there). On **Copilot** the pass inherits the invoking prompt's
+model (skills have no independent `model:` boundary), so "cheap by default" holds only when the
+caller is itself cheap-pinned (`finalize-github-pr`) or the skill is invoked standalone with a
+cheap picker; when invoked inline from a smart-tier orchestrator (`create-github-pr`,
+`resolve-github-reviews`), the pass runs smart. On **Codex** the pass runs whatever the session
+model is (`codex --model`). The skill still ships `model: haiku` because it runs at least once
+per PR plus once per review round, so a `sonnet`-tier default would multiply the token cost of
+every autonomous cycle wherever the pin *is* honoured. Callers pass `--budget` to scope the pass
+to the amount of drift the current step can realistically introduce:
+
+| Budget       | Scope                                                                            | When callers use it                                                             |
+| ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `quick`      | Just the diff (`git diff` vs the base branch) plus the files it directly touches | `finalize-github-pr` and `resolve-github-reviews` pre-push fix batches          |
+| `medium`     | Diff + one-hop neighbours: importers/consumers, docs & indexes that list the changed symbol or asset, sibling files in the same folder | `create-github-pr` pre-PR pass — the default when unspecified                   |
+| `thorough`   | Whole repository — every file, index, README, workflow, and cross-repo doc claim | Standalone pre-release review, or when the diff touches architecture / renaming |
+
+> **Only the GitHub-tracker orchestrators wire this skill today** (`create-github-pr`,
+> `finalize-github-pr`, `resolve-github-reviews`). The Jira-tracker variants (`create-pr`,
+> `finalize-pr`) do **not** invoke `core-review` — they run validations and push directly.
+> Standalone callers on Jira projects can invoke `core-review` manually with an explicit
+> `--budget`; the callers table above lists only the actual auto-wired invocations.
+
+**Cheap tier is safe at every budget.** `thorough` does not automatically switch to the smart
+tier — it just widens the file set. Callers who genuinely need reasoning (architecture reviews,
+renames that span layers) can pass `--budget thorough` **and** escalate the model. Escalation
+mechanics are platform-specific:
+
+- **Copilot** — skills don't have a `model:` boundary, so the invoking prompt's pin (or the
+  picker choice when this skill is invoked standalone from a fresh chat) governs. Set the
+  picker to a smart model before a one-off standalone run.
+- **Codex** — no per-skill pin either; launch the smart-tier session with
+  `codex --model gpt-5-codex` (or your provider's smart tier).
+- **Claude Code** — the skill's own `model: haiku` frontmatter locks the tier for the pass
+  **even on a standalone invocation**: `/model sonnet` in the chat does **not** override a
+  `SKILL.md model:` pin. To escalate, edit the `model:` line in the installed
+  `.agents/skills/core-review/SKILL.md` before running and revert afterward.
+
+Do **not** hard-code a smart-tier override in the calling prompt: the caller decides, not this
+skill.
+
+The default when `--budget` is omitted is `medium`. `--budget quick` still runs the full
+checklist below — it just narrows the file set the checklist is applied to.
 
 ## The review checklist
 
@@ -172,14 +264,20 @@ term and each synonym, then reconcile every hit.
 grep -rn "subagent" . --include="*.md"
 ```
 
-### P2 — Keep the *mechanism* branch-specific, never the *scope/contract*
+### P2 — Keep the *mechanism* branch-specific, never the *contract*
 
 When guidance branches per agent / platform / environment, only the **mechanism** may differ; the
-**scope or contract** must stay identical across every branch.
+**contract** (what the caller passes in and what the pass returns out) must stay identical across
+every branch. **Scope is caller-selected via `--budget`, not per-agent** — the mechanism chooses
+*how* the file set is walked, never *which* file set is walked.
 
 ```text
-❌ "Copilot runs it inline over the changed files and their neighbors."   (silently narrowed scope)
-✅ "Copilot runs it inline over the whole repository."                     (mechanism differs, scope constant)
+❌ "Copilot runs it inline over only the changed file."                  (silently narrows scope
+                                                                            beyond `--budget`)
+✅ "Copilot runs it inline over the file set the caller's `--budget`
+   selected."                                                              (mechanism differs,
+                                                                            scope-selection contract
+                                                                            constant)
 ```
 
 ### P3 — "We updated X" must match the diff
@@ -233,9 +331,11 @@ read-only review pass itself — the pass only inspects and reports.
 
 1. The caller applies every `critical` and `warning`; applies `nit`s unless there is a reason not to.
 2. The caller re-runs the project's checks (`lint`, `type-check`, `tsc --noEmit`, `test`, `build` — whichever exist).
-3. The caller re-runs the review over the whole repo. **Loop until the pass reports zero findings
-   *within the change's blast radius***, *then* push. Pre-existing issues outside that scope are
-   noted (see "What NOT to flag" below) but do not block convergence.
+3. The caller re-runs the review **at the same `--budget`** the initial pass used. **Loop until
+   the pass reports zero findings *within the change's blast radius***, *then* push. Pre-existing
+   issues outside that scope are noted (see "What NOT to flag" below) but do not block convergence.
+   Escalate the `--budget` (e.g. `quick` → `medium`) only when a fix ripples into files the initial
+   scope did not cover.
 
 Because these repos guide agents, an inaccurate doc induces downstream errors — so it is worth
 iterating N times to reach an optimal, consistent result rather than stopping at the first

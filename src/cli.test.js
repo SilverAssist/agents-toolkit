@@ -736,3 +736,260 @@ test('core-review skill is included for --tracker github, excluded for --tracker
   assert.equal(jira.status, 0, jira.stderr);
   assert.doesNotMatch(jira.stdout, /core-review[\\/]SKILL\.md/);
 });
+
+// ─── #39 M3: Copilot → Claude model: frontmatter remap ────────────────────────
+
+test('claude install remaps cheap-tier Copilot model to `haiku` alias', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const file = path.join(tempDir, '.claude', 'commands', 'quality-check.md');
+  const content = fs.readFileSync(file, 'utf-8');
+
+  assert.match(content, /^---\nmodel: haiku\n---\n\n/, 'expected haiku alias frontmatter');
+  assert.doesNotMatch(content, /Claude Haiku 4\.5 \(copilot\)/, 'Copilot vendor name must not leak into Claude commands');
+  assert.doesNotMatch(content, /GPT-5 mini \(copilot\)/, 'GPT-5 fallback must be dropped for Claude');
+  assert.doesNotMatch(content, /^agent:/m, 'Copilot-only `agent:` field must be stripped');
+  assert.doesNotMatch(content, /^tools:/m, 'Copilot-only `tools:` field must be stripped');
+});
+
+test('claude install remaps smart-tier Copilot model to `sonnet` alias', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const file = path.join(tempDir, '.claude', 'commands', 'create-plan.md');
+  const content = fs.readFileSync(file, 'utf-8');
+
+  assert.match(content, /^---\nmodel: sonnet\n---\n\n/, 'expected sonnet alias frontmatter');
+  assert.doesNotMatch(content, /Claude Sonnet 5 \(copilot\)/, 'Copilot vendor name must not leak into Claude commands');
+});
+
+test('every shipped prompt pins `model:` as a scalar, never a list', () => {
+  // A prioritized array is undocumented for .prompt.md files and GitHub Copilot
+  // CLI rejects it outright ("model: Expected string, received array"). If the
+  // array form silently loses, the prompt falls back to the picker and the whole
+  // cost optimization becomes a no-op — so guard the scalar form here.
+  const dir = path.join(process.cwd(), 'templates', 'shared', 'prompts');
+  const prompts = fs.readdirSync(dir).filter((f) => f.endsWith('.prompt.md'));
+  assert.ok(prompts.length > 0, 'expected shipped prompts');
+
+  for (const name of prompts) {
+    const content = fs.readFileSync(path.join(dir, name), 'utf-8');
+    assert.match(content, /^model: \S[^\n]*$/m, `${name} must carry a scalar model: pin`);
+    assert.doesNotMatch(content, /^model:[ \t]*\n[ \t]*-/m, `${name} must not use the array model: form`);
+  }
+});
+
+test('copilot install ships the prompt pin verbatim', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  // No transform runs on the Copilot path any more — the installed file must be
+  // byte-identical to the shipped template.
+  const installed = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md'), 'utf-8');
+  const shipped = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', 'quality-check.prompt.md'), 'utf-8');
+  assert.equal(installed, shipped, 'copilot prompts must install byte-identical to the template');
+  assert.match(installed, /^model: Claude Haiku 4\.5$/m, 'cheap tier pin must survive');
+});
+
+test('claude install preserves the > **Model:** blockquote body text', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const content = fs.readFileSync(path.join(tempDir, '.claude', 'commands', 'quality-check.md'), 'utf-8');
+  assert.match(content, /> \*\*Model:\*\* Cheap tier/, 'body-level model note must survive the transform');
+});
+
+// ─── #39: agent overrides + --budget ─────────────────────────────────────────
+
+test('help shows --no-agent-overrides and no model-selection flags', () => {
+  const { status, stdout } = runCli(['help'], process.cwd());
+  assert.equal(status, 0);
+  assert.match(stdout, /--no-agent-overrides/);
+  // Model pins are hardcoded in the templates; there is no CLI surface for them.
+  assert.doesNotMatch(stdout, /--model-pins/);
+});
+
+test('claude install copies Explore subagent override by default', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const explorePath = path.join(tempDir, '.claude', 'agents', 'Explore.md');
+  assert.ok(fs.existsSync(explorePath), 'Explore.md must exist at .claude/agents/Explore.md');
+  const content = fs.readFileSync(explorePath, 'utf-8');
+  assert.match(content, /^---\n[\s\S]*?name: Explore/, 'Explore.md must keep its Claude subagent frontmatter');
+  assert.match(content, /model: haiku/, 'Explore override must pin cheap tier');
+});
+
+test('--no-agent-overrides skips .claude/agents/ install', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only', '--no-agent-overrides'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentsDir = path.join(tempDir, '.claude', 'agents');
+  assert.equal(fs.existsSync(agentsDir), false, '.claude/agents/ must not be created with --no-agent-overrides');
+});
+
+test('core-review skill ships model: haiku and --budget hint', () => {
+  const skillPath = path.join(process.cwd(), 'templates', 'shared', 'skills', 'core-review', 'SKILL.md');
+  const content = fs.readFileSync(skillPath, 'utf-8');
+  assert.match(content, /^model: haiku$/m, 'core-review must pin the cheap tier for Claude');
+  assert.match(content, /argument-hint: --budget quick\|medium\|thorough/, 'core-review must advertise the --budget argument');
+  assert.match(content, /## `--budget \{quick,medium,thorough\}`/, 'core-review must document the budget scoping');
+});
+
+test('orchestrator prompts pass explicit --budget to core-review', () => {
+  const preview = (name) => fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
+  assert.match(preview('create-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget medium`/, 'create-github-pr must pass --budget medium');
+  assert.match(preview('finalize-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'finalize-github-pr must pass --budget quick');
+  assert.match(preview('resolve-github-reviews.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'resolve-github-reviews must pass --budget quick');
+});
+
+// ─── Planning-doc removal: the shipped shell block must not eat other docs ────
+
+/**
+ * Extract the first fenced bash block that contains the planning-doc removal
+ * logic from a shipped prompt.
+ * @param {string} promptName - File name under templates/shared/prompts
+ * @returns {string} The bash source
+ */
+function planDocBlock(promptName) {
+  const content = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', promptName), 'utf-8');
+  // Scan each fenced block separately — a single regex spanning the file would
+  // glue several blocks (and the prose between them) into one script.
+  const blocks = [...content.matchAll(/```bash\n((?:(?!```)[\s\S])*)```/g)].map((m) => m[1]);
+  const block = blocks.find((b) => b.includes('agents-toolkit:planning-doc') && b.includes('git rm'));
+  assert.ok(block, `${promptName} must ship a bash block that removes marked planning docs`);
+  return block;
+}
+
+const PLAN_MARKER = '<!-- agents-toolkit:planning-doc issue=1 -->\n';
+
+const bashAvailable = spawnSync('bash', ['-c', 'command -v git'], { encoding: 'utf-8' }).status === 0;
+
+test('plan-doc generators instruct writing the removal marker', () => {
+  // If a generator stops emitting the marker the removal step silently becomes a
+  // no-op, so the two sides must be asserted together.
+  for (const name of ['work-ticket.prompt.md', 'work-github-issue.prompt.md', 'create-plan.prompt.md']) {
+    const content = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
+    assert.match(content, /<!-- agents-toolkit:planning-doc /, `${name} must tell the agent to write the planning-doc marker`);
+    assert.match(content, /first line/i, `${name} must state that the marker goes on the first line`);
+  }
+});
+
+test('create-plan template starts with the marker, not a separator', () => {
+  // Presence is not enough: the removal step reads only `head -n 1`, so a template
+  // that shows `---` (or anything else) above the marker produces plans that are
+  // never cleaned up — the generator and the remover would silently disagree.
+  const content = fs.readFileSync(
+    path.join(process.cwd(), 'templates', 'shared', 'prompts', 'create-plan.prompt.md'),
+    'utf-8',
+  );
+  const blocks = [...content.matchAll(/```markdown\n((?:(?!```)[\s\S])*)```/g)].map((m) => m[1]);
+  const template = blocks.find((b) => b.includes('# {Feature Name} Implementation Plan'));
+  assert.ok(template, 'create-plan must ship the plan template in a fenced markdown block');
+  assert.match(
+    template.split('\n')[0],
+    /^<!-- agents-toolkit:planning-doc /,
+    'the first line of the plan template must be the removal marker',
+  );
+});
+
+/**
+ * Initialise a repo with a `main` baseline and check out a feature branch.
+ * @param {string} repo - Repository directory
+ * @param {(...args: string[]) => unknown} git - git runner bound to `repo`
+ * @returns {void}
+ */
+function initRepoOnFeatureBranch(repo, git) {
+  git('init', '-q', '.');
+  git('config', 'user.email', 'test@example.com');
+  git('config', 'user.name', 'Test');
+  fs.mkdirSync(path.join(repo, 'docs', 'nested'), { recursive: true });
+  // Marked, but committed BEFORE the branch — must survive on the --diff-filter=A rule.
+  fs.writeFileSync(path.join(repo, 'docs', 'pre-existing-plan.md'), `${PLAN_MARKER}old\n`);
+  git('add', '-A');
+  git('commit', '-qm', 'base');
+  git('branch', '-M', 'main');
+  git('checkout', '-qb', 'feat');
+}
+
+for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) {
+  test(`${promptName} removes only marked planning docs`, { skip: !bashAvailable && 'bash/git unavailable' }, (t) => {
+    const repo = createTempProject(t);
+    const git = (...args) => spawnSync('git', args, { cwd: repo, encoding: 'utf-8' });
+    initRepoOnFeatureBranch(repo, git);
+
+    // Unmarked decoys. `rollout-plan.md` is the important one: it is a perfectly
+    // ordinary deliverable that ends in `-plan.md`, so a filename-suffix rule
+    // deletes it. "explanation" and "planet" contain the substring "plan" and
+    // would fall to a `*plan*.md` glob.
+    for (const name of ['explanation.md', 'planet.md', 'rollout-plan.md']) {
+      fs.writeFileSync(path.join(repo, 'docs', name), 'x\n');
+    }
+    // Marked plans. The space in one path word-splits under xargs and would
+    // abort the whole `git rm`, leaving every plan doc behind.
+    for (const name of ['auth-plan.md', 'my feature-plan.md']) {
+      fs.writeFileSync(path.join(repo, 'docs', name), `${PLAN_MARKER}x\n`);
+    }
+    fs.writeFileSync(path.join(repo, 'docs', 'nested', 'deep-plan.md'), `${PLAN_MARKER}x\n`);
+    // The marker, not the extension, is what identifies a plan.
+    fs.writeFileSync(path.join(repo, 'docs', 'design.md'), `${PLAN_MARKER}x\n`);
+    // A legitimate doc that merely *documents* the convention. The marker is
+    // contractually the first line, so a whole-file grep would delete this.
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'conventions.md'),
+      `# Conventions\n\nPlanning docs carry ${PLAN_MARKER.trim()} on line 1.\n`,
+    );
+    // First line, but not the marker: a substring match would delete this.
+    fs.writeFileSync(path.join(repo, 'docs', 'heading.md'), '# agents-toolkit:planning-doc notes\n\nbody\n');
+    // A Jira-style id contains a hyphen — the marker pattern must still accept it.
+    fs.writeFileSync(
+      path.join(repo, 'docs', 'jira-plan.md'),
+      '<!-- agents-toolkit:planning-doc ticket=WEB-1111 -->\n\nbody\n',
+    );
+    git('add', '-A');
+    git('commit', '-qm', 'add docs');
+
+    // The block references $BASE_BRANCH, set by an earlier step in the prompt.
+    // create-pr's block also commits, which needs the identity configured above.
+    const script = `set -e\nBASE_BRANCH=main\n${planDocBlock(promptName)}`;
+    const run = spawnSync('bash', ['-c', script], { cwd: repo, encoding: 'utf-8' });
+    assert.equal(run.status, 0, `block failed: ${run.stderr}`);
+
+    const exists = (...p) => fs.existsSync(path.join(repo, 'docs', ...p));
+    assert.ok(exists('rollout-plan.md'), 'an unmarked deliverable ending in -plan.md must survive');
+    assert.ok(exists('explanation.md'), 'explanation.md must survive — it only contains the substring "plan"');
+    assert.ok(exists('planet.md'), 'planet.md must survive');
+    assert.ok(exists('pre-existing-plan.md'), 'a marked plan doc that predates the branch must survive');
+    assert.ok(!exists('auth-plan.md'), 'the branch-added marked plan doc must be removed');
+    assert.ok(!exists('my feature-plan.md'), 'a marked plan doc whose path contains a space must be removed');
+    assert.ok(!exists('nested', 'deep-plan.md'), 'a nested marked plan doc must be removed');
+    assert.ok(!exists('design.md'), 'a marked doc is removed regardless of its filename');
+    assert.ok(exists('conventions.md'), 'a doc that only mentions the marker below line 1 must survive');
+    assert.ok(exists('heading.md'), 'a first-line heading that merely names the token must survive');
+    assert.ok(!exists('jira-plan.md'), 'a marker carrying a hyphenated Jira id must still be removed');
+  });
+
+  test(`${promptName} removes nothing when no doc carries the marker`, { skip: !bashAvailable && 'bash/git unavailable' }, (t) => {
+    const repo = createTempProject(t);
+    const git = (...args) => spawnSync('git', args, { cwd: repo, encoding: 'utf-8' });
+    initRepoOnFeatureBranch(repo, git);
+
+    // A branch whose plan was written without the marker. Leaving the plan behind
+    // is the deliberate bias: deleting a deliverable is not recoverable from the PR.
+    fs.writeFileSync(path.join(repo, 'docs', 'unmarked-plan.md'), 'x\n');
+    git('add', '-A');
+    git('commit', '-qm', 'add docs');
+
+    const script = `set -e\nBASE_BRANCH=main\n${planDocBlock(promptName)}`;
+    const run = spawnSync('bash', ['-c', script], { cwd: repo, encoding: 'utf-8' });
+    assert.equal(run.status, 0, `block must succeed when nothing matches: ${run.stderr}`);
+    assert.ok(fs.existsSync(path.join(repo, 'docs', 'unmarked-plan.md')), 'an unmarked plan must be left in place, not deleted');
+  });
+}

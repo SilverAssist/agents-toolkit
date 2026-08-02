@@ -5,9 +5,12 @@ tools:
   - run_in_terminal
   - read_file
   - replace_string_in_file
+model: Claude Haiku 4.5
 ---
 
 # Quality Check
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (runs the tools and reports). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Run the full quality check suite on the current Silver Assist plugin.
 

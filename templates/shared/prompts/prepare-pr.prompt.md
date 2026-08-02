@@ -1,9 +1,12 @@
 ---
 agent: agent
 description: Prepare code for a pull request by running all validations
+model: Claude Haiku 4.5
 ---
 
 # Prepare for Pull Request
+
+> **Model:** Cheap tier — `Claude Haiku 4.5` on Copilot, `haiku` on Claude Code (runs the checks and reports). To change it, edit the `model:` line in this file's frontmatter; the pin wins over the Copilot picker and Claude `/model`. Codex ignores `model:` — set the session model with `codex --model`.
 
 Prepare the current branch for a pull request by running all validations.
 
