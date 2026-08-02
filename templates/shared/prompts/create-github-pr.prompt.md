@@ -136,7 +136,7 @@ differs (subagents are a Claude-Code-only optimization, not a requirement):
   add its one-hop neighbours (importers/consumers, sibling files, docs/indexes that list the
   changed symbol or asset). Then brief it: "review these files — `<list>` — against the
   core-review checklist; report `severity | file:line | problem | suggested fix`; do not edit
-  Passing an explicit list is what scopes the pass to `--budget medium`.
+  files." Passing an explicit list is what scopes the pass to `--budget medium`.
 
 Apply every `critical` and `warning` finding — including any stale reference exposed by removing
 the planning doc — re-run the checks from Step 4, then **commit the fixes and the doc removal and

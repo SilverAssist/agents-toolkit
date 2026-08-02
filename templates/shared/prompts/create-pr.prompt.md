@@ -69,7 +69,7 @@ Fix any issues before proceeding. If a validation command fails and the fix is n
 The planning document created by `work-ticket` or `create-plan` has served its purpose. Delete it now so it stays out of the base branch after merge.
 
 1. Find `docs/*.md` files **added on this branch** vs `$BASE_BRANCH`.
-2. Keep only files whose **first line** is `<!-- agents-toolkit:planning-doc -->`.
+2. Keep only files whose **first line** matches `<!-- agents-toolkit:planning-doc … -->` (bare token or with optional metadata like `ticket={ticket-id}`).
 3. `git rm` matching files and commit. If none match, skip.
 4. Stage and commit any remaining working-tree changes, then verify the tree is clean.
 

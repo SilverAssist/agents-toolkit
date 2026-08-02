@@ -1,6 +1,6 @@
 ---
 name: core-review
-description: Run a consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Scope follows `--budget`: the diff (`quick`), the diff plus one-hop neighbours (`medium`, the default), or the whole repository (`thorough`). Use when about to push a branch for review or to push a batch of review fixes.
+description: "Run a consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline on Copilot/Codex; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Scope follows `--budget`: the diff (`quick`), the diff plus one-hop neighbours (`medium`, the default), or the whole repository (`thorough`). Use when about to push a branch for review or to push a batch of review fixes."
 model: haiku
 argument-hint: --budget quick|medium|thorough
 ---
