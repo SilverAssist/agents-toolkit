@@ -109,6 +109,7 @@ Type `/` in the chat to open the command palette and select the desired command:
 /analyze-ticket
 /work-ticket
 /create-pr
+# … 19 total — type / to open the full command palette
 ```
 
 ### Codex

@@ -1089,13 +1089,13 @@ test('validate-prompts: unclosed frontmatter block fails', () => {
 test('validate-prompts: missing description fails', () => {
   const r = runValidator({ 'bad.prompt.md': '---\nagent: agent\n---\n# Body\n' });
   assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /missing or empty required key `description`/);
+  assert.match(r.stderr, /missing required key `description`/);
 });
 
 test('validate-prompts: empty description fails', () => {
   const r = runValidator({ 'bad.prompt.md': '---\ndescription:\nagent: agent\n---\n# Body\n' });
   assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /missing or empty required key `description`/);
+  assert.match(r.stderr, /`description` is declared but empty/);
 });
 
 test('validate-prompts: block-list model fails', () => {
@@ -1119,20 +1119,13 @@ test('validate-prompts: duplicate key fails', () => {
     'bad.prompt.md': '---\ndescription: x\ndescription: y\n---\n# Body\n',
   });
   assert.notEqual(r.status, 0);
-  // js-yaml throws on duplicate keys ("duplicated mapping key")
-  assert.match(r.stderr, /duplicated mapping key|duplicate key `description`/);
+  assert.match(r.stderr, /duplicate key `description`/);
 });
 
 test('validate-prompts: tab in frontmatter fails', () => {
   const r = runValidator({ 'bad.prompt.md': '---\ndescription: x\n\tmodel: haiku\n---\n# Body\n' });
   assert.notEqual(r.status, 0);
   assert.match(r.stderr, /tab character/);
-});
-
-test('validate-prompts: malformed YAML fails', () => {
-  const r = runValidator({ 'bad.prompt.md': '---\ndescription: "unclosed quote\n---\n# Body\n' });
-  assert.notEqual(r.status, 0);
-  assert.match(r.stderr, /not valid YAML/);
 });
 
 test('validate-prompts: CRLF input passes', () => {

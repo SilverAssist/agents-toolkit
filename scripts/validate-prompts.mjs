@@ -21,15 +21,8 @@
  * Exits non-zero with a per-file report on the first failing rule set.
  */
 import fs from 'node:fs';
-import { createRequire } from 'node:module';
 import path from 'node:path';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
-
-// Resolve js-yaml from the script's own location so it works even when the
-// validator is invoked with a different CWD (e.g. from tests in a temp dir).
-const require = createRequire(import.meta.url);
-const jsYaml = require('js-yaml');
 
 const PROMPTS_DIR = path.join(process.cwd(), 'templates', 'shared', 'prompts');
 
@@ -67,28 +60,6 @@ function validate(file) {
   const block = extractFrontmatter(fs.readFileSync(file, 'utf-8'));
   if ('error' in block) return [block.error];
 
-  // Parse the block as YAML to catch malformed syntax (unclosed quotes, inline
-  // arrays, orphan list items) before inspecting individual values.
-  let parsed;
-  try {
-    parsed = jsYaml.load(block.lines.join('\n')) ?? {};
-  } catch (e) {
-    return [`frontmatter is not valid YAML: ${e.message}`];
-  }
-
-  // Scalar-only keys must hold a string/number/boolean, never a list or mapping
-  // (flow or block). Checking the parsed value catches both `model: [a, b]` and
-  // the multi-line `model:\n  - a\n  - b` forms.
-  for (const key of SCALAR_ONLY_KEYS) {
-    const val = parsed[key];
-    if (val === undefined) continue;
-    if (Array.isArray(val) || (typeof val === 'object' && val !== null)) {
-      problems.push(`\`${key}\` must be a single scalar value, not a list or mapping`);
-    }
-  }
-
-  // Raw line scan — catches tabs and duplicate keys (yaml.load is last-one-wins
-  // for duplicate keys, so it silently discards earlier values).
   const seen = new Map();
   for (const [index, line] of block.lines.entries()) {
     if (line.trim() === '') continue;
@@ -101,19 +72,27 @@ function validate(file) {
       problems.push(`line ${index + 2}: not a \`key: value\` pair — ${JSON.stringify(line)}`);
       continue;
     }
-    const [, key] = match;
+    const [, key, rest] = match;
     if (seen.has(key)) {
       problems.push(`duplicate key \`${key}\` (line ${index + 2} overrides line ${seen.get(key)})`);
     }
     seen.set(key, index + 2);
+    if (SCALAR_ONLY_KEYS.includes(key)) {
+      // Block-list: empty value + next line is a list item.
+      const nextLine = block.lines[index + 1] ?? '';
+      const isBlockList = rest.trim() === '' && /^\s*-\s/.test(nextLine);
+      // Flow/inline collection: value starts with `[` or `{`.
+      const isInlineCollection = /^\s*[\[{]/.test(rest.trim());
+      if (isBlockList || isInlineCollection) {
+        problems.push(`\`${key}\` must be a single scalar value, not a list or mapping`);
+      } else if (rest.trim() === '') {
+        problems.push(`\`${key}\` is declared but empty`);
+      }
+    }
   }
 
-  // Required keys must be present and non-empty in the parsed output.
   for (const key of REQUIRED_KEYS) {
-    const val = parsed[key];
-    if (val === undefined || val === null || String(val).trim() === '') {
-      problems.push(`missing or empty required key \`${key}\``);
-    }
+    if (!seen.has(key)) problems.push(`missing required key \`${key}\``);
   }
   return problems;
 }

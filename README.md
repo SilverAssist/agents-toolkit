@@ -132,6 +132,7 @@ Type `/` in the chat to see all available slash commands:
 /work-github-issue
 /create-github-pr
 /finalize-github-pr
+# … 19 total — type / in Claude Code chat to see the full list
 ```
 
 ### Codex
