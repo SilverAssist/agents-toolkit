@@ -51,7 +51,7 @@ prompts/
 
 ## Model tiers
 
-Every shipped prompt carries an explicit `model:` pin so a fresh install runs cost-optimally with no configuration at all. The pins are **hardcoded in the files** — there is no tier config, no CLI flag, and nothing to resolve at install time. **To change a tier, edit the `model:` line in the installed file.** That is the whole mechanism, and it is deliberate: a model picker spanning three agents whose model catalogues move independently would cost more to maintain than it saves.
+Every shipped prompt carries an explicit `model:` pin — on Copilot and Claude Code a fresh install therefore runs cost-optimally with no configuration at all. On Codex the field is ignored; select the session tier with `codex --model` instead. The pins are **hardcoded in the files** — there is no tier config, no CLI flag, and nothing to resolve at install time. **To change a tier on Copilot or Claude Code, edit the `model:` line in the installed file.** That is the whole mechanism, and it is deliberate: a model picker spanning three agents whose model catalogues move independently would cost more to maintain than it saves.
 
 | Tier | Copilot / Codex | Claude Code | Used for |
 | --- | --- | --- | --- |

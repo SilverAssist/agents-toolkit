@@ -71,7 +71,7 @@ vs `$BASE_BRANCH`, and it **carries the planning-doc marker** that `work-ticket`
 write as the first line:
 
 ```markdown
-<!-- agents-toolkit:planning-doc ticket={ticket-id} -->
+<!-- agents-toolkit:planning-doc -->
 ```
 
 The marker — not the filename — is what identifies a temporary plan. Filename patterns cannot:

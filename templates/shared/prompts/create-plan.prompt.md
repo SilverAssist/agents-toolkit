@@ -34,7 +34,7 @@ Save to: `docs/{feature-name}-plan.md`
 **The first line must be the removal marker**, exactly:
 
 ```markdown
-<!-- agents-toolkit:planning-doc ticket={ticket-id} -->
+<!-- agents-toolkit:planning-doc -->
 ```
 
 `create-pr` / `create-github-pr` delete the plan at PR time by grepping for this marker, and
@@ -47,7 +47,7 @@ with no separator, blank line, or frontmatter above it. The removal step reads o
 so a plan whose first line is anything else is never cleaned up:
 
 ```markdown
-<!-- agents-toolkit:planning-doc ticket={ticket-id} -->
+<!-- agents-toolkit:planning-doc -->
 
 # {Feature Name} Implementation Plan
 
