@@ -11,6 +11,7 @@ model: Claude Sonnet 5
 Create a detailed implementation plan for: **{feature-description}**
 
 ## Prerequisites
+
 - Reference: `.github/prompts/_partials/documentation.md` for plan template
 - Reference: `AGENTS.md` for agent workflow conventions
 - Reference: `.github/copilot-instructions.md` (if present) for additional project conventions
@@ -18,11 +19,13 @@ Create a detailed implementation plan for: **{feature-description}**
 ## Steps
 
 ### 1. Analyze Request
+
 - Break down the feature into components
 - Identify affected areas of the codebase
 - Search for related implementations
 
 ### 2. Research Current State
+
 - Read relevant source files
 - Understand current architecture
 - Document existing patterns
@@ -139,4 +142,5 @@ git commit -m "{ticket-id}: Add {feature-name} implementation plan"
 ```
 
 ## Output
+
 The planning document at `docs/{feature-name}-plan.md` ready for implementation.

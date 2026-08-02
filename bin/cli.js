@@ -1622,19 +1622,10 @@ function resolveFilters(options = {}) {
  */
 function main() {
   const { command, options } = parseArgs();
-<<<<<<< HEAD
-  const target = (command === 'install' || command === 'update')
-    ? resolveInstallTarget(options)
-    : null;
-  const filters = (command === 'install' || command === 'update')
-    ? resolveFilters(options)
-    : { stack: 'all', tracker: 'all' };
-  const installOptions = { ...options, filters };
-=======
   const target = command === 'install' || command === 'update' ? resolveInstallTarget(options) : null;
   const filters =
     command === 'install' || command === 'update' ? resolveFilters(options) : { stack: 'all', tracker: 'all' };
->>>>>>> c8b39b8 (build: Add husky, lint-staged, prettier and markdownlint quality gate)
+  const installOptions = { ...options, filters };
 
   switch (command) {
     case 'install':

@@ -60,6 +60,7 @@ Every shipped prompt carries a hardcoded `model:` pin. The rule of thumb:
 - **Design / reasoning → smart tier** (`Claude Sonnet 5`, `sonnet` on Claude Code). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
 
 **Autonomous cycles — delegate model behaviour is platform-specific.**
+
 - **Claude Code**: each delegate has its own `model:` boundary (skills via `SKILL.md`, slash-commands via `.md` frontmatter), so a cheap-tier delegate invoked from a smart-tier orchestrator (`create-github-pr` → `core-review`) runs on the delegate's own pin for that turn. Do **not** force the orchestrator's tier onto delegated steps.
 - **Copilot**: only `.prompt.md` files establish a `model:` boundary; skills inherit the invoking prompt's model. An inline `core-review` (or any skill) from a smart-tier orchestrator runs on the smart tier too — to keep it cheap, invoke it as a standalone chat (fresh prompt invocation) rather than inline.
 - **Codex**: `model:` is ignored; the session runs one model set by `codex --model` (or `~/.codex/config.toml`). To run a cheap-tier delegate, open a separate `codex --model <cheap>` session for that step.

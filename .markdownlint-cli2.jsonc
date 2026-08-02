@@ -35,5 +35,7 @@
     // contributor running --fix.
     "MD029": false,
     "MD007": false,
+    // <details>/<summary> is used in prompt files as collapsible rationale blocks.
+    "MD033": { "allowed_elements": ["details", "summary"] },
   },
 }

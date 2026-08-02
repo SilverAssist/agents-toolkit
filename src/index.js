@@ -100,15 +100,13 @@ export const CLAUDE_COMMANDS = [
 ];
 
 export const CLAUDE_FILES = {
-  instructions: "CLAUDE.md",
-  commandsDir: ".claude/commands",
-  skillsDir: ".claude/skills",
-  agentsDir: ".claude/agents",
+  instructions: 'CLAUDE.md',
+  commandsDir: '.claude/commands',
+  skillsDir: '.claude/skills',
+  agentsDir: '.claude/agents',
 };
 
 // Claude Code subagent overrides shipped by the toolkit (project-local
 // `.claude/agents/*.md`). Each file re-defines a built-in subagent — for now
 // only `Explore` (cheap-tier default). Suppress with --no-agent-overrides.
-export const AGENTS = [
-  "Explore",
-];
+export const AGENTS = ['Explore'];
