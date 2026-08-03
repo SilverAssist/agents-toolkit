@@ -32,7 +32,17 @@ export function readLockfile(cwd = process.cwd()): Lockfile | null {
   const lockPath = path.join(cwd, LOCKFILE_NAME);
   if (!fs.existsSync(lockPath)) return null;
   try {
-    return JSON.parse(fs.readFileSync(lockPath, 'utf-8')) as Lockfile;
+    const raw: unknown = JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
+    // Reject partial/damaged lockfiles that would throw downstream in restore/status.
+    if (
+      typeof raw !== 'object' ||
+      raw === null ||
+      typeof (raw as Record<string, unknown>)['skills'] !== 'object' ||
+      (raw as Record<string, unknown>)['skills'] === null
+    ) {
+      return null;
+    }
+    return raw as Lockfile;
   } catch {
     return null;
   }
