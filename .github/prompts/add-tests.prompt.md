@@ -8,6 +8,7 @@ description: Add tests for a CLI command, flag, or behavior in agents-toolkit
 Add tests for **{target-behavior}** in `src/cli.test.js`.
 
 ## Prerequisites
+
 - Reference: `.agents/skills/testing-patterns/SKILL.md`
 
 ## Steps
@@ -15,6 +16,7 @@ Add tests for **{target-behavior}** in `src/cli.test.js`.
 ### 1. Analyze Target
 
 Read the relevant code in `bin/cli.js` to understand:
+
 - What command/flag/behavior to test
 - What filesystem changes it produces
 - What stdout/stderr output it emits
@@ -41,6 +43,7 @@ test('{description of what it does}', (t) => {
 ```
 
 For filesystem assertions:
+
 ```js
 test('{description}', (t) => {
   const tempDir = createTempProject(t);
@@ -55,6 +58,7 @@ test('{description}', (t) => {
 ```
 
 For symlink assertions (always guard with `symlinkSupported()`):
+
 ```js
 test('{description}', (t) => {
   const tempDir = createTempProject(t);
@@ -72,6 +76,7 @@ test('{description}', (t) => {
 ```
 
 For global installs (use `HOME` override):
+
 ```js
 test('{description}', (t) => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-toolkit-global-'));

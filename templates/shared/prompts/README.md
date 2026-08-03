@@ -12,7 +12,7 @@ This package provides a collection of modular, reusable prompts for common devel
 
 ## Structure
 
-```
+```text
 prompts/
 ├── README.md                    # This documentation
 ├── _partials/                   # Shared prompt fragments
@@ -79,7 +79,7 @@ Because the pin is a single scalar, an unavailable model falls back to the agent
 
 ## Workflow Stages
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  1. Analyze     │────▶│  2. Plan        │────▶│  3. Work        │
 │  analyze-ticket │     │  create-plan    │     │  work-ticket    │
@@ -105,10 +105,11 @@ Because the pin is a single scalar, an unavailable model falls back to the agent
 
 Type `/` in the chat to open the command palette and select the desired command:
 
-```
+```text
 /analyze-ticket
 /work-ticket
 /create-pr
+# … 19 total — type / to open the full command palette
 ```
 
 ### Codex

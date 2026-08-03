@@ -21,6 +21,7 @@ Start working on GitHub issue **#{issue-number}** in repository **{owner}/{repo}
 ### 1. Read Complete Issue
 
 Fetch issue **#{issue-number}** with all details:
+
 - Title and description
 - Labels and priority
 - Current state
@@ -30,6 +31,7 @@ Fetch issue **#{issue-number}** with all details:
 ### 2. Analyze Project Context
 
 Read project conventions:
+
 - `AGENTS.md` — Agent instructions (Copilot/Codex)
 - `CLAUDE.md` — Agent instructions (Claude Code)
 - `copilot-instructions.md` or `.github/copilot-instructions.md` — Project guidelines
@@ -39,6 +41,7 @@ Read project conventions:
 ### 3. Analyze Technical Impact
 
 Search codebase for:
+
 - Related components
 - Existing patterns
 - Files to modify
@@ -60,6 +63,7 @@ marker, not the filename, is what identifies the file as temporary, so a legitim
 like `docs/rollout-plan.md` is never at risk.
 
 Then the body:
+
 - Problem statement
 - Current architecture
 - Proposed changes
@@ -69,6 +73,7 @@ Then the body:
 ### 5. Create Working Branch
 
 From latest `main`:
+
 ```bash
 git checkout main
 git pull origin main
@@ -87,6 +92,7 @@ git commit -m "docs: Add implementation plan for #{issue-number}"
 ### 7. Update GitHub Issue
 
 Add comment to the issue:
+
 ```markdown
 ## Development Started
 - Branch: `feature/{issue-number}-description`
@@ -100,6 +106,7 @@ Add comment to the issue:
 ## Output
 
 Report:
+
 1. ✅ Issue summary
 2. ✅ Branch created
 3. ✅ Planning document created

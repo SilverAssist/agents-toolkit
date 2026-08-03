@@ -203,10 +203,13 @@ test('invalid --tracker value fails with a clear error', (t) => {
 
 test('config file stack/tracker values are used when no flags provided', (t) => {
   const tempDir = createTempProject(t);
-  fs.writeFileSync(path.join(tempDir, '.agents-toolkit.json'), JSON.stringify({
-    stack: 'react',
-    tracker: 'github',
-  }));
+  fs.writeFileSync(
+    path.join(tempDir, '.agents-toolkit.json'),
+    JSON.stringify({
+      stack: 'react',
+      tracker: 'github',
+    }),
+  );
 
   const { status, stdout } = runCli(['install', '--dry-run'], tempDir);
   assert.equal(status, 0);
@@ -332,8 +335,14 @@ test('--global --hooks-only installs hooks to ~/.copilot/hooks/', (t) => {
   const hooksDir = path.join(tempDir, '.copilot', 'hooks');
   assert.ok(fs.existsSync(path.join(hooksDir, 'validate-tsx.json')), 'validate-tsx.json should exist in global hooks');
   assert.ok(fs.existsSync(path.join(hooksDir, 'lint-format.json')), 'lint-format.json should exist in global hooks');
-  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'validate-tsx.sh')), 'validate-tsx.sh should exist in global hooks');
-  assert.ok(fs.existsSync(path.join(hooksDir, 'scripts', 'lint-format.sh')), 'lint-format.sh should exist in global hooks');
+  assert.ok(
+    fs.existsSync(path.join(hooksDir, 'scripts', 'validate-tsx.sh')),
+    'validate-tsx.sh should exist in global hooks',
+  );
+  assert.ok(
+    fs.existsSync(path.join(hooksDir, 'scripts', 'lint-format.sh')),
+    'lint-format.sh should exist in global hooks',
+  );
 
   // Verify the JSON configs use relative command paths (work for both project and global)
   const config = JSON.parse(fs.readFileSync(path.join(hooksDir, 'lint-format.json'), 'utf-8'));
@@ -573,9 +582,10 @@ test('status exits 1 when a skill is missing', (t) => {
 
   // Delete one skill from the canonical store.
   const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
-  const skills = fs.readdirSync(agentsSkillsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
+  const skills = fs
+    .readdirSync(agentsSkillsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
   assert.ok(skills.length > 0, 'at least one skill should exist');
   fs.rmSync(path.join(agentsSkillsDir, skills[0]), { recursive: true, force: true });
 
@@ -591,9 +601,10 @@ test('status exits 1 when a skill is modified', (t) => {
 
   // Modify one skill's SKILL.md in the canonical store.
   const agentsSkillsDir = path.join(tempDir, '.agents', 'skills');
-  const skills = fs.readdirSync(agentsSkillsDir, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => d.name);
+  const skills = fs
+    .readdirSync(agentsSkillsDir, { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
   assert.ok(skills.length > 0, 'at least one skill should exist');
   const skillMdPath = path.join(agentsSkillsDir, skills[0], 'SKILL.md');
   fs.appendFileSync(skillMdPath, '\n<!-- modified -->');
@@ -668,12 +679,12 @@ test('successive installs to multiple targets accumulate lockfile entries', (t) 
   // Every skill should have BOTH .github/skills and .claude/skills in its agents array.
   for (const [name, meta] of Object.entries(lock.skills)) {
     assert.ok(
-      meta.agents.some(a => a.includes('.github')),
-      `skill "${name}" should have a .github/skills agent entry after copilot install`
+      meta.agents.some((a) => a.includes('.github')),
+      `skill "${name}" should have a .github/skills agent entry after copilot install`,
     );
     assert.ok(
-      meta.agents.some(a => a.includes('.claude')),
-      `skill "${name}" should have a .claude/skills agent entry after claude install`
+      meta.agents.some((a) => a.includes('.claude')),
+      `skill "${name}" should have a .claude/skills agent entry after claude install`,
     );
   }
 });
@@ -748,7 +759,11 @@ test('claude install remaps cheap-tier Copilot model to `haiku` alias', (t) => {
   const content = fs.readFileSync(file, 'utf-8');
 
   assert.match(content, /^---\nmodel: haiku\n---\n\n/, 'expected haiku alias frontmatter');
-  assert.doesNotMatch(content, /Claude Haiku 4\.5 \(copilot\)/, 'Copilot vendor name must not leak into Claude commands');
+  assert.doesNotMatch(
+    content,
+    /Claude Haiku 4\.5 \(copilot\)/,
+    'Copilot vendor name must not leak into Claude commands',
+  );
   assert.doesNotMatch(content, /GPT-5 mini \(copilot\)/, 'GPT-5 fallback must be dropped for Claude');
   assert.doesNotMatch(content, /^agent:/m, 'Copilot-only `agent:` field must be stripped');
   assert.doesNotMatch(content, /^tools:/m, 'Copilot-only `tools:` field must be stripped');
@@ -790,7 +805,10 @@ test('copilot install ships the prompt pin verbatim', (t) => {
   // No transform runs on the Copilot path any more — the installed file must be
   // byte-identical to the shipped template.
   const installed = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md'), 'utf-8');
-  const shipped = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', 'quality-check.prompt.md'), 'utf-8');
+  const shipped = fs.readFileSync(
+    path.join(process.cwd(), 'templates', 'shared', 'prompts', 'quality-check.prompt.md'),
+    'utf-8',
+  );
   assert.equal(installed, shipped, 'copilot prompts must install byte-identical to the template');
   assert.match(installed, /^model: Claude Haiku 4\.5$/m, 'cheap tier pin must survive');
 });
@@ -828,7 +846,10 @@ test('claude install copies Explore subagent override by default', (t) => {
 
 test('--no-agent-overrides skips .claude/agents/ install', (t) => {
   const tempDir = createTempProject(t);
-  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only', '--no-agent-overrides'], tempDir);
+  const { status, stderr } = runCli(
+    ['install', '--target', 'claude', '--prompts-only', '--no-agent-overrides'],
+    tempDir,
+  );
   assert.equal(status, 0, stderr);
 
   const agentsDir = path.join(tempDir, '.claude', 'agents');
@@ -839,15 +860,31 @@ test('core-review skill ships model: haiku and --budget hint', () => {
   const skillPath = path.join(process.cwd(), 'templates', 'shared', 'skills', 'core-review', 'SKILL.md');
   const content = fs.readFileSync(skillPath, 'utf-8');
   assert.match(content, /^model: haiku$/m, 'core-review must pin the cheap tier for Claude');
-  assert.match(content, /argument-hint: --budget quick\|medium\|thorough/, 'core-review must advertise the --budget argument');
+  assert.match(
+    content,
+    /argument-hint: --budget quick\|medium\|thorough/,
+    'core-review must advertise the --budget argument',
+  );
   assert.match(content, /## `--budget \{quick,medium,thorough\}`/, 'core-review must document the budget scoping');
 });
 
 test('orchestrator prompts pass explicit --budget to core-review', () => {
   const preview = (name) => fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
-  assert.match(preview('create-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget medium`/, 'create-github-pr must pass --budget medium');
-  assert.match(preview('finalize-github-pr.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'finalize-github-pr must pass --budget quick');
-  assert.match(preview('resolve-github-reviews.prompt.md'), /`core-review` skill[\s\S]*?`--budget quick`/, 'resolve-github-reviews must pass --budget quick');
+  assert.match(
+    preview('create-github-pr.prompt.md'),
+    /`core-review` skill[\s\S]*?`--budget medium`/,
+    'create-github-pr must pass --budget medium',
+  );
+  assert.match(
+    preview('finalize-github-pr.prompt.md'),
+    /`core-review` skill[\s\S]*?`--budget quick`/,
+    'finalize-github-pr must pass --budget quick',
+  );
+  assert.match(
+    preview('resolve-github-reviews.prompt.md'),
+    /`core-review` skill[\s\S]*?`--budget quick`/,
+    'resolve-github-reviews must pass --budget quick',
+  );
 });
 
 // ─── Planning-doc removal: the shipped shell block must not eat other docs ────
@@ -877,7 +914,11 @@ test('plan-doc generators instruct writing the removal marker', () => {
   // no-op, so the two sides must be asserted together.
   for (const name of ['work-ticket.prompt.md', 'work-github-issue.prompt.md', 'create-plan.prompt.md']) {
     const content = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
-    assert.match(content, /<!-- agents-toolkit:planning-doc /, `${name} must tell the agent to write the planning-doc marker`);
+    assert.match(
+      content,
+      /<!-- agents-toolkit:planning-doc /,
+      `${name} must tell the agent to write the planning-doc marker`,
+    );
     assert.match(content, /first line/i, `${name} must state that the marker goes on the first line`);
   }
 });
@@ -976,20 +1017,27 @@ for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) 
     assert.ok(!exists('jira-plan.md'), 'a marker carrying a hyphenated Jira id must still be removed');
   });
 
-  test(`${promptName} removes nothing when no doc carries the marker`, { skip: !bashAvailable && 'bash/git unavailable' }, (t) => {
-    const repo = createTempProject(t);
-    const git = (...args) => spawnSync('git', args, { cwd: repo, encoding: 'utf-8' });
-    initRepoOnFeatureBranch(repo, git);
+  test(
+    `${promptName} removes nothing when no doc carries the marker`,
+    { skip: !bashAvailable && 'bash/git unavailable' },
+    (t) => {
+      const repo = createTempProject(t);
+      const git = (...args) => spawnSync('git', args, { cwd: repo, encoding: 'utf-8' });
+      initRepoOnFeatureBranch(repo, git);
 
-    // A branch whose plan was written without the marker. Leaving the plan behind
-    // is the deliberate bias: deleting a deliverable is not recoverable from the PR.
-    fs.writeFileSync(path.join(repo, 'docs', 'unmarked-plan.md'), 'x\n');
-    git('add', '-A');
-    git('commit', '-qm', 'add docs');
+      // A branch whose plan was written without the marker. Leaving the plan behind
+      // is the deliberate bias: deleting a deliverable is not recoverable from the PR.
+      fs.writeFileSync(path.join(repo, 'docs', 'unmarked-plan.md'), 'x\n');
+      git('add', '-A');
+      git('commit', '-qm', 'add docs');
 
-    const script = `set -e\nBASE_BRANCH=main\n${planDocBlock(promptName)}`;
-    const run = spawnSync('bash', ['-c', script], { cwd: repo, encoding: 'utf-8' });
-    assert.equal(run.status, 0, `block must succeed when nothing matches: ${run.stderr}`);
-    assert.ok(fs.existsSync(path.join(repo, 'docs', 'unmarked-plan.md')), 'an unmarked plan must be left in place, not deleted');
-  });
+      const script = `set -e\nBASE_BRANCH=main\n${planDocBlock(promptName)}`;
+      const run = spawnSync('bash', ['-c', script], { cwd: repo, encoding: 'utf-8' });
+      assert.equal(run.status, 0, `block must succeed when nothing matches: ${run.stderr}`);
+      assert.ok(
+        fs.existsSync(path.join(repo, 'docs', 'unmarked-plan.md')),
+        'an unmarked plan must be left in place, not deleted',
+      );
+    },
+  );
 }

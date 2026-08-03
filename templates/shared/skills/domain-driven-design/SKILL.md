@@ -34,7 +34,7 @@ This skill provides guidelines for organizing code following Domain-Driven Desig
 
 ### Components Domain
 
-```
+```text
 src/components/
 ├── auth/                    # Authentication components
 │   ├── login-form/
@@ -67,7 +67,7 @@ src/components/
 
 ### Library Domain
 
-```
+```text
 src/lib/
 ├── api/                     # API client utilities
 │   ├── client.ts
@@ -92,7 +92,7 @@ src/lib/
 
 ### Actions Domain (Next.js Server Actions)
 
-```
+```text
 src/actions/
 ├── auth/                    # Auth-related actions
 │   ├── index.ts             # Barrel export
@@ -115,7 +115,7 @@ src/actions/
 
 ### Data Access Layer (DAL)
 
-```
+```text
 src/data/                    # Data Access Layer - server-only
 ├── index.ts                 # Barrel export
 ├── user.ts                  # User data operations
@@ -227,7 +227,7 @@ Ask these questions to identify domains:
 
 ### ❌ Generic Folder Anti-Patterns
 
-```
+```text
 # ❌ BAD: Generic folders at src/ root
 src/
 ├── components/
@@ -244,7 +244,7 @@ src/
 
 ### ✅ Domain-Oriented Structure
 
-```
+```text
 # ✅ GOOD: Domain-oriented
 src/
 ├── components/

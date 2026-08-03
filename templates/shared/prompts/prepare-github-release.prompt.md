@@ -19,6 +19,7 @@ package) and analyzes the repo's GitHub Actions workflows to decide whether a **
 **GitHub Release** is required.
 
 ## Prerequisites
+
 - Reference: `.github/prompts/_partials/git-operations.md`
 - Reference: `.github/prompts/_partials/release-wordpress.md` (WordPress projects)
 - Reference: `.github/prompts/_partials/release-node.md` (Node/npm projects)
@@ -28,6 +29,7 @@ package) and analyzes the repo's GitHub Actions workflows to decide whether a **
 ## Inputs
 
 Ask the user:
+
 1. **Version type** — `patch`, `minor`, or `major`? (default: patch). Suggest one from the
    `[Unreleased]` changelog content: new features → `minor`, fixes only → `patch`, breaking → `major`.
 2. **Changelog entry** — reuse the existing `[Unreleased]` section if present, otherwise offer to

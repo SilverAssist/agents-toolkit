@@ -41,9 +41,11 @@ Analyze GitHub issue **#{issue-number}** in repository **{owner}/{repo}** and pr
 Provide the following structured analysis:
 
 #### Summary
+
 Brief overview of what needs to be done.
 
 #### Acceptance Criteria
+
 - [ ] Criterion 1
 - [ ] Criterion 2
 - [ ] Criterion 3
@@ -51,6 +53,7 @@ Brief overview of what needs to be done.
 (Extract from issue body if present, or derive from the description)
 
 #### Technical Impact
+
 | Area | Files/Components | Impact Level |
 |------|------------------|--------------|
 | Components | list | High/Medium/Low |
@@ -58,15 +61,18 @@ Brief overview of what needs to be done.
 | Config | list | High/Medium/Low |
 
 #### Complexity Estimate
+
 - **Level**: Simple / Medium / Complex
 - **Estimated effort**: X hours/days
 - **Reasoning**: Why this complexity level
 
 #### Risks & Blockers
+
 - Risk 1: Description and mitigation
 - Risk 2: Description and mitigation
 
 #### Dependencies
+
 - Related issues: #X, #Y
 - External dependencies: packages, services
 - Prerequisites that must be completed first

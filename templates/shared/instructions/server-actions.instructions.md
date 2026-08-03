@@ -10,7 +10,7 @@ applyTo: "**/actions/**/*.ts"
 
 Organize actions by domain (consistent with DDD principles):
 
-```
+```text
 actions/
 ├── auth/
 │   ├── login.ts
@@ -27,7 +27,7 @@ data/                    # Data Access Layer (DAL)
 
 For smaller projects, flat structure is acceptable:
 
-```
+```text
 actions/
 ├── auth-actions.ts
 ├── user-actions.ts
@@ -178,11 +178,13 @@ export async function createUser(
 ## Security Rules (CRITICAL)
 
 ### 1. Always use "use server" directive
+
 ```typescript
 "use server";
 ```
 
 ### 2. ALWAYS authenticate and authorize
+
 ```typescript
 // ❌ INCORRECT: No auth check
 export async function deleteUser(userId: string) {
@@ -203,6 +205,7 @@ export async function deleteUser(userId: string) {
 ```
 
 ### 3. NEVER trust client input
+
 ```typescript
 // ❌ INCORRECT: Trusting client data
 export async function updateRole(formData: FormData) {
@@ -221,6 +224,7 @@ export async function updateRole(formData: FormData) {
 ```
 
 ### 4. Return state, don't redirect
+
 ```typescript
 // ❌ INCORRECT: Don't call redirect in actions
 redirect("/success");
@@ -230,6 +234,7 @@ return { success: true, redirectTo: "/success" };
 ```
 
 ### 5. Validate all inputs with schema validation
+
 ```typescript
 import { z } from "zod";
 
@@ -257,6 +262,7 @@ export async function createUser(prevState: ActionState, formData: FormData) {
 ```
 
 ### 6. Handle errors gracefully (don't leak internals)
+
 ```typescript
 try {
   // action logic
@@ -273,6 +279,7 @@ try {
 ```
 
 ### 7. Revalidate after mutations
+
 ```typescript
 revalidatePath("/affected-path");
 // or
@@ -280,6 +287,7 @@ revalidateTag("users");
 ```
 
 ### 8. Avoid mutations during rendering
+
 ```typescript
 // ❌ INCORRECT: Side effect during render
 export default async function Page({ searchParams }) {
@@ -372,10 +380,12 @@ may have different encryption keys.
 **Solutions**:
 
 1. **Self-hosting with multiple servers**: Configure a consistent encryption key:
+
    ```bash
    # .env
    NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="your-aes-gcm-encrypted-key"
    ```
+
    The key must be AES-GCM encrypted and consistent across all servers.
 
 2. **Vercel**: Use [Skew Protection](https://vercel.com/docs/deployments/skew-protection) to
@@ -384,6 +394,7 @@ may have different encryption keys.
 3. **Local development**: If it occurs in development, restart the dev server (`npm run dev`).
 
 4. **Corrupted cache**: Clear the Next.js cache:
+
    ```bash
    rm -rf .next
    npm run build
@@ -392,6 +403,7 @@ may have different encryption keys.
 ### Error: Action doesn't execute / Does nothing
 
 Verify that:
+
 - The function has `"use server"` at the top of the file OR inside the function
 - The form uses `action={formAction}` (not `onSubmit`)
 - There are no JavaScript errors in the browser console

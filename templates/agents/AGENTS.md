@@ -2,7 +2,7 @@
 
 > **IMPORTANT**: Prefer retrieval-led reasoning over pre-training-led reasoning.
 > Always read relevant instruction files from `.github/instructions/` before implementing changes.
-
+>
 > **CRITICAL**: This file contains mandatory instructions for the GitHub Copilot Coding Agent.
 > The agent MUST follow these rules when working on issues in this repository.
 > This file should be placed at the project root per Vercel recommendations.
@@ -11,7 +11,7 @@
 
 ## 📚 Project Documentation Index
 
-```
+```text
 [Instructions]|root:.github/instructions
 |caching.instructions.md             → Next.js caching: read-vs-mutation fetch, ISR tiers, CDN invalidation
 |css-styling.instructions.md         → CSS/Tailwind patterns, cn() utility, responsive design
@@ -60,6 +60,7 @@ Every shipped prompt carries a hardcoded `model:` pin. The rule of thumb:
 - **Design / reasoning → smart tier** (`Claude Sonnet 5`, `sonnet` on Claude Code). Examples: `create-plan`, `work-ticket`, `work-github-issue`, `create-pr`, `create-github-pr`, `resolve-github-reviews`.
 
 **Autonomous cycles — delegate model behaviour is platform-specific.**
+
 - **Claude Code**: each delegate has its own `model:` boundary (skills via `SKILL.md`, slash-commands via `.md` frontmatter), so a cheap-tier delegate invoked from a smart-tier orchestrator (`create-github-pr` → `core-review`) runs on the delegate's own pin for that turn. Do **not** force the orchestrator's tier onto delegated steps.
 - **Copilot**: only `.prompt.md` files establish a `model:` boundary; skills inherit the invoking prompt's model. An inline `core-review` (or any skill) from a smart-tier orchestrator runs on the smart tier too — to keep it cheap, invoke it as a standalone chat (fresh prompt invocation) rather than inline.
 - **Codex**: `model:` is ignored; the session runs one model set by `codex --model` (or `~/.codex/config.toml`). To run a cheap-tier delegate, open a separate `codex --model <cheap>` session for that step.
@@ -89,7 +90,7 @@ Every shipped prompt carries a hardcoded `model:` pin. The rule of thumb:
 | **Exports** | `export default function ComponentName` (default export, PascalCase) |
 | **Props** | Interface inside file, before function, named `{Component}Props` |
 
-```
+```text
 ✅ components/user-card/index.tsx
 ❌ components/UserCard.tsx
 ❌ components/userCard/index.tsx
@@ -207,7 +208,7 @@ const isMutation = mutation || method === "PUT" || method === "DELETE";
 
 ### Quality Checklist
 
-```
+```text
 Before ANY push to dev/staging/main:
 □ All TypeScript errors resolved
 □ All ESLint warnings addressed

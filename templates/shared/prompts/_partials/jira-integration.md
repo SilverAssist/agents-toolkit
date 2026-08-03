@@ -63,6 +63,7 @@ Include these steps in prompts that require Jira integration.
    - Use Markdown formatting for readability
 
 2. **Comment templates**:
+
    ```markdown
    ## Development Started
    - Branch: `feature/WEB-XXX-description`
@@ -94,6 +95,7 @@ Include these steps in prompts that require Jira integration.
 ### Step: Link PR to Ticket
 
 1. **Add PR comment**:
+
    ```markdown
    ## Pull Request
    - PR Link: [PR Title](PR_URL)
@@ -143,7 +145,7 @@ Include these steps in prompts that require Jira integration.
 
 ## Ticket Workflow States
 
-```
+```text
 ┌──────────┐    ┌─────────────┐    ┌───────────┐
 │   Open   │───▶│ In Progress │───▶│ In Review │
 └──────────┘    └─────────────┘    └───────────┘

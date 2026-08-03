@@ -18,7 +18,7 @@ build step — adapt all examples accordingly.
 
 ## Project Layout
 
-```
+```text
 agents-toolkit/
 ├── bin/
 │   └── cli.js              # Single CLI entry point — all install logic lives here
@@ -47,6 +47,7 @@ agents-toolkit/
 ### `bin/cli.js` — The CLI
 
 Single file responsible for all runtime behavior:
+
 - Argument parsing (`--stack`, `--tracker`, `--force`, `--dry-run`, `--global`, `--copy`)
 - Content filtering (`FILE_CATEGORIES` + `shouldIncludeFile()`)
 - Install orchestration (`install`, `installClaude`, `installCodex`, `installGitBasedTarget`)
@@ -117,7 +118,7 @@ stdout/stderr. Tests are the spec — new behavior requires a test.
 
 ### ❌ Don't split `bin/cli.js` prematurely
 
-```
+```text
 # ❌ BAD: premature modularization
 bin/
 ├── cli.js
@@ -126,7 +127,7 @@ bin/
 └── helpers.js       # catch-all
 ```
 
-```
+```text
 # ✅ GOOD: keep related logic together until it genuinely warrants extraction
 bin/
 └── cli.js           # all install logic, clearly sectioned with comments
@@ -144,7 +145,7 @@ export const SKILLS = ['domain-driven-design', 'testing-patterns'];  // metadata
 
 ### ❌ Don't add project-specific content to templates
 
-```
+```text
 # ❌ BAD: template references this repo's layout
 templates/shared/prompts/review-code.prompt.md mentions bin/cli.js
 

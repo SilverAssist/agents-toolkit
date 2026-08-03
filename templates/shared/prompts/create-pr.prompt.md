@@ -11,6 +11,7 @@ model: Claude Sonnet 5
 Create a pull request for the current branch linked to Jira ticket **{ticket-id}**.
 
 ## Prerequisites
+
 - Run `prepare-pr` first to ensure code is ready
 - Reference: `.github/prompts/_partials/pr-template.md`
 - Reference: `.github/prompts/_partials/git-operations.md`
@@ -30,6 +31,7 @@ git status
 ```
 
 Verify:
+
 - Branch follows convention: `feature/{ticket-id}-*` or `bugfix/{ticket-id}-*`
 - All changes are committed
 - Not on protected branch
@@ -48,6 +50,7 @@ git diff "$BASE_BRANCH" --name-only
 ### 3. Read Jira Ticket
 
 Fetch ticket **{ticket-id}** details:
+
 - Get summary for PR title
 - Extract acceptance criteria
 - Get any context from comments
@@ -123,7 +126,8 @@ git push -u origin $(git branch --show-current)
 ### 7. Create Pull Request
 
 #### PR Title
-```
+
+```text
 {ticket-id}: {Ticket Summary}
 ```
 
@@ -166,6 +170,7 @@ Brief description of what this PR accomplishes.
 ```
 
 #### PR Settings
+
 - **Source**: Current branch
 - **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
 - **Reviewers**: Read `.github/CODEOWNERS` and map changed files to owners. If no CODEOWNERS file exists, leave the reviewers field empty and note it in the Output report.
@@ -173,6 +178,7 @@ Brief description of what this PR accomplishes.
 ### 8. Link PR to Jira
 
 Add comment to Jira ticket:
+
 ```markdown
 ## Pull Request Created
 - PR: [PR Title](PR_URL)
@@ -186,11 +192,13 @@ Add comment to Jira ticket:
 ## Output
 
 Report:
+
 1. ✅ PR URL
 2. ✅ Jira ticket linked
 3. ✅ Reviewers assigned
 
 ## Next Steps
+
 - Wait for review
 - Address feedback
 - Use `finalize-pr` after approval

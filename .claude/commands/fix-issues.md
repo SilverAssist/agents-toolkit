@@ -18,6 +18,7 @@ npm test 2>&1 | head -80
 ### 2. Read Failing Test Output
 
 For each failing test, the output shows:
+
 - Test name
 - Expected vs actual values
 - Stack trace pointing to the assertion
@@ -25,6 +26,7 @@ For each failing test, the output shows:
 ### 3. Diagnose Each Failure
 
 Determine the root cause:
+
 - **CLI output changed** — update assertion regex to match new output
 - **CLI behavior changed** — fix `bin/cli.js` to restore expected behavior
 - **Test is wrong** — update test if requirement changed
@@ -34,6 +36,7 @@ Determine the root cause:
 ### 4. Fix the Code
 
 Edit the relevant file:
+
 - `bin/cli.js` — CLI behavior and installers
 - `src/cli.test.js` — test assertions (only if the test is wrong)
 - `src/index.js` — exports (if an export mismatch caused the failure)
@@ -55,4 +58,5 @@ All tests must pass before committing.
 | test name | description | what was changed |
 
 ### Remaining Issues
+
 List any tests still failing and why.

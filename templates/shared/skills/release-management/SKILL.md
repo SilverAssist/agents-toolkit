@@ -22,7 +22,7 @@ This skill covers the unified release pipeline used across all Silver Assist Wor
 
 Every Silver Assist plugin follows the same release structure:
 
-```
+```text
 plugin-slug/
 ├── scripts/
 │   ├── build-release.sh          # Unified build script (identical across plugins)
@@ -99,6 +99,7 @@ diverge from a manual `update-version-simple.sh` run.
 ```
 
 Both scripts update:
+
 - Main plugin file `Version:` header
 - Plugin version constant (e.g., `PLUGIN_VERSION`)
 - All PHP `@version` doc tags in source directories
@@ -543,7 +544,7 @@ For production repositories, pin actions to commit SHAs for supply chain securit
 
 ### Workflow Pipeline
 
-```
+```text
 Tag push (v*) ──► Checkout ──► Setup PHP 8.2
     ──► Detect version ──► Install Composer deps
     ──► Update version in files ──► Code quality (PHPCS + PHPStan)
@@ -654,16 +655,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Troubleshooting
 
 ### Build fails: "No main plugin file found"
+
 The script searches for `Plugin Name:` in root `.php` files. Ensure the header exists in the main plugin file.
 
 ### Build fails: "wp-settings-hub CSS asset" or "wp-github-updater JS asset"
+
 The `silverassist/*` packages must include `assets/` directories. Check that `composer.json` lists them in `require` (not `require-dev`), and run `composer install --no-dev` to verify they're included.
 
 ### Release fails: "already_exists" error
+
 The tag was already used. Increment the version and create a new tag — never try to reuse a tag.
 
 ### ZIP is too large
+
 The build script only copies `src/` and `assets/` from `vendor/silverassist/*` packages. If other vendor packages are needed at runtime, add them to the copy logic in `build-release.sh`.
 
 ### Local build leaves dev dependencies removed
+
 The script automatically restores dev deps after building locally. If interrupted, run `composer install` manually.

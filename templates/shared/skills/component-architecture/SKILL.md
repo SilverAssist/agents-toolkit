@@ -11,7 +11,7 @@ When creating or modifying React components in this project, follow these strict
 
 ### CRITICAL: Naming Conventions
 
-```
+```text
 ✅ CORRECT (kebab-case folders):
 src/components/user-profile/index.tsx
 src/components/checkout-wizard/index.tsx
@@ -27,7 +27,7 @@ src/components/UserProfile/index.tsx    # No PascalCase folders
 
 Every component MUST be in its own folder with `index.tsx`:
 
-```
+```text
 src/components/payment-form/
 ├── index.tsx           # ONLY the component + props interface
 ├── types.ts            # Shared types (if multiple)
@@ -202,7 +202,7 @@ import { LoginForm, RegisterForm } from "@/components/auth";
 
 ### Example: Complex Component Structure
 
-```
+```text
 src/components/checkout-wizard/
 ├── index.tsx                    # Main wizard component
 ├── types.ts                     # WizardState, WizardAction, etc.
@@ -236,7 +236,7 @@ import { cn } from "../../../lib/utils";
 
 Components are organized by business domain with barrel exports:
 
-```
+```text
 src/components/
 ├── auth/                      # Authentication domain
 │   ├── index.ts               # Barrel export

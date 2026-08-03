@@ -1,0 +1,5 @@
+# The full gate — the same command CI runs, so the two cannot drift.
+# Escape hatch when a push must go out regardless:  git push --no-verify
+[ -n "$CI" ] && exit 0
+
+npm run check

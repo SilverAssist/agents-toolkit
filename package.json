@@ -41,12 +41,25 @@
   ],
   "scripts": {
     "install-prompts": "node bin/cli.js install",
-    "test": "node --test"
+    "test": "node --test",
+    "lint:md": "markdownlint-cli2",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "validate:prompts": "node scripts/validate-prompts.mjs",
+    "check": "npm run format:check && npm run lint:md && npm run validate:prompts && npm test",
+    "prepare": "node -e \"if(!process.env.CI&&process.env.NODE_ENV!=='production')require('child_process').execSync('husky',{stdio:'inherit'})\""
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "js-yaml": "5.2.3",
+    "lint-staged": "^16.4.0",
+    "markdownlint-cli2": "^0.23.2",
+    "prettier": "^3.9.6"
   }
 }

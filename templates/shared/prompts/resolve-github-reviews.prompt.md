@@ -28,11 +28,13 @@ Works for both **Copilot** and **human** reviews.
 > active (`codex --model`).
 
 ## Prerequisites
+
 - `gh` CLI authenticated (`gh auth status`) with `repo` scope — the GraphQL thread-resolve mutation needs it
 - Reference: `.github/prompts/_partials/github-integration.md`
 - Reference: `.github/prompts/_partials/git-operations.md`
 
 ## Inputs
+
 - `{pr-number}` *(optional)* — target PR. Defaults to the PR for the current branch.
 - `{repo}` *(optional)* — `owner/repo` for cross-repo review (adds `--repo` / fills the GraphQL vars).
 
@@ -328,6 +330,7 @@ fi
 ```
 
 Then summarize:
+
 - Threads addressed and how (fix commit SHA per finding).
 - Any threads intentionally left with a reply explaining a false positive (resolve those too).
 - Commit(s) pushed and the resulting `reviewDecision`.

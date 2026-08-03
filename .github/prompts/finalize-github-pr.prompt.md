@@ -8,6 +8,7 @@ description: Finalize a pull request after approval and prepare for merge
 Finalize PR for GitHub issue **#{issue-number}** after approval and prepare for merge.
 
 ## Prerequisites
+
 - PR has been approved
 - GitHub MCP connection or `gh` CLI required
 - Reference: `.github/prompts/_partials/git-operations.md`
@@ -23,6 +24,7 @@ gh pr view --json state,reviewDecision,statusCheckRollup | cat
 ```
 
 Check:
+
 - All required approvals in place
 - CI/CD pipeline passed
 - No unresolved review comments
@@ -54,6 +56,7 @@ query($owner: String!, $repo: String!, $pr: Int!) {
 **Do NOT merge if any thread has `"isResolved": false`.**
 
 For each unresolved thread:
+
 1. Read the comment body carefully
 2. Apply the requested change (code fix, test, docs, etc.)
 3. Reply to the thread via GraphQL mutation:
@@ -98,11 +101,13 @@ git rebase "origin/${BASE_BRANCH}"
 ```
 
 If conflicts:
+
 1. Resolve each conflict
 2. Stage resolved files: `git add <file>`
 3. Continue rebase: `git rebase --continue`
 
 Push updated branch:
+
 ```bash
 git push --force-with-lease
 ```
@@ -110,6 +115,7 @@ git push --force-with-lease
 ### 5. Final Validations
 
 Run complete validation suite:
+
 ```bash
 npm run lint --if-present
 npm run type-check --if-present
@@ -119,6 +125,7 @@ npm run build --if-present
 ```
 
 Verify:
+
 - No regressions after rebase
 - All tests still pass
 - No new warnings
@@ -132,7 +139,8 @@ gh pr merge --squash --delete-branch | cat
 ```
 
 **Final commit message format**:
-```
+
+```text
 {Issue title} (#{pr-number})
 
 - Key change 1

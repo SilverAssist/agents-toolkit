@@ -42,6 +42,7 @@ interface LoadableInterface {
 ```
 
 Priority values:
+
 - **10**: Core components (Plugin, Activator, critical services)
 - **20**: Services (business logic, API clients)
 - **30**: Admin components (controllers, settings pages)
@@ -112,7 +113,7 @@ private function load_components(): void {
 
 ## MVC Flow Pattern
 
-```
+```text
 User Request → Controller → Service → Repository/WordPress API
                    ↓
               View::render($data)  ← Static call with prepared data
@@ -155,7 +156,7 @@ class PageView {
 
 ## Directory Structure
 
-```
+```text
 plugin-name/
 ├── plugin-name.php              # Main plugin file
 ├── composer.json

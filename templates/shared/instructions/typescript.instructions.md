@@ -29,6 +29,7 @@ export function useForm() { }
 ```
 
 ## Avoid Nested Ternaries
+
 **❌ NEVER use nested ternary operators** - they reduce readability significantly.
 
 ```typescript

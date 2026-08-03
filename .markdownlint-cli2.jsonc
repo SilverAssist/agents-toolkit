@@ -1,0 +1,37 @@
+{
+  // `templates/` is the product: it ships to consumers as Markdown, so it is the
+  // main thing this lint exists to protect.
+  "globs": ["**/*.md"],
+  "ignores": [
+    "node_modules",
+    // .github/skills and .claude/skills are symlinks to .agents/skills — keeping
+    // them ignored avoids linting the same canonical files twice.
+    ".github/skills",
+    ".claude/skills",
+  ],
+  "config": {
+    // Prose is hard-wrapped at widths chosen per file; an 80-column rule would
+    // flag ~1,150 lines that are deliberately formatted.
+    "MD013": false,
+    // Table pipe padding is purely cosmetic and would rewrite ~550 lines.
+    "MD060": false,
+    // A CHANGELOG repeats "Added"/"Changed"/"Fixed" under every release heading.
+    // `siblings_only` still catches a genuine duplicate within one section.
+    "MD024": { "siblings_only": true },
+    // Tabs inside fenced blocks are sample output (git status, Makefiles) and
+    // must be preserved byte-for-byte.
+    "MD010": { "code_blocks": false },
+    // MD029 and MD007 are disabled for their --fix behaviour, not their intent.
+    // Renumbering an ordered list breaks prose that cites items by number
+    // (nextjs-caching/SKILL.md refers to "strategy 1/2/3" in surrounding text),
+    // and re-indenting flattens nested bullets into siblings. Both rewrites are
+    // silent and change meaning, so the rules stay off rather than risk a
+    // contributor running --fix.
+    "MD029": false,
+    "MD007": false,
+    // <details>/<summary> is used in prompt files as collapsible rationale blocks.
+    "MD033": { "allowed_elements": ["details", "summary"] },
+    // Instructions files start with YAML frontmatter, not an H1.
+    "MD041": false,
+  },
+}

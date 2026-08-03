@@ -55,7 +55,7 @@ npx @silverassist/agents-toolkit@latest install
 
 This creates the following structure:
 
-```
+```text
 AGENTS.md                             # Copilot Coding Agent instructions (project root)
 .github/
 ├── copilot-instructions.md           # Project-wide Copilot instructions
@@ -99,7 +99,7 @@ npx @silverassist/agents-toolkit@latest install --claude
 
 This creates the following structure:
 
-```
+```text
 CLAUDE.md                             # Project instructions for Claude Code (project root)
 .agents/
 └── skills/                           # Canonical skills store (single source of truth)
@@ -127,11 +127,12 @@ CLAUDE.md                             # Project instructions for Claude Code (pr
 
 Type `/` in the chat to see all available slash commands:
 
-```
+```text
 /analyze-github-issue
 /work-github-issue
 /create-github-pr
 /finalize-github-pr
+# … 19 total — type / in Claude Code chat to see the full list
 ```
 
 ### Codex
@@ -144,7 +145,7 @@ npx @silverassist/agents-toolkit@latest install --codex
 
 This creates the following structure:
 
-```
+```text
 AGENTS.md                             # Project instructions for Codex (project root)
 .github/
 ├── prompts/
@@ -250,7 +251,7 @@ The same set of prompts is available for all supported tools.
 
 **Jira workflow:**
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │  1. Analyze     │────▶│  2. Plan        │────▶│  3. Work        │
 │  analyze-ticket │     │  create-plan    │     │  work-ticket    │
@@ -265,7 +266,7 @@ The same set of prompts is available for all supported tools.
 
 **GitHub workflow:**
 
-```
+```text
 ┌──────────────────────┐     ┌─────────────────┐     ┌──────────────────────┐
 │  1. Analyze          │────▶│  2. Plan        │────▶│  3. Work             │
 │  analyze-github-issue│     │  create-plan    │     │  work-github-issue   │
@@ -469,7 +470,7 @@ Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard
 
 **GitHub Copilot** — skills are symlinked into `.github/skills/`. Reference a skill explicitly:
 
-```
+```text
 @workspace Use the component-architecture skill to create a new payment form
 ```
 
@@ -522,7 +523,7 @@ Hooks are installed to:
 - **Project** (default): `.github/hooks/`
 - **Global** (`--global`): `~/.copilot/hooks/`
 
-```
+```text
 .github/hooks/              # or ~/.copilot/hooks/ for global
 ├── validate-tsx.json       # Hook config (PostToolUse trigger)
 ├── lint-format.json        # Hook config (PostToolUse trigger)

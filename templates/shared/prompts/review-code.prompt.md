@@ -25,24 +25,28 @@ git diff --name-only
 For each changed file:
 
 #### Code Quality
+
 - [ ] No `console.log` or debug statements
 - [ ] No `any` types
 - [ ] No hardcoded values (use constants)
 - [ ] No commented-out code
 
 #### Style & Conventions
+
 - [ ] Follows project naming conventions
 - [ ] Imports organized alphabetically
 - [ ] Proper TypeScript types
 - [ ] Consistent formatting
 
 #### Logic
+
 - [ ] No nested ternaries
 - [ ] Early returns used appropriately
 - [ ] Error handling in place
 - [ ] Edge cases considered
 
 #### Documentation
+
 - [ ] JSDoc on new functions
 - [ ] Complex logic has comments
 - [ ] Props interfaces documented
@@ -83,14 +87,18 @@ For each changed file:
 ### Issues Found
 
 #### ❌ Critical (must fix)
+
 - Issue 1: Description and fix
 
 #### ⚠️ Warnings (should fix)
+
 - Warning 1: Description and suggestion
 
 #### 💡 Suggestions (nice to have)
+
 - Suggestion 1: Improvement idea
 
 ### Overall
+
 - **Status**: Ready / Needs Work
 - **Recommendation**: Summary

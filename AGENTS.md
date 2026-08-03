@@ -88,11 +88,41 @@ Releasing `@silverassist/agents-toolkit` (a Node/npm package published from GitH
 ## Commands
 
 ```bash
-npm test                          # Run the full test suite (node --test)
+npm run check                     # The full gate — CI and pre-push run this exact command
+npm test                          # Run the test suite (node --test)
+npm run lint:md                   # markdownlint over the repo (templates/ is the product)
+npm run format                    # Prettier over .js/.json/.yml — never Markdown
+npm run validate:prompts          # Frontmatter shape check for templates/shared/prompts
 node bin/cli.js help              # Show CLI help
 node bin/cli.js list              # List available prompts/skills/hooks
 node bin/cli.js install --dry-run # Preview an install (run in a sandbox dir, not this repo)
 ```
+
+## Quality Gate
+
+`npm run check` is the single entry point: **format check → markdownlint → prompt frontmatter →
+tests**. CI and the `pre-push` hook both invoke it, so the two cannot drift.
+
+Git hooks are installed by `prepare` (husky) and are a local convenience — CI is the real gate:
+
+| Hook | Does |
+| --- | --- |
+| `pre-commit` | Refuses direct commits to `main`/`master`, then runs `lint-staged` on staged files |
+| `pre-push` | Runs `npm run check` |
+
+Both exit early when `$CI` is set. Escape hatches: `git commit --no-verify`, `git push --no-verify`.
+
+Three constraints worth knowing before changing this setup:
+
+- **Prettier never touches Markdown.** It rewrites code spans and fenced content whose exact
+  whitespace is the subject of the surrounding sentence, and `templates/` documents frontmatter
+  and shell snippets character by character. Markdown is linted, not formatted.
+- **`markdownlint --fix` is not run automatically**, for the same reason. Its fixers for `MD029`
+  (ordered-list numbering) and `MD007` (list indentation) silently change meaning — renumbering
+  broke prose in `nextjs-caching/SKILL.md` that cites items by number — so both rules are off.
+- **`engines.node` stays `>=18`.** The dev tooling needs more (markdownlint-cli2 `>=22`,
+  lint-staged `>=20.17`), which is why CI's `quality` job runs Node 22 while the `compat` matrix
+  installs with `--omit=dev` and exercises the CLI on 18/20/22.
 
 ## Git Conventions
 

@@ -11,6 +11,7 @@ model: Claude Haiku 4.5
 Finalize PR for Jira ticket **{ticket-id}** after approval and prepare for merge.
 
 ## Prerequisites
+
 - PR has been approved
 - Reference: `.github/prompts/_partials/git-operations.md`
 - Reference: `.github/prompts/_partials/validations.md`
@@ -21,6 +22,7 @@ Finalize PR for Jira ticket **{ticket-id}** after approval and prepare for merge
 ### 1. Verify PR Status
 
 Check:
+
 - All required approvals in place
 - CI/CD pipeline passed
 - No unresolved review comments
@@ -28,6 +30,7 @@ Check:
 ### 2. Address Review Comments
 
 If there are unresolved comments:
+
 - List each comment
 - Address feedback
 - Push additional commits if needed
@@ -42,11 +45,13 @@ git rebase "origin/${BASE_BRANCH}"
 ```
 
 If conflicts:
+
 1. Resolve each conflict
 2. Stage resolved files: `git add <file>`
 3. Continue rebase: `git rebase --continue`
 
 Push updated branch:
+
 ```bash
 git push --force-with-lease
 ```
@@ -54,6 +59,7 @@ git push --force-with-lease
 ### 4. Final Validations
 
 Run complete validation suite:
+
 ```bash
 npm run lint --if-present
 npm run type-check --if-present
@@ -63,6 +69,7 @@ npm run build --if-present
 ```
 
 Verify:
+
 - No regressions after rebase
 - All tests still pass
 - No new warnings
@@ -70,6 +77,7 @@ Verify:
 ### 5. Update Jira Ticket
 
 Add comment:
+
 ```markdown
 ## Ready for Merge
 - All approvals received
@@ -83,6 +91,7 @@ Add comment:
 ```
 
 Transition ticket to appropriate status:
+
 - "In Review" → "Ready for QA" or
 - "In Review" → "Done" (if no QA needed)
 
@@ -97,7 +106,8 @@ Transition ticket to appropriate status:
 **Recommended merge strategy**: Squash merge
 
 **Final commit message format**:
-```
+
+```text
 {ticket-id}: {Summary of changes}
 
 - Key change 1
@@ -123,6 +133,7 @@ git remote prune origin
 ```
 
 Update Jira:
+
 - Transition to "Done" or "Ready for QA"
 - Add deployment comment if applicable
 
@@ -131,6 +142,7 @@ Update Jira:
 ### Completion Report
 
 ✅ **Pre-Merge Checklist**
+
 - [ ] All approvals received
 - [ ] CI/CD passed
 - [ ] Branch synced with base branch
@@ -138,16 +150,19 @@ Update Jira:
 - [ ] Documentation complete
 
 ✅ **Merge Ready**
+
 - Commit message prepared
 - Merge strategy confirmed
 
 ✅ **Post-Merge Tasks**
+
 - [ ] Local branch deleted
 - [ ] Remote branch deleted
 - [ ] Jira ticket updated
 - [ ] Team notified (if needed)
 
 ## Notes
+
 - If merge conflicts arise during squash, resolve and complete
 - Notify team if deployment is needed
 - Update related documentation if this was a major feature

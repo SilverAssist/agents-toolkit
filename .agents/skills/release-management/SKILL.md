@@ -19,7 +19,7 @@ This skill covers the release pipeline for `@silverassist/agents-toolkit`, an np
 
 ## Architecture Overview
 
-```
+```text
 agents-toolkit/
 ├── package.json             # Version number lives here
 ├── src/index.js             # VERSION constant (must match package.json)
@@ -56,6 +56,7 @@ If a release fails after the tag is pushed: **increment the version** and start 
 Update **two places** — they must stay in sync:
 
 **`package.json`:**
+
 ```json
 {
   "version": "2.4.0"
@@ -63,6 +64,7 @@ Update **two places** — they must stay in sync:
 ```
 
 **`src/index.js`:**
+
 ```js
 export const VERSION = "2.4.0";
 ```
@@ -97,6 +99,7 @@ npm pack --dry-run   # Preview what will be published
 ```
 
 Verify the `npm pack --dry-run` output only includes:
+
 - `bin/`, `src/index.js`, `templates/`, `README.md`, `LICENSE`
 
 ### Step 4: Commit and Push

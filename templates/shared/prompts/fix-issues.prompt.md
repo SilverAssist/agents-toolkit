@@ -24,6 +24,7 @@ npm run test --if-present 2>&1 | head -100
 ### 2. Categorize Issues
 
 Sort issues by type:
+
 - **Lint errors**: ESLint violations
 - **Type errors**: TypeScript compilation errors
 - **Test failures**: Failed unit tests
@@ -31,12 +32,15 @@ Sort issues by type:
 ### 3. Fix Lint Errors
 
 #### Auto-fixable
+
 ```bash
 npm run lint --if-present -- --fix
 ```
 
 #### Manual fixes
+
 For each remaining lint error:
+
 1. Read the error message
 2. Locate the file and line
 3. Apply the appropriate fix
@@ -45,6 +49,7 @@ For each remaining lint error:
 ### 4. Fix Type Errors
 
 For each type error:
+
 1. Read the TypeScript error message
 2. Understand the type mismatch
 3. Apply fix:
@@ -56,6 +61,7 @@ For each type error:
 ### 5. Fix Test Failures
 
 For each failing test:
+
 1. Read the test output
 2. Understand what's expected vs actual
 3. Determine if issue is:
@@ -84,12 +90,15 @@ npm run build --if-present
 | Tests | N | test1, test2 |
 
 ### Remaining Issues
+
 List any issues that couldn't be auto-fixed.
 
 ### Changes Made
+
 Summary of fixes applied.
 
 ## Notes
+
 - Always commit after fixing each category
 - Run full validation after all fixes
 - Some issues may require architectural changes

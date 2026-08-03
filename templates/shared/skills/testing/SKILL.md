@@ -177,6 +177,7 @@ if ( $wp_tests_available ) {
 ```
 
 **Key Points:**
+
 - Constants are defined with `if ( ! defined() )` guards to allow phpunit.xml.dist to set them
 - WordPress Test Suite is auto-detected from `$WP_TESTS_DIR` env var or `/tmp/wordpress-tests-lib`
 - Plugin is loaded via `muplugins_loaded` filter (NOT directly in bootstrap)
@@ -211,7 +212,7 @@ abstract class TestCase extends \WP_UnitTestCase {
 
 ### Directory Structure
 
-```
+```text
 tests/
 ├── bootstrap.php           # Test bootstrap
 ├── README.md               # Testing documentation
@@ -280,6 +281,7 @@ public function testActivatorCreatesDefaultOptions(): void {
 - Location: mirrors `includes/` structure under `tests/Unit/` or `tests/Integration/`
 
 Example:
+
 - `includes/Core/Plugin.php` → `tests/Unit/Core/PluginTest.php`
 - `includes/Service/FormHandler.php` → `tests/Unit/Service/FormHandlerTest.php`
 
@@ -443,12 +445,14 @@ class YourTest extends TestCase {
 ### MySQL Statements Reference
 
 **Trigger Implicit COMMIT (use only in `wpSetUpBeforeClass`):**
+
 - `CREATE TABLE` / `DROP TABLE`
 - `CREATE DATABASE` / `DROP DATABASE`
 - `ALTER TABLE`
 - `RENAME TABLE`
 
 **Safe for `set_up()` / `tear_down()`:**
+
 - `TRUNCATE TABLE` (safe in WordPress Test Suite context)
 - `INSERT` / `UPDATE` / `DELETE` (regular DML)
 - `SELECT` queries
@@ -632,6 +636,7 @@ bash scripts/install-wp-tests.sh wordpress_test root 'root' localhost latest tru
 ### CI Pipeline
 
 Tests run automatically in CI via `quality-checks.yml`:
+
 - PHP 8.2 (with coverage)
 - PHP 8.3
 - PHP 8.4
@@ -653,6 +658,7 @@ bash scripts/install-wp-tests.sh wordpress_test root 'root' localhost latest tru
 ### Tests pass locally but fail in CI
 
 Common causes:
+
 1. **Missing `set_up()` parent call**: Always call `parent::set_up()` first
 2. **State leaking between tests**: Use `tear_down()` to clean up
 3. **Database table issues**: Use `wpSetUpBeforeClass()` for DDL statements
@@ -671,6 +677,7 @@ public static function wpSetUpBeforeClass( $factory ): void {
 ### "Cannot modify header information"
 
 Test is producing output before headers. Check for:
+
 - `echo` statements in tested code
 - Missing output buffering
 - `beStrictAboutOutputDuringTests="true"` in phpunit.xml.dist (expected behavior)

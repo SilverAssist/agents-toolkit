@@ -7,7 +7,7 @@ applyTo: "**/*.test.{ts,tsx}"
 
 Place tests in `__tests__/` folders next to the code:
 
-```
+```text
 components/
 └── button/
     ├── index.tsx
@@ -59,21 +59,25 @@ describe('Button', () => {
 Include tests for:
 
 ### Rendering
+
 - Component renders without crashing
 - All expected elements are present
 - Conditional rendering works
 
 ### Props
+
 - Default props work correctly
 - Custom props are applied
 - Required props are validated
 
 ### User Interactions
+
 - Click handlers work
 - Form inputs update
 - Keyboard navigation
 
 ### Edge Cases
+
 - Empty data handled
 - Null/undefined handled
 - Error states displayed

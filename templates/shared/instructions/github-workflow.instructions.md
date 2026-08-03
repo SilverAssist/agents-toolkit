@@ -12,7 +12,7 @@ applyTo: "**"
 
 ### Naming Conventions
 
-```
+```text
 main                 → Production branch (default)
 feature/description  → New features
 fix/description      → Bug fixes
@@ -175,10 +175,12 @@ gh issue close ISSUE_NUMBER --comment "✅ Completed in PR #XX" | cat
 ### Dependabot Auto-merge Workflow
 
 When creating jobs that only run for Dependabot PRs, **NEVER** use job-level `if: github.actor == 'dependabot[bot]'`. This causes the job to be "skipped", which can:
+
 - Fail branch protection rules that require the job to pass
 - Show confusing status in the PR checks
 
 **❌ WRONG — Job skipped for non-Dependabot PRs:**
+
 ```yaml
 jobs:
   auto-merge-dependabot:
@@ -190,6 +192,7 @@ jobs:
 ```
 
 **✅ CORRECT — Job runs, steps conditionally execute:**
+
 ```yaml
 jobs:
   auto-merge-dependabot:
