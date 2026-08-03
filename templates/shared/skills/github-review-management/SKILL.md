@@ -239,7 +239,8 @@ When a push triggers multiple CI jobs, wait for all of them before concluding th
 
 ```bash
 # Wait for all checks; exit non-zero if any fail.
-gh pr checks $PR --watch | cat
+# GH_PAGER=cat preserves the non-zero exit when any check fails; piping to `| cat` would not.
+GH_PAGER=cat gh pr checks $PR --watch
 ```
 
 ## Common failures
