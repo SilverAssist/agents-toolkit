@@ -60,7 +60,7 @@ The caller applies the fixes, so the review stays unbiased by the intent behind 
 pass works the same on every agent — **Copilot** (the primary reviewer to preempt), **Codex**,
 and **Claude Code**; only the *mechanism* differs:
 
-- **GitHub Copilot** — run the checklist **inline as a distinct pass** or use `@agent-core-review` (`.github/agents/core-review.agent.md`) for a cheap-tier pass; pass the resolved file list in the brief — the agent has no shell.
+- **GitHub Copilot** — run the checklist **inline as a distinct pass** or use `@agent-core-review` (`.github/agents/core-review.agent.md`) for a cheap-tier pass; pass the resolved file list in the brief — the agent has no shell. Trigger before
   pushing (not folded into the edit under review). The scope of the pass is set by the
   caller-supplied `--budget` (see the next section) — `quick` is diff + directly-touched files,
   `medium` adds one-hop neighbours, `thorough` is the whole repo. On Copilot the effective model

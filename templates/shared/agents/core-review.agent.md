@@ -73,6 +73,15 @@ assets or be explicitly marked truncated with a total.
 - A failed API call must fail fast, not be treated as an empty result.
 - Paginate past the first 100 items.
 
+### 7. Repo health
+
+- `package-lock.json` in sync — after a dependency bump, `npm ci` must exit `0`
+  (a drifted lockfile fails with `Missing … from lock file`). Regenerate with
+  `npm install --package-lock-only` and verify.
+- CI matrix / workflow config sanity: a `workflow_run` trigger names a workflow
+  whose `name:` actually exists; `on:` events match intent; least-privilege
+  `permissions:`.
+
 ## Output contract
 
 Return **prioritized findings, most severe first**, one row each:
