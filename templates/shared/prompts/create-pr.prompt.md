@@ -2,6 +2,12 @@
 agent: agent
 description: Create a pull request for the current branch
 model: Claude Sonnet 5
+tools:
+  - read_file
+  - grep_search
+  - replace_string_in_file
+  - run_in_terminal
+  - atlassian/*
 ---
 
 # Create Pull Request

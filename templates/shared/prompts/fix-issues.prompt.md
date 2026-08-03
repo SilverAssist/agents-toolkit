@@ -2,6 +2,11 @@
 agent: agent
 description: Fix failing tests and lint errors
 model: Claude Haiku 4.5
+tools:
+  - read_file
+  - grep_search
+  - replace_string_in_file
+  - run_in_terminal
 ---
 
 # Fix Code Issues

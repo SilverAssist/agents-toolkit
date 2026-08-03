@@ -2,6 +2,9 @@
 agent: agent
 description: Prepare code for a pull request by running all validations
 model: Claude Haiku 4.5
+tools:
+  - read_file
+  - run_in_terminal
 ---
 
 # Prepare for Pull Request

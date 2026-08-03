@@ -2,6 +2,12 @@
 agent: agent
 description: Create a pull request for the current branch linked to a GitHub issue
 model: Claude Sonnet 5
+tools:
+  - read_file
+  - grep_search
+  - replace_string_in_file
+  - run_in_terminal
+  - github/*
 ---
 
 # Create GitHub Pull Request

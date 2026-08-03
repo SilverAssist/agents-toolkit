@@ -4,11 +4,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CLI_PATH = path.join(__dirname, '..', 'bin', 'cli.js');
+const require = createRequire(import.meta.url);
 
 function stripAnsi(text) {
   return text.replace(/\u001b\[[0-9;]*m/g, '');
@@ -927,6 +929,20 @@ test('orchestrator prompts pass explicit --budget to core-review', () => {
     /`core-review` skill[\s\S]*?`--budget quick`/,
     'resolve-github-reviews must pass --budget quick',
   );
+});
+
+test('every shipped prompt declares a non-empty tools: block', () => {
+  const jsYaml = require('js-yaml');
+  const promptsDir = path.join(process.cwd(), 'templates', 'shared', 'prompts');
+  const names = fs.readdirSync(promptsDir).filter((n) => n.endsWith('.prompt.md'));
+  assert.ok(names.length > 0, 'expected at least one prompt template');
+  for (const name of names) {
+    const source = fs.readFileSync(path.join(promptsDir, name), 'utf-8');
+    const end = source.indexOf('---', 3);
+    assert.ok(end !== -1, `${name}: missing closing frontmatter delimiter`);
+    const fm = jsYaml.load(source.slice(4, end));
+    assert.ok(Array.isArray(fm?.tools) && fm.tools.length > 0, `${name}: tools: must be a non-empty list`);
+  }
 });
 
 // ─── Planning-doc removal: the shipped shell block must not eat other docs ────

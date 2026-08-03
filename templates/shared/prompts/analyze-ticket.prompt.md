@@ -2,6 +2,10 @@
 agent: agent
 description: Analyze a Jira ticket without creating branches or making changes
 model: Claude Haiku 4.5
+tools:
+  - read_file
+  - grep_search
+  - atlassian/*
 ---
 
 # Analyze Jira Ticket

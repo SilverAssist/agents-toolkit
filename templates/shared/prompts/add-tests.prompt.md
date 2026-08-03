@@ -2,6 +2,12 @@
 agent: agent
 description: Add tests for a component or function
 model: Claude Haiku 4.5
+tools:
+  - read_file
+  - grep_search
+  - create_file
+  - replace_string_in_file
+  - run_in_terminal
 ---
 
 # Add Tests

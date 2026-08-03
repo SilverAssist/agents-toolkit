@@ -38,6 +38,10 @@ There is no React, Next.js, or build step here.
 - **Claude Code** → `.claude/commands/` (prompts, renamed `.prompt.md`→`.md`, frontmatter stripped, paths adapted), `.claude/skills/`, `.github/instructions/`, root `CLAUDE.md`.
 - **Skills** follow the [`npx skills`](https://github.com/vercel-labs/skills) standard: real files live once in canonical `.agents/skills/`; each agent's `skills/` dir holds per-skill symlinks to it (with `--copy` / auto-fallback to copies when symlinks are unsupported).
 
+### Prompt `tools:` scoping (Copilot-only)
+
+Every `.prompt.md` declares a `tools:` allowlist. VS Code uses it to restrict which MCP server schemas are sent on each turn. `bin/cli.js` strips `tools:` when converting to Claude commands — Claude Code's `allowed-tools` is a permission pre-approval that does not reduce context, so mirroring `tools:` there would deliver no token savings. Claude's only real lever is `disallowed-tools` (a denylist that breaks whenever a new tool appears), which is not maintainable in a distributed toolkit.
+
 ### Filtering
 
 `FILE_CATEGORIES` + `shouldIncludeFile()` in `bin/cli.js` filter content by `--stack`

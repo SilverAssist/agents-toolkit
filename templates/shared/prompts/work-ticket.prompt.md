@@ -2,6 +2,13 @@
 agent: agent
 description: Start working on a Jira ticket with full workflow setup
 model: Claude Sonnet 5
+tools:
+  - read_file
+  - grep_search
+  - create_file
+  - replace_string_in_file
+  - run_in_terminal
+  - atlassian/*
 ---
 
 # Work on Jira Ticket

@@ -2,6 +2,9 @@
 agent: agent
 description: Quick code review of current changes
 model: Claude Haiku 4.5
+tools:
+  - read_file
+  - grep_search
 ---
 
 # Quick Code Review
