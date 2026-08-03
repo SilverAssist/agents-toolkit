@@ -2,7 +2,8 @@
 // subset, scoped to the files actually staged.
 export default {
   // Markdown is never auto-formatted — see .prettierignore for why.
-  '*.{js,mjs,cjs,json,yml,yaml}': 'prettier --write',
+  '*.{js,mjs,cjs,ts,json,yml,yaml}': 'prettier --write',
+  '*.ts': 'eslint --fix',
   // Report only: markdownlint's --fix rewrites code spans and list numbering,
   // which silently changes meaning in these templates.
   '*.md': 'markdownlint-cli2',

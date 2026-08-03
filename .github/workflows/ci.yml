@@ -42,6 +42,9 @@ jobs:
           echo "- ✅ Formatting (Prettier)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Markdown (markdownlint)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Prompt frontmatter" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ TypeScript (tsc --noEmit)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Build (unbuild → dist/)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Lint (eslint)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Tests" >> $GITHUB_STEP_SUMMARY
 
   compat:

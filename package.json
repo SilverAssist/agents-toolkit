@@ -35,6 +35,7 @@
   "files": [
     "bin",
     "src/index.js",
+    "dist",
     "templates",
     "README.md",
     "LICENSE"
@@ -42,11 +43,14 @@
   "scripts": {
     "install-prompts": "node bin/cli.js install",
     "test": "node --test",
+    "typecheck": "tsc --noEmit",
+    "build": "unbuild",
+    "lint": "eslint .",
     "lint:md": "markdownlint-cli2",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "validate:prompts": "node scripts/validate-prompts.mjs",
-    "check": "npm run format:check && npm run lint:md && npm run validate:prompts && npm test",
+    "check": "npm run format:check && npm run lint:md && npm run validate:prompts && npm run typecheck && npm run build && npm run lint && npm test",
     "prepare": "node -e \"if(!process.env.CI&&process.env.NODE_ENV!=='production')require('child_process').execSync('husky',{stdio:'inherit'})\""
   },
   "engines": {
@@ -56,10 +60,16 @@
     "access": "public"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.1",
+    "eslint": "^10.8.0",
     "husky": "^9.1.7",
     "js-yaml": "5.2.3",
     "lint-staged": "^16.4.0",
     "markdownlint-cli2": "^0.23.2",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.65.0",
+    "unbuild": "^3.6.1"
   }
 }

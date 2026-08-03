@@ -9,7 +9,7 @@ reads the equivalent `CLAUDE.md`; keep both aligned when you change project guid
 `@silverassist/agents-toolkit` is a **Node.js ESM CLI package** that installs reusable AI
 agent content (instructions, prompts, skills, hooks) into a user's project for **GitHub
 Copilot, Claude Code, and Codex**. It is a distribution/installer tool — not an application.
-There is no React, Next.js, or build step here.
+There is no React or Next.js. TypeScript sources in `src/` compile to `dist/` via `unbuild`.
 
 > ⚠️ This repo is the *source* of the toolkit. Do **not** run `install` inside this repo
 > — it would overwrite the developer workflow files in `.github/prompts/`, `.claude/commands/`,
@@ -20,9 +20,16 @@ There is no React, Next.js, or build step here.
 
 | Path | Purpose |
 | --- | --- |
-| `bin/cli.js` | The CLI. All install logic: arg parsing, filtering, copy/symlink, target installers (`install`, `installClaude`, `installCodex`, `installGitBasedTarget`). |
-| `src/index.js` | Package metadata exports (`VERSION`, `PROMPTS`, `INSTRUCTIONS`, `SKILLS`, `HOOKS`, `SKILLS_LAYOUT`, `CLAUDE_*`). |
-| `src/cli.test.js` | Tests using the native Node test runner (`node --test`). Spawn the CLI against temp dirs and assert on output/filesystem. |
+| `bin/cli.js` | The CLI. All install logic: arg parsing, filtering, copy/symlink, target installers (`install`, `installClaude`, `installCodex`, `installGitBasedTarget`). Migrating to `src/cli.ts` in PR D. |
+| `src/index.js` | Package metadata exports (`VERSION`, `PROMPTS`, `INSTRUCTIONS`, `SKILLS`, `HOOKS`, `SKILLS_LAYOUT`, `CLAUDE_*`). Superseded by `src/index.ts`. |
+| `src/index.ts` | TypeScript source for the library surface; compiles to `dist/index.mjs`. |
+| `src/types.ts` | Shared TypeScript interfaces (`Lockfile`, `InstallOptions`, `AgentToolkitConfig`, …). |
+| `src/logger.ts` | Logging helpers (`success`, `warn`, `error`, `info`). |
+| `src/paths.ts` | Install-path helpers (`getTargetDir`, `getClaudeTargetDir`, `getAgentsSkillsDir`). |
+| `src/cli.test.js` | Tests using the native Node test runner (`node --test`). Spawn the CLI against temp dirs and assert on output/filesystem. Migrating to `src/cli.test.ts` in PR D. |
+| `build.config.ts` | `unbuild` configuration; produces `dist/index.mjs` (and `dist/cli.mjs` in PR D). |
+| `eslint.config.mjs` | ESLint flat config for TypeScript sources. TSDoc rules added in PR E. |
+| `tsconfig.json` | TypeScript strict config (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`). `noEmit: true` — `unbuild` drives the actual emit. |
 | `templates/shared/` | Single source of truth for content: `instructions/`, `prompts/` (+ `_partials/`), `skills/` (folders with `SKILL.md`), `hooks/`. |
 | `templates/agents/` | Agent root files: `AGENTS.md`, `AGENTS.codex.md`, `CLAUDE.md`, `copilot-instructions.md`. |
 | `.agents/skills/` | Canonical dev skills store — 4 skills adapted for this Node.js ESM CLI: `domain-driven-design` (project layout), `quality-checks`, `release-management`, `testing-patterns`. |
@@ -51,9 +58,10 @@ CLI flags → project `.agents-toolkit.json` → global `~/.agents-toolkit.json`
 ## Conventions
 
 - **ESM only** (`"type": "module"`); Node ≥ 22. Use `import`, `fileURLToPath` for `__dirname`.
+- **TypeScript**: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`. No `any`. Use `import type` for type-only imports (`verbatimModuleSyntax`).
 - **File naming**: kebab-case. Templates use `.instructions.md`, `.prompt.md`, `SKILL.md`.
   **Exception — Claude Code subagent overrides** (`templates/shared/agents/*.md`): the filename stem **must match the target subagent's `name:` frontmatter exactly** (case-sensitive), because Claude Code loads `.claude/agents/<name>.md` and resolves overrides by filename stem. A mismatch registers a *new* subagent instead of overriding the built-in one, silently defeating the purpose — e.g. renaming `Explore.md` to `EXPLORE.md` or `explore.md` would leave Claude's built-in `Explore` running on its default (smart) tier and the shipped `haiku` pin would never take effect. This is a Claude Code protocol requirement, not a stylistic choice — platform naming wins over the repo convention. Any new subagent override added under `templates/shared/agents/` must follow the same rule.
-- **JSDoc** on functions in `bin/cli.js`, written in English.
+- **JSDoc** on functions in `bin/cli.js`, **TSDoc** on exported symbols in `src/**/*.ts`, written in English.
 - Reuse existing helpers (`copyDir`, `getTargetDir`, `getClaudeTargetDir`, `getAgentsSkillsDir`, `info/warn/success/error`) instead of adding new ones.
 - Keep installers honoring `force`, `dryRun`, and `global` consistently.
 
