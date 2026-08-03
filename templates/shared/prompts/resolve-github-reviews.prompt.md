@@ -168,7 +168,7 @@ run a single consistency pass (the *core review*) before committing the batch. U
 (diff + directly-touched files — the batch is small and scoped, so `medium`/`thorough` would only
 add unrelated noise). Run it as a dedicated read-only pass. Options by agent:
 
-- **GitHub Copilot** — run inline as a distinct pass, or use `@agent-core-review` for a cheap-tier pass even from within this smart-tier prompt.
+- **GitHub Copilot** — run inline as a distinct pass, or use `@agent-core-review` for a cheap-tier pass — if using the agent, pass the current batch's changed-file list in the brief (the agent has no shell tool).
 - **Codex** — run inline as a distinct pass.
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).
 

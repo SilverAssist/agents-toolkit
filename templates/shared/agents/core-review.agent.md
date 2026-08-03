@@ -14,10 +14,12 @@ review loops — doc↔code drift, invalid code examples, broken links, stale
 indexes — so they are fixed in the first push instead of round 5.
 
 > **Model pin.** `Claude Haiku 4.5` is the cheap tier on Copilot. The VS Code
-> model ceiling rule guarantees this is honoured: a requested model can never
-> exceed the cost tier of the parent conversation, so a downgrade always applies
-> and no subagent can escalate cost. Invoke this agent inline from any
-> smart-tier orchestrator and it still runs cheap.
+> model ceiling rule prevents cost escalation: a requested model can never
+> exceed the cost tier of the parent conversation, so the agent cannot run more
+> expensively than the caller's session. The pin is honoured unless an explicit
+> model parameter overrides it at invocation time — which orchestrators do not
+> do in normal use. Invoke this agent inline from any smart-tier orchestrator
+> and it runs cheap.
 >
 > **Installed by:** `npx @silverassist/agents-toolkit install` → `.github/agents/core-review.agent.md`.
 > Skipped when `--no-agent-overrides` is passed.

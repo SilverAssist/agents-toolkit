@@ -115,6 +115,6 @@ Report:
 ## Next Steps
 
 - Begin implementation following the plan
-- Use `@agent-core-review` (if installed) for cheap-tier consistency checks during development — custom agents establish their own model boundary, so the pass runs cheap even inline from a smart-tier chat
+- Use `@agent-core-review` (if installed) for cheap-tier consistency checks during development — pass the changed-file list in the brief (the agent has no shell and cannot run `git diff` itself)
 - Use `prepare-pr` when ready for review
 - Use `create-github-pr` to submit pull request
