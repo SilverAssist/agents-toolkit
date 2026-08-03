@@ -66,3 +66,17 @@ export interface InstallFilters {
 
 /** Return value of extractClaudeAlias — the Claude Code model alias or null. */
 export type ClaudeAlias = 'haiku' | 'sonnet' | 'opus' | 'fable' | null;
+
+/** Count result returned by any install / copy operation. */
+export interface InstallResult {
+  written: number;
+  planned: number;
+}
+
+/** Which content categories to install, derived from InstallOptions flags. */
+export interface InstallScope {
+  shouldInstallPrompts: boolean;
+  shouldInstallInstructions: boolean;
+  shouldInstallSkills: boolean;
+  shouldInstallHooks: boolean;
+}
