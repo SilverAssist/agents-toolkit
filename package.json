@@ -50,7 +50,7 @@
     "prepare": "node -e \"if(!process.env.CI&&process.env.NODE_ENV!=='production')require('child_process').execSync('husky',{stdio:'inherit'})\""
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "publishConfig": {
     "access": "public"

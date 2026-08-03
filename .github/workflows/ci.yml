@@ -52,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node: ['18.x', '20.x', '22.x']
+        node: ['22.x', '24.x']
 
     steps:
       - name: Checkout code
@@ -65,8 +65,8 @@ jobs:
           cache: 'npm'
 
       # `--omit=dev` deliberately: this job verifies the published surface
-      # against the whole `engines.node` range, and the dev tooling does not
-      # install below Node 22. The CLI and tests use only Node builtins.
+      # against the whole `engines.node` range. The CLI and tests use only
+      # Node builtins.
       - name: Install production dependencies
         run: npm ci --omit=dev
 
