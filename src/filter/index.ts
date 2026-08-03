@@ -68,9 +68,6 @@ export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
   },
 } as const;
 
-/**
- * File category key.
- *
 /** Valid content category keys used by `shouldIncludeFile` and `FILE_CATEGORIES`. */
 export type FileCategoryKey = 'instructions' | 'prompts' | 'partials' | 'skills';
 

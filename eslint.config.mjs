@@ -3,7 +3,6 @@ import tseslint from 'typescript-eslint';
 import tsdoc from 'eslint-plugin-tsdoc';
 import tsdocRequire from 'eslint-plugin-tsdoc-require-2';
 
-// TSDoc plugins (eslint-plugin-tsdoc, eslint-plugin-tsdoc-require-2) are added in PR E.
 export default tseslint.config(
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],

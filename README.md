@@ -75,6 +75,10 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
 │   ├── testing-patterns       -> ../../.agents/skills/testing-patterns
 │   └── ...                           # filtered by --stack
+├── hooks/                            # PostToolUse validation hooks
+│   ├── validate-tsx.json
+│   ├── lint-format.json
+│   └── scripts/
 └── agents/                           # Copilot custom agents (model-pinned overrides)
     └── core-review.agent.md          # cheap-tier inline reviewer (@core-review)
 .agents/

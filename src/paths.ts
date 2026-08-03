@@ -2,7 +2,7 @@ import path from 'node:path';
 
 /** Returns the user home directory, compatible with macOS, Linux, and Windows. */
 export function getHomeDir(): string {
-  return process.env['HOME'] ?? process.env['USERPROFILE'] ?? '';
+  return process.env['HOME'] || process.env['USERPROFILE'] || '';
 }
 
 /** Returns the Copilot install target: `.github/` (project) or `~/.copilot/` (global). */
