@@ -6,6 +6,7 @@ tools:
   - read_file
   - grep_search
   - create_file
+  - run_in_terminal
 ---
 
 # Create Implementation Plan

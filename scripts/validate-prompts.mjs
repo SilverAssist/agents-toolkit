@@ -103,12 +103,14 @@ function validate(file) {
     seen.set(key, index + 2);
   }
 
-  // LIST_KEYS must be non-empty arrays.
+  // LIST_KEYS must be non-empty arrays of non-empty strings.
   for (const key of LIST_KEYS) {
     const val = parsed[key];
     if (val !== undefined && val !== null) {
       if (!Array.isArray(val) || val.length === 0) {
         problems.push(`\`${key}\` must be a non-empty list`);
+      } else if (val.some((entry) => typeof entry !== 'string' || entry.trim() === '')) {
+        problems.push(`\`${key}\` entries must be non-empty strings`);
       }
     }
   }
