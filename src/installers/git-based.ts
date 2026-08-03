@@ -16,6 +16,14 @@ import type { InstallFilters, InstallOptions, SkillMeta } from '../types.js';
 
 type GitBasedTargetOptions = Partial<InstallOptions> & { filters?: InstallFilters };
 
+/**
+ * Install git based target.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options (optional).
+ * @param target - TODO(tsdoc): describe target (optional).
+ */
 export function installGitBasedTarget(options: GitBasedTargetOptions = {}, target = 'copilot'): void {
   const {
     force = false,

@@ -8,6 +8,11 @@ type CategoryEntries = {
   github?: readonly string[];
 };
 
+/**
+ * File categories.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
   instructions: {
     react: [
@@ -67,8 +72,23 @@ export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
   },
 } as const;
 
+/**
+ * File category key.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export type FileCategoryKey = 'instructions' | 'prompts' | 'partials' | 'skills';
 
+/**
+ * Reports whether include file.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param filename - TODO(tsdoc): describe filename.
+ * @param category - TODO(tsdoc): describe category.
+ * @param filters - TODO(tsdoc): describe filters.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function shouldIncludeFile(filename: string, category: FileCategoryKey, filters: InstallFilters): boolean {
   const cats = FILE_CATEGORIES[category];
 

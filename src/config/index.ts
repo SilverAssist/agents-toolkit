@@ -5,6 +5,11 @@ import { error, info, success } from '../logger.js';
 import { getHomeDir } from '../paths.js';
 import type { AgentToolkitConfig, InstallFilters, InstallOptions, InstallResult, InstallScope } from '../types.js';
 
+/**
+ * Default config.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const DEFAULT_CONFIG: AgentToolkitConfig = {
   stack: 'all',
   tracker: 'all',
@@ -37,6 +42,14 @@ function loadConfig(configPath: string): AgentToolkitConfig | null {
   }
 }
 
+/**
+ * Resolves the filters.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function resolveFilters(options: Pick<InstallOptions, 'stack' | 'tracker'>): InstallFilters {
   const validStacks = ['react', 'wordpress', 'all'] as const;
   const validTrackers = ['jira', 'github', 'all'] as const;
@@ -81,6 +94,14 @@ export function resolveFilters(options: Pick<InstallOptions, 'stack' | 'tracker'
   return { stack, tracker };
 }
 
+/**
+ * Gets the install scope.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function getInstallScope(
   options: Partial<
     Pick<InstallOptions, 'promptsOnly' | 'partialsOnly' | 'skillsOnly' | 'instructionsOnly' | 'hooksOnly'>
@@ -103,10 +124,27 @@ export function getInstallScope(
   };
 }
 
+/**
+ * Gets the change count.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param result - TODO(tsdoc): describe result.
+ * @param dryRun - TODO(tsdoc): describe dryRun.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function getChangeCount(result: InstallResult, dryRun: boolean): number {
   return dryRun ? result.planned : result.written;
 }
 
+/**
+ * Ensure config file.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options (optional).
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function ensureConfigFile(options: { dryRun?: boolean; global?: boolean } = {}): InstallResult {
   const { dryRun = false, global: isGlobal = false } = options;
   const configDir = isGlobal ? getHomeDir() : process.cwd();

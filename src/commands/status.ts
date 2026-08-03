@@ -8,6 +8,11 @@ import type { ColorKey } from '../logger.js';
 import { getAgentsSkillsDir } from '../paths.js';
 import { computeSkillHash, readLockfile, LOCKFILE_NAME } from '../lockfile/index.js';
 
+/**
+ * Status.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export function status(): void {
   log('\n📊 Agents Toolkit Status\n', 'bright');
 
@@ -71,6 +76,11 @@ export function status(): void {
   console.log('');
 }
 
+/**
+ * List.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export function list(): void {
   log('\n📋 Available Prompts\n', 'bright');
 

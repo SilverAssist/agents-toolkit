@@ -1,6 +1,11 @@
 import { log, error } from '../logger.js';
 import type { InstallOptions } from '../types.js';
 
+/**
+ * Show help.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export function showHelp(): void {
   log('\n📦 Agents Toolkit\n', 'bright');
   console.log('Usage: agents-toolkit <command> [options]\n');
@@ -52,6 +57,13 @@ export function showHelp(): void {
   console.log('');
 }
 
+/**
+ * Parses the args.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function parseArgs(): { command: string; options: InstallOptions } {
   const args = process.argv.slice(2);
   const command = args[0] ?? 'help';
@@ -120,6 +132,14 @@ export function parseArgs(): { command: string; options: InstallOptions } {
   return { command, options };
 }
 
+/**
+ * Resolves the install target.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function resolveInstallTarget(options: Pick<InstallOptions, 'claude' | 'codex' | 'target'>): string {
   const legacyTargets: string[] = [];
   if (options.claude) legacyTargets.push('claude');

@@ -5,6 +5,14 @@ import { TEMPLATES_DIR } from '../constants.js';
 import { info, success } from '../logger.js';
 import type { InstallResult } from '../types.js';
 
+/**
+ * Install copilot instructions.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options (optional).
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function installCopilotInstructions(
   options: { targetDir: string; dryRun?: boolean } = { targetDir: '' },
 ): InstallResult {

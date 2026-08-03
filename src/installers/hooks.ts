@@ -33,6 +33,14 @@ function finalizeHookConfigs(hooksDest: string, isGlobal: boolean): void {
   }
 }
 
+/**
+ * Install hooks.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function installHooks({
   targetDir,
   force = false,

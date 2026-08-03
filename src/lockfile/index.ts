@@ -5,6 +5,11 @@ import path from 'node:path';
 import { success } from '../logger.js';
 import type { InstallFilters, Lockfile, LockfileEntry, SkillMeta } from '../types.js';
 
+/**
+ * Lockfile name.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const LOCKFILE_NAME = 'agents-toolkit-lock.json';
 
 /** Computes a SHA-256 hex digest of SKILL.md, or null if the file is absent. */
@@ -15,6 +20,14 @@ export function computeSkillHash(skillDir: string): string | null {
   return crypto.createHash('sha256').update(content).digest('hex');
 }
 
+/**
+ * Reads the lockfile.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param cwd - TODO(tsdoc): describe cwd (optional).
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function readLockfile(cwd = process.cwd()): Lockfile | null {
   const lockPath = path.join(cwd, LOCKFILE_NAME);
   if (!fs.existsSync(lockPath)) return null;

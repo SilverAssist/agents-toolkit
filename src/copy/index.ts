@@ -6,6 +6,16 @@ import { info, warn } from '../logger.js';
 import { getAgentsSkillsDir } from '../paths.js';
 import type { CopyOptions, InstallResult, SkillInstallResult } from '../types.js';
 
+/**
+ * Copy dir.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param src - TODO(tsdoc): describe src.
+ * @param dest - TODO(tsdoc): describe dest.
+ * @param options - TODO(tsdoc): describe options (optional).
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function copyDir(src: string, dest: string, options: CopyOptions = {}): InstallResult {
   const {
     force = false,
@@ -69,6 +79,13 @@ export function copyDir(src: string, dest: string, options: CopyOptions = {}): I
   return totals;
 }
 
+/**
+ * Append skills to gitignore.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param cwd - TODO(tsdoc): describe cwd.
+ */
 export function appendSkillsToGitignore(cwd: string): void {
   const gitignorePath = path.join(cwd, '.gitignore');
   const block = [
@@ -99,6 +116,16 @@ interface LinkSkillOptions {
   copy?: boolean;
 }
 
+/**
+ * Link skill.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param canonicalSkillDir - TODO(tsdoc): describe canonicalSkillDir.
+ * @param agentSkillLinkPath - TODO(tsdoc): describe agentSkillLinkPath.
+ * @param options - TODO(tsdoc): describe options (optional).
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function linkSkill(
   canonicalSkillDir: string,
   agentSkillLinkPath: string,
@@ -168,6 +195,14 @@ interface InstallSkillsParams {
   dirFilter?: (name: string) => boolean;
 }
 
+/**
+ * Install skills standard.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function installSkillsStandard({
   isGlobal,
   agentSkillsDir,

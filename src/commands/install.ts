@@ -16,14 +16,35 @@ import type { InstallFilters, InstallOptions, SkillMeta } from '../types.js';
 
 type CommandOptions = Partial<InstallOptions> & { filters?: InstallFilters };
 
+/**
+ * Install.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options (optional).
+ */
 export function install(options: CommandOptions = {}): void {
   installGitBasedTarget(options, 'copilot');
 }
 
+/**
+ * Install codex.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options (optional).
+ */
 export function installCodex(options: CommandOptions = {}): void {
   installGitBasedTarget(options, 'codex');
 }
 
+/**
+ * Install claude.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options (optional).
+ */
 export function installClaude(options: CommandOptions = {}): void {
   const {
     force = false,

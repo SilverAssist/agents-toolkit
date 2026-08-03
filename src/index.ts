@@ -1,5 +1,15 @@
+/**
+ * Version.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const VERSION = '2.6.0';
 
+/**
+ * Prompts.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const PROMPTS: { workflow: readonly string[]; utility: readonly string[] } = {
   workflow: [
     'analyze-github-issue',
@@ -26,6 +36,11 @@ export const PROMPTS: { workflow: readonly string[]; utility: readonly string[] 
   ],
 };
 
+/**
+ * Partials.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const PARTIALS: readonly string[] = [
   'documentation',
   'git-operations',
@@ -37,6 +52,11 @@ export const PARTIALS: readonly string[] = [
   'validations',
 ];
 
+/**
+ * Instructions.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const INSTRUCTIONS: readonly string[] = [
   'caching',
   'css-styling',
@@ -53,6 +73,11 @@ export const INSTRUCTIONS: readonly string[] = [
   'wordpress-plugin-architecture',
 ];
 
+/**
+ * Skills.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const SKILLS: readonly string[] = [
   'ai-seo-optimization',
   'component-architecture',
@@ -69,10 +94,20 @@ export const SKILLS: readonly string[] = [
   'tsdoc-standards',
 ];
 
+/**
+ * Hooks.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const HOOKS: readonly string[] = ['lint-format', 'validate-tsx'];
 
 // Skills follow the `npx skills` standard: a single canonical copy lives in
 // .agents/skills/ and each agent's skills directory symlinks to it.
+/**
+ * Skills layout.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const SKILLS_LAYOUT: {
   canonicalDir: string;
   agentDirs: { claude: string; copilot: string };
@@ -84,6 +119,11 @@ export const SKILLS_LAYOUT: {
   },
 };
 
+/**
+ * Claude commands.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const CLAUDE_COMMANDS: readonly string[] = [
   'analyze-ticket',
   'create-plan',
@@ -96,6 +136,11 @@ export const CLAUDE_COMMANDS: readonly string[] = [
   'add-tests',
 ];
 
+/**
+ * Claude files.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const CLAUDE_FILES: {
   instructions: string;
   commandsDir: string;
@@ -114,4 +159,9 @@ export const CLAUDE_FILES: {
 // Names use the frontmatter `name:` field (the VS Code canonical identifier),
 // not the raw filename stem — `core-review.agent.md` has `name: core-review`.
 // Suppress both with --no-agent-overrides.
+/**
+ * Agents.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ */
 export const AGENTS = ['Explore', 'core-review'] as const;

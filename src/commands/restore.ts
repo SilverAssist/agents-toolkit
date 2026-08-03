@@ -14,6 +14,13 @@ interface RestoreOptions {
   copy?: boolean;
 }
 
+/**
+ * Restore.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options (optional).
+ */
 export function restore(options: RestoreOptions = {}): void {
   const { dryRun = false, copy = false } = options;
   log('\n🔄 Agents Toolkit Restore\n', 'bright');

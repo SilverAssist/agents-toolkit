@@ -1,5 +1,13 @@
 import type { ClaudeAlias } from '../types.js';
 
+/**
+ * Extracts the claude alias.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param frontmatterBody - TODO(tsdoc): describe frontmatterBody.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function extractClaudeAlias(frontmatterBody: string): ClaudeAlias {
   const match = frontmatterBody.match(/^model:[ \t]+([^\n]+)$/m);
   const value = match?.[1]?.trim();

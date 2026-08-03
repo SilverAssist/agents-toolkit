@@ -21,6 +21,14 @@ interface InstallAgentsFileOptions {
   dryRun?: boolean;
 }
 
+/**
+ * Install agents file.
+ *
+ * @remarks TODO(tsdoc): verify this generated summary.
+ *
+ * @param options - TODO(tsdoc): describe options.
+ * @returns TODO(tsdoc): describe the return value.
+ */
 export function installAgentsFile({
   templatePath,
   force = false,
