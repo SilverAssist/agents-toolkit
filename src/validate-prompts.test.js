@@ -139,3 +139,19 @@ test('validate-prompts: scalar tools fails', () => {
   assert.notEqual(r.status, 0);
   assert.match(r.stderr, /`tools` must be a non-empty list/);
 });
+
+test('validate-prompts: tools list with empty-string entry fails', () => {
+  const r = runValidator({
+    'bad.prompt.md': "---\ndescription: A prompt\nagent: agent\ntools:\n  - read_file\n  - ''\n---\n# Body\n",
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /`tools` entries must be non-empty strings/);
+});
+
+test('validate-prompts: tools list with null entry fails', () => {
+  const r = runValidator({
+    'bad.prompt.md': '---\ndescription: A prompt\nagent: agent\ntools:\n  - read_file\n  - ~\n---\n# Body\n',
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /`tools` entries must be non-empty strings/);
+});

@@ -4,6 +4,7 @@ description: Prepare code for a pull request by running all validations
 model: Claude Haiku 4.5
 tools:
   - read_file
+  - grep_search
   - run_in_terminal
 ---
 
