@@ -73,6 +73,8 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
     ├── testing-patterns       -> ../../.agents/skills/testing-patterns
     └── ...                           # filtered by --stack
+└── agents/                           # Copilot custom agents (model-pinned overrides)
+    └── core-review.agent.md          # cheap-tier inline reviewer (@core-review)
 .agents/
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/

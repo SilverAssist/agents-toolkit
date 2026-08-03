@@ -856,6 +856,15 @@ test('--no-agent-overrides skips .claude/agents/ install', (t) => {
   assert.equal(fs.existsSync(agentsDir), false, '.claude/agents/ must not be created with --no-agent-overrides');
 });
 
+test('claude install does not copy Copilot-format .agent.md to .claude/agents/', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentFile = path.join(tempDir, '.claude', 'agents', 'core-review.agent.md');
+  assert.ok(!fs.existsSync(agentFile), 'Claude install must not copy Copilot-format .agent.md to .claude/agents/');
+});
+
 test('copilot install writes core-review.agent.md to .github/agents/', (t) => {
   const tempDir = createTempProject(t);
   const { status, stderr } = runCli(['install', '--prompts-only'], tempDir);
