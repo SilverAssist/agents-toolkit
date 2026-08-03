@@ -127,7 +127,7 @@ Run the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`
 diff is complete, so a `quick` pass would miss cross-file drift, but `thorough` (whole-repo) is
 normally overkill at this stage unless the change touches architecture or renames symbols across
 layers. Run it as a dedicated, read-only pass. It works on every agent — only the mechanism
-differs (subagents are a Claude-Code-only optimization, not a requirement):
+differs — only the invocation mechanism varies by agent:
 
 - **GitHub Copilot** — run the checklist **inline as a distinct pass** over the scope defined by
   `--budget medium`. Or, if `.github/agents/core-review.agent.md` is installed, @-mention

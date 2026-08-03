@@ -1063,7 +1063,12 @@ function installClaude(options = {}) {
     const agentsDir = path.join(TEMPLATES_DIR, 'shared', 'agents');
     if (fs.existsSync(agentsDir)) {
       info('Installing subagent overrides...');
-      const result = copyDir(agentsDir, path.join(claudeDir, 'agents'), { force, dryRun });
+      const result = copyDir(agentsDir, path.join(claudeDir, 'agents'), {
+        force,
+        dryRun,
+        // .agent.md files are Copilot-format; skip them for Claude installs.
+        filter: (name) => !name.endsWith('.agent.md'),
+      });
       totalChanges += getChangeCount(result, dryRun);
       if (!dryRun && result.written > 0) {
         success(`Installed ${result.written} agent override(s) to .claude/agents/`);

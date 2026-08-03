@@ -166,9 +166,13 @@ For every unresolved thread from Step 2:
 run a single consistency pass (the *core review*) before committing the batch. Use the
 **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
 (diff + directly-touched files — the batch is small and scoped, so `medium`/`thorough` would only
-add unrelated noise). Run it as a dedicated read-only pass (inline on Copilot/Codex; optionally
-a subagent on Claude Code). A fix often leaves or introduces an adjacent issue (a now-stale doc
-line, a broken link, a table missing the new asset) that would trigger yet another Copilot round.
+add unrelated noise). Run it as a dedicated read-only pass. Options by agent:
+
+- **GitHub Copilot** — run inline as a distinct pass, or use `@agent-core-review` for a cheap-tier pass even from within this smart-tier prompt.
+- **Codex** — run inline as a distinct pass.
+- **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).
+
+A fix often leaves or introduces an adjacent issue (a now-stale doc
 Apply everything the pass flags, re-run the checks above, and only then proceed to Step 4.
 Running this once over the completed batch — rather than per thread — keeps the review cost
 bounded.

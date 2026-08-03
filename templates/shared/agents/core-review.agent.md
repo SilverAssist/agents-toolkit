@@ -3,7 +3,7 @@ name: core-review
 description: "Run a consistency review before opening a PR or before pushing fixes — a dedicated, read-only pass that catches doc\u2194code drift, invalid examples, broken links, and stale indexes before a reviewer sees them. Scope: `--budget quick` (diff only), `--budget medium` (diff + one-hop neighbours, default), or `--budget thorough` (whole repo)."
 model: Claude Haiku 4.5
 tools: ['read', 'search']
-user-invocable: false
+user-invocable: true
 ---
 
 # core-review (Copilot cheap-tier subagent)

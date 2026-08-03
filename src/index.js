@@ -106,7 +106,8 @@ export const CLAUDE_FILES = {
   agentsDir: '.claude/agents',
 };
 
-// Claude Code subagent overrides shipped by the toolkit (project-local
-// `.claude/agents/*.md`). Each file re-defines a built-in subagent — for now
-// only `Explore` (cheap-tier default). Suppress with --no-agent-overrides.
+// Subagent overrides shipped by the toolkit:
+//   - 'Explore'     → Claude Code  (.claude/agents/Explore.md, cheap-tier default)
+//   - 'core-review' → Copilot      (.github/agents/core-review.agent.md, cheap-tier)
+// Suppress both with --no-agent-overrides.
 export const AGENTS = ['Explore', 'core-review'];

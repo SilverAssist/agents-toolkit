@@ -866,7 +866,7 @@ test('copilot install writes core-review.agent.md to .github/agents/', (t) => {
 
   const content = fs.readFileSync(agentFile, 'utf-8');
   assert.match(content, /model: Claude Haiku 4\.5/, 'core-review.agent.md must pin the cheap Copilot tier');
-  assert.match(content, /user-invocable: false/, 'core-review.agent.md must be hidden from the chat picker');
+  assert.match(content, /user-invocable: true/, 'core-review.agent.md must be user-invocable so it can be @-mentioned');
 });
 
 test('--no-agent-overrides skips .github/agents/ for copilot install', (t) => {
@@ -879,11 +879,13 @@ test('--no-agent-overrides skips .github/agents/ for copilot install', (t) => {
 });
 
 test('AGENTS export contains Explore and core-review', () => {
-  // Read the source directly — avoids async import in a sync test context.
+  // Use a precise regex to match the exact array literal, not just substring presence.
   const content = fs.readFileSync(path.join(process.cwd(), 'src', 'index.js'), 'utf-8');
-  assert.match(content, /export const AGENTS\s*=\s*\[/, 'AGENTS must be exported');
-  assert.match(content, /'Explore'/, 'AGENTS must include Explore');
-  assert.match(content, /'core-review'/, 'AGENTS must include core-review');
+  assert.match(
+    content,
+    /export const AGENTS\s*=\s*\['Explore',\s*'core-review'\]/,
+    "AGENTS must be exactly ['Explore', 'core-review'] in this order",
+  );
 });
 
 test('core-review skill ships model: haiku and --budget hint', () => {
