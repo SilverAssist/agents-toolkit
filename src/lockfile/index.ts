@@ -30,6 +30,10 @@ export function readLockfile(cwd = process.cwd()): Lockfile | null {
     if (typeof raw !== 'object' || raw === null) return null;
     const obj = raw as Record<string, unknown>;
 
+    // Validate required top-level fields before trusting the rest of the structure.
+    if (obj['version'] !== 1) return null;
+    if (typeof obj['packageVersion'] !== 'string') return null;
+
     // Validate config shape — restore/status dereference config.stack and config.tracker directly.
     const config = obj['config'];
     if (typeof config !== 'object' || config === null) return null;

@@ -1098,3 +1098,26 @@ for (const promptName of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) 
     },
   );
 }
+
+// ---------------------------------------------------------------------------
+// Pack manifest smoke test — verifies the published file set matches dist/ layout
+// ---------------------------------------------------------------------------
+
+test('npm pack --dry-run includes dist/cli.mjs and dist/index.mjs', () => {
+  // --ignore-scripts prevents prepack from re-running the build and mixing its
+  // stdout with the JSON output that this test must parse.
+  const packResult = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
+    cwd: path.join(__dirname, '..'),
+    encoding: 'utf-8',
+  });
+  assert.equal(packResult.status, 0, `npm pack --dry-run failed: ${packResult.stderr}`);
+  const manifest = JSON.parse(packResult.stdout);
+  const files = manifest[0].files.map((f) => f.path);
+  assert.ok(files.includes('dist/cli.mjs'), 'tarball must include dist/cli.mjs');
+  assert.ok(files.includes('dist/index.mjs'), 'tarball must include dist/index.mjs');
+  assert.ok(!files.some((f) => f.startsWith('bin/')), 'tarball must not include bin/ (deleted)');
+  assert.ok(
+    !files.some((f) => f.startsWith('src/') && !f.startsWith('src/cli.test')),
+    'tarball must not include src/ source files',
+  );
+});

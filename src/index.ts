@@ -91,17 +91,27 @@ export const SKILLS_LAYOUT: {
   },
 };
 
-/** Prompt names converted to Claude Code slash commands during `--claude` install. */
+/** All prompt names available as Claude Code slash commands during `--claude` install, sorted alphabetically. */
 export const CLAUDE_COMMANDS: readonly string[] = [
-  'analyze-ticket',
-  'create-plan',
-  'work-ticket',
-  'prepare-pr',
-  'create-pr',
-  'finalize-pr',
-  'review-code',
-  'fix-issues',
   'add-tests',
+  'analyze-github-issue',
+  'analyze-ticket',
+  'audit-ai-seo',
+  'create-github-pr',
+  'create-plan',
+  'create-pr',
+  'finalize-github-pr',
+  'finalize-pr',
+  'fix-issues',
+  'new-wp-component',
+  'new-wp-plugin',
+  'prepare-github-release',
+  'prepare-pr',
+  'quality-check',
+  'resolve-github-reviews',
+  'review-code',
+  'work-github-issue',
+  'work-ticket',
 ];
 
 /** Install-target paths for Claude Code (instructions root file, commands dir, skills dir, agents dir). */
