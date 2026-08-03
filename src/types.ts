@@ -53,9 +53,16 @@ export interface AgentToolkitConfig {
 export interface CopyOptions {
   force?: boolean;
   dryRun?: boolean;
-  filterFile?: (name: string) => boolean;
   renameFile?: (name: string) => string;
-  transformContent?: (content: string, filename: string) => string;
+  transformContent?: (content: string) => string;
+  filter?: (name: string) => boolean;
+  dirFilter?: (name: string) => boolean;
+  partialsFilter?: (name: string) => boolean;
+}
+
+/** Result of installSkillsStandard — extends InstallResult with per-skill metadata. */
+export interface SkillInstallResult extends InstallResult {
+  installedSkills: Record<string, { canonicalDir: string }>;
 }
 
 /** Resolved stack/tracker values used by shouldIncludeFile. */

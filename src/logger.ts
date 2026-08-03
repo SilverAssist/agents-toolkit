@@ -1,4 +1,4 @@
-type ColorKey = 'reset' | 'bright' | 'green' | 'yellow' | 'blue' | 'red' | 'cyan';
+export type ColorKey = 'reset' | 'bright' | 'green' | 'yellow' | 'blue' | 'red' | 'cyan';
 
 const COLORS: Record<ColorKey, string> = {
   reset: '\x1b[0m',
@@ -10,7 +10,7 @@ const COLORS: Record<ColorKey, string> = {
   cyan: '\x1b[36m',
 };
 
-function log(message: string, color: ColorKey = 'reset'): void {
+export function log(message: string, color: ColorKey = 'reset'): void {
   console.log(`${COLORS[color]}${message}${COLORS.reset}`);
 }
 
