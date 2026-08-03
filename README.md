@@ -69,10 +69,10 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── typescript.instructions.md
 │   ├── react-components.instructions.md
 │   └── ...                           # filtered by --stack
-└── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
-    ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
-    └── ...                           # filtered by --stack
+├── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
+│   ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
+│   ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+│   └── ...                           # filtered by --stack
 └── agents/                           # Copilot custom agents (model-pinned overrides)
     └── core-review.agent.md          # cheap-tier inline reviewer (@core-review)
 .agents/
