@@ -100,7 +100,7 @@ npm pack --dry-run   # Preview what will be published
 
 Verify the `npm pack --dry-run` output only includes:
 
-- `dist/`, `src/index.ts`, `templates/`, `README.md`, `LICENSE`
+- `dist/`, `templates/`, `README.md`, `LICENSE`
 
 ### Step 4: Commit and Push
 
@@ -132,8 +132,7 @@ Controlled by the `files` field in `package.json`:
 
 ```json
 "files": [
-  "bin",
-  "src/index.ts",
+  "dist",
   "templates",
   "README.md",
   "LICENSE"

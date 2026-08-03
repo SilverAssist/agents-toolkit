@@ -10,7 +10,7 @@ import { getChangeCount, getInstallScope, ensureConfigFile } from '../config/ind
 import { computeSkillHash, writeLockfile } from '../lockfile/index.js';
 import { shouldIncludeFile } from '../filter/index.js';
 import { adaptPathsForClaude, transformFrontmatterForClaude } from '../transforms/index.js';
-import { installGitBasedTarget } from '../installers/git-based.js';
+import { installGitBasedTarget } from '../installers/index.js';
 import type { FileCategoryKey } from '../filter/index.js';
 import type { InstallFilters, InstallOptions, SkillMeta } from '../types.js';
 
