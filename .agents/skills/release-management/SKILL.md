@@ -22,7 +22,7 @@ This skill covers the release pipeline for `@silverassist/agents-toolkit`, an np
 ```text
 agents-toolkit/
 ├── package.json             # Version number lives here
-├── src/index.js             # VERSION constant (must match package.json)
+├── src/index.ts             # VERSION constant (must match package.json)
 ├── CHANGELOG.md             # Follows Keep a Changelog format
 └── .github/
     └── workflows/
@@ -63,10 +63,10 @@ Update **two places** — they must stay in sync:
 }
 ```
 
-**`src/index.js`:**
+**`src/index.ts`:**
 
-```js
-export const VERSION = "2.4.0";
+```ts
+export const VERSION = '2.4.0';
 ```
 
 ### Step 2: Update CHANGELOG.md
@@ -100,21 +100,25 @@ npm pack --dry-run   # Preview what will be published
 
 Verify the `npm pack --dry-run` output only includes:
 
-- `bin/`, `src/index.js`, `templates/`, `README.md`, `LICENSE`
+- `package.json` (always included automatically)
+- `dist/`, `templates/`, `README.md`, `LICENSE`
 
 ### Step 4: Commit and Push
 
 ```bash
-git add package.json src/index.js CHANGELOG.md
+git add package.json package-lock.json src/index.ts CHANGELOG.md
 git commit -m "chore: bump version to 2.4.0 for release"
 git push origin main
 ```
 
-### Step 5: Create Tag (Triggers the Release)
+### Step 5: Create GitHub Release (Triggers the Publish)
+
+> **CRITICAL:** `publish.yml` triggers on `on: release: [created]`, not on a bare tag push.
+> A bare tag push does **not** trigger npm publish.
 
 ```bash
-git tag v2.4.0 -m "Release v2.4.0"
-git push origin v2.4.0
+git checkout main && git pull
+gh release create v2.4.0 --generate-notes   # fires publish.yml → npm publish
 ```
 
 ### Step 6: Monitor Workflow
@@ -132,8 +136,7 @@ Controlled by the `files` field in `package.json`:
 
 ```json
 "files": [
-  "bin",
-  "src/index.js",
+  "dist",
   "templates",
   "README.md",
   "LICENSE"

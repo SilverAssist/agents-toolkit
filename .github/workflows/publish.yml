@@ -20,14 +20,17 @@ jobs:
 
       - run: npm ci
 
+      - name: Build
+        run: npm run build
+
       - name: Verify CLI syntax
-        run: node --check bin/cli.js
+        run: node --check dist/cli.mjs
 
       - name: Verify module syntax
-        run: node --check src/index.js
+        run: node --check dist/index.mjs
 
       - name: Test CLI
-        run: node bin/cli.js list
+        run: node dist/cli.mjs list
 
       - name: Run tests
         run: npm test

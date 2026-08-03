@@ -1,11 +1,8 @@
-/**
- * Agents Toolkit
- * @module @silverassist/agents-toolkit
- */
-
+/** Current package version — must match `package.json`. */
 export const VERSION = '2.6.0';
 
-export const PROMPTS = {
+/** Prompt names grouped by `workflow` and `utility` categories. */
+export const PROMPTS: { workflow: readonly string[]; utility: readonly string[] } = {
   workflow: [
     'analyze-github-issue',
     'analyze-ticket',
@@ -31,7 +28,8 @@ export const PROMPTS = {
   ],
 };
 
-export const PARTIALS = [
+/** Partial names installed into the `_partials/` subdirectory. */
+export const PARTIALS: readonly string[] = [
   'documentation',
   'git-operations',
   'github-integration',
@@ -42,7 +40,8 @@ export const PARTIALS = [
   'validations',
 ];
 
-export const INSTRUCTIONS = [
+/** Instruction file names installed into `.github/instructions/`. */
+export const INSTRUCTIONS: readonly string[] = [
   'caching',
   'css-styling',
   'documentation-language',
@@ -58,7 +57,8 @@ export const INSTRUCTIONS = [
   'wordpress-plugin-architecture',
 ];
 
-export const SKILLS = [
+/** Skill names installed to the canonical `.agents/skills/` store. */
+export const SKILLS: readonly string[] = [
   'ai-seo-optimization',
   'component-architecture',
   'core-review',
@@ -74,11 +74,16 @@ export const SKILLS = [
   'tsdoc-standards',
 ];
 
-export const HOOKS = ['lint-format', 'validate-tsx'];
+/** Hook config names installed to the hooks directory. */
+export const HOOKS: readonly string[] = ['lint-format', 'validate-tsx'];
 
 // Skills follow the `npx skills` standard: a single canonical copy lives in
 // .agents/skills/ and each agent's skills directory symlinks to it.
-export const SKILLS_LAYOUT = {
+/** Directory layout for the `npx skills` standard: canonical store and per-agent symlink targets. */
+export const SKILLS_LAYOUT: {
+  canonicalDir: string;
+  agentDirs: { claude: string; copilot: string };
+} = {
   canonicalDir: '.agents/skills',
   agentDirs: {
     claude: '.claude/skills',
@@ -86,20 +91,36 @@ export const SKILLS_LAYOUT = {
   },
 };
 
-// Claude Code equivalents
-export const CLAUDE_COMMANDS = [
-  'analyze-ticket',
-  'create-plan',
-  'work-ticket',
-  'prepare-pr',
-  'create-pr',
-  'finalize-pr',
-  'review-code',
-  'fix-issues',
+/** All prompt names available as Claude Code slash commands during `--claude` install, sorted alphabetically. */
+export const CLAUDE_COMMANDS: readonly string[] = [
   'add-tests',
+  'analyze-github-issue',
+  'analyze-ticket',
+  'audit-ai-seo',
+  'create-github-pr',
+  'create-plan',
+  'create-pr',
+  'finalize-github-pr',
+  'finalize-pr',
+  'fix-issues',
+  'new-wp-component',
+  'new-wp-plugin',
+  'prepare-github-release',
+  'prepare-pr',
+  'quality-check',
+  'resolve-github-reviews',
+  'review-code',
+  'work-github-issue',
+  'work-ticket',
 ];
 
-export const CLAUDE_FILES = {
+/** Install-target paths for Claude Code (instructions root file, commands dir, skills dir, agents dir). */
+export const CLAUDE_FILES: {
+  instructions: string;
+  commandsDir: string;
+  skillsDir: string;
+  agentsDir: string;
+} = {
   instructions: 'CLAUDE.md',
   commandsDir: '.claude/commands',
   skillsDir: '.claude/skills',
@@ -112,4 +133,5 @@ export const CLAUDE_FILES = {
 // Names use the frontmatter `name:` field (the VS Code canonical identifier),
 // not the raw filename stem — `core-review.agent.md` has `name: core-review`.
 // Suppress both with --no-agent-overrides.
-export const AGENTS = ['Explore', 'core-review'];
+/** Subagent override names shipped by the toolkit (uses frontmatter `name:` field, not filename stem). */
+export const AGENTS = ['Explore', 'core-review'] as const;

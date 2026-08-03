@@ -1,5 +1,6 @@
 node_modules
 package-lock.json
+dist
 
 # Markdown is linted by markdownlint, never reformatted by Prettier.
 # Prettier rewrites code spans and fenced content whose exact whitespace is the

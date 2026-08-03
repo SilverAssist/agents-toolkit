@@ -28,7 +28,7 @@ For each failing test, the output shows:
 Determine the root cause:
 
 - **CLI output changed** — update assertion regex to match new output
-- **CLI behavior changed** — fix `bin/cli.js` to restore expected behavior
+- **CLI behavior changed** — fix the relevant `src/commands/` or `src/installers/` module
 - **Test is wrong** — update test if requirement changed
 - **New file missing** — CLI didn't create a file it should; fix the installer
 - **Symlink type wrong** — ensure `fs.symlinkSync(target, link, 'dir')` uses `'dir'` type
@@ -37,9 +37,9 @@ Determine the root cause:
 
 Edit the relevant file:
 
-- `bin/cli.js` — CLI behavior and installers
+- `src/commands/` — CLI behavior and installers
 - `src/cli.test.js` — test assertions (only if the test is wrong)
-- `src/index.js` — exports (if an export mismatch caused the failure)
+- `src/index.ts` — exports (if an export mismatch caused the failure)
 
 ### 5. Re-run After Each Fix
 

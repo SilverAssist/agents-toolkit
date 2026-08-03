@@ -162,8 +162,8 @@ assert.ok(fs.statSync(path.join(dir, 'subdir')).isDirectory());
 ## Naming Conventions
 
 - Test file: same name as the module under test, suffix `.test.js`
-  - `src/index.js` → `src/index.test.js`
-  - `bin/cli.js` → `src/cli.test.js`
+  - `src/index.ts` → `src/index.test.ts`
+  - `dist/cli.mjs` → `src/cli.test.js` (spawns the compiled CLI)
 - Test description: plain English, starts with a verb ("installs", "reports", "exits")
 - No `describe` blocks — use subtests (`t.test()`) when grouping is needed
 

@@ -44,7 +44,7 @@ Verify:
 
 - [ ] No `console.log` or debug statements left in
 - [ ] No sensitive data exposed (API keys, secrets)
-- [ ] JSDoc comments on new/modified functions in `bin/cli.js`
+- [ ] TSDoc comments on new/modified exported symbols in `src/**/*.ts`
 - [ ] New CLI flags documented in `help` output
 
 ### 4. Review Changes
@@ -58,7 +58,7 @@ Check:
 
 - Files changed align with issue scope
 - No unintended changes
-- `src/index.js` exports in sync with `templates/shared/` filesystem
+- `src/index.ts` exports in sync with `templates/shared/` filesystem
 - `README.md` and `CHANGELOG.md` updated if needed
 
 ### 5. Commit Hygiene
@@ -80,7 +80,7 @@ git rebase "origin/${BASE_BRANCH}"
 
 - [ ] `CHANGELOG.md` updated under the correct version
 - [ ] `README.md` updated if prompts/flags/behavior changed
-- [ ] JSDoc on new/modified functions in `bin/cli.js`
+- [ ] TSDoc on new/modified exported symbols in `src/**/*.ts`
 
 ## Output: Readiness Report
 
