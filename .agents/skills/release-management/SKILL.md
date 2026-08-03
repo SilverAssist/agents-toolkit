@@ -100,21 +100,25 @@ npm pack --dry-run   # Preview what will be published
 
 Verify the `npm pack --dry-run` output only includes:
 
+- `package.json` (always included automatically)
 - `dist/`, `templates/`, `README.md`, `LICENSE`
 
 ### Step 4: Commit and Push
 
 ```bash
-git add package.json src/index.ts CHANGELOG.md
+git add package.json package-lock.json src/index.ts CHANGELOG.md
 git commit -m "chore: bump version to 2.4.0 for release"
 git push origin main
 ```
 
-### Step 5: Create Tag (Triggers the Release)
+### Step 5: Create GitHub Release (Triggers the Publish)
+
+> **CRITICAL:** `publish.yml` triggers on `on: release: [created]`, not on a bare tag push.
+> A bare tag push does **not** trigger npm publish.
 
 ```bash
-git tag v2.4.0 -m "Release v2.4.0"
-git push origin v2.4.0
+git checkout main && git pull
+gh release create v2.4.0 --generate-notes   # fires publish.yml → npm publish
 ```
 
 ### Step 6: Monitor Workflow

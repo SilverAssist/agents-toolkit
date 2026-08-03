@@ -68,6 +68,15 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── work-ticket.prompt.md
 │   └── ...                           # 19 prompts total (filtered by --tracker and --stack)
 ├── instructions/
+│   ├── typescript.instructions.md
+│   ├── react-components.instructions.md
+│   └── ...                           # filtered by --stack
+├── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
+│   ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
+│   ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+│   └── ...                           # filtered by --stack
+└── agents/                           # Copilot custom agents (model-pinned overrides)
+    └── core-review.agent.md          # cheap-tier inline reviewer (@core-review)
 .agents/
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/

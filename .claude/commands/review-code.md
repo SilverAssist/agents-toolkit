@@ -19,16 +19,17 @@ git diff --name-only
 
 ### 2. Review Each File
 
-#### `bin/cli.js` — CLI logic
+#### `src/commands/` and `src/installers/` — CLI logic
 
 - [ ] No `console.log` debug statements (use `info()`/`warn()`/`success()`/`error()` helpers)
 - [ ] No hardcoded paths — use `getTargetDir()`, `getClaudeTargetDir()`, `getAgentsSkillsDir()`
-- [ ] JSDoc on new/modified functions
+- [ ] TSDoc on new/modified exported symbols in `src/**/*.ts`
 - [ ] `force`, `dryRun`, and `global` flags respected in new code paths
-- [ ] New flags added to `help` command output
+- [ ] New flags added to `showHelp()` output in `src/commands/help.ts`
 - [ ] No duplicate code — reuse existing helpers (`copyDir`, `linkSkill`, etc.)
+- [ ] Imports use the domain barrel (`../installers/index.js`), never internal files
 
-#### `src/index.js` — exports
+#### `src/index.ts` — exports
 
 - [ ] All arrays sorted alphabetically
 - [ ] Every file in `templates/shared/` has a corresponding export entry
@@ -65,7 +66,7 @@ git diff --name-only
 
 | File | Status | Issues |
 |------|--------|--------|
-| bin/cli.js | ✅/⚠️/❌ | — |
+| src/commands/ | ✅/⚠️/❌ | — |
 
 ### Issues Found
 
