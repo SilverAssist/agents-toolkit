@@ -1,8 +1,8 @@
 ---
-applyTo: "src/index.js"
+applyTo: "src/index.ts"
 ---
 
-When reviewing `src/index.js`, cross-check every exported array against the
+When reviewing `src/index.ts`, cross-check every exported array against the
 corresponding source directory in `templates/shared/`:
 
 - `SKILLS`: one entry per subdirectory under `templates/shared/skills/`, sorted A–Z.

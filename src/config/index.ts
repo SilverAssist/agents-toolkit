@@ -31,11 +31,20 @@ export const DEFAULT_CONFIG: AgentToolkitConfig = {
   },
 };
 
+const VALID_STACKS = new Set(['react', 'wordpress', 'all']);
+const VALID_TRACKERS = new Set(['jira', 'github', 'all']);
+
 function loadConfig(configPath: string): AgentToolkitConfig | null {
   if (!fs.existsSync(configPath)) return null;
   try {
     const raw: unknown = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
     if (typeof raw !== 'object' || raw === null) return null;
+    const obj = raw as Record<string, unknown>;
+    // Reject invalid enum values so a typo silently behaves like 'all'.
+    const stack = obj['stack'];
+    if (stack !== undefined && (typeof stack !== 'string' || !VALID_STACKS.has(stack))) return null;
+    const tracker = obj['tracker'];
+    if (tracker !== undefined && (typeof tracker !== 'string' || !VALID_TRACKERS.has(tracker))) return null;
     return raw as AgentToolkitConfig;
   } catch {
     return null;

@@ -33,15 +33,23 @@ export function readLockfile(cwd = process.cwd()): Lockfile | null {
   if (!fs.existsSync(lockPath)) return null;
   try {
     const raw: unknown = JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
-    // Reject partial/damaged lockfiles that would throw downstream in restore/status.
-    if (
-      typeof raw !== 'object' ||
-      raw === null ||
-      typeof (raw as Record<string, unknown>)['skills'] !== 'object' ||
-      (raw as Record<string, unknown>)['skills'] === null
-    ) {
-      return null;
+    if (typeof raw !== 'object' || raw === null) return null;
+    const obj = raw as Record<string, unknown>;
+
+    // Validate config shape — restore/status dereference config.stack and config.tracker directly.
+    const config = obj['config'];
+    if (typeof config !== 'object' || config === null) return null;
+    const cfg = config as Record<string, unknown>;
+    if (typeof cfg['stack'] !== 'string' || typeof cfg['tracker'] !== 'string') return null;
+
+    // Validate skills map — each entry must have an agents array.
+    const skills = obj['skills'];
+    if (typeof skills !== 'object' || skills === null) return null;
+    for (const entry of Object.values(skills as Record<string, unknown>)) {
+      if (typeof entry !== 'object' || entry === null) return null;
+      if (!Array.isArray((entry as Record<string, unknown>)['agents'])) return null;
     }
+
     return raw as Lockfile;
   } catch {
     return null;

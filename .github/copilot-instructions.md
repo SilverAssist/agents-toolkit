@@ -4,7 +4,7 @@ When performing a code review, apply the following checks.
 
 ## 1. Template/Export Sync (CRITICAL)
 
-`src/index.js` exports must always match the actual files in `templates/shared/`.
+`src/index.ts` exports must always match the actual files in `templates/shared/`.
 Check each array against the filesystem:
 
 | Export | Source directory | Strip suffix |
@@ -52,9 +52,9 @@ When adding a new CLI flag:
 This package declares its version in **two** places that MUST always match:
 
 - `package.json` → `"version"`
-- `src/index.js` → `export const VERSION`
+- `src/index.ts` → `export const VERSION`
 
-`bin/cli.js` stamps the exported `VERSION` into the generated `agents-toolkit-lock.json`
+`src/cli.ts` (compiled to `dist/cli.mjs`) stamps the exported `VERSION` into the generated `agents-toolkit-lock.json`
 (`packageVersion`), and `restore` / `status` compare against it to warn on drift — so a mismatch
 records the wrong version in users' lockfiles and emits misleading sync warnings. On any
 release/version-bump PR (or any diff that touches either value), confirm both are identical and equal
