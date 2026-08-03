@@ -109,5 +109,7 @@ export const CLAUDE_FILES = {
 // Subagent overrides shipped by the toolkit:
 //   - 'Explore'     → Claude Code  (.claude/agents/Explore.md, cheap-tier default)
 //   - 'core-review' → Copilot      (.github/agents/core-review.agent.md, cheap-tier)
+// Names use the frontmatter `name:` field (the VS Code canonical identifier),
+// not the raw filename stem — `core-review.agent.md` has `name: core-review`.
 // Suppress both with --no-agent-overrides.
 export const AGENTS = ['Explore', 'core-review'];

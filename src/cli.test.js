@@ -879,7 +879,8 @@ test('--no-agent-overrides skips .github/agents/ for copilot install', (t) => {
 });
 
 test('AGENTS export contains Explore and core-review', () => {
-  // Use a precise regex to match the exact array literal, not just substring presence.
+  // Names use the frontmatter `name:` field (VS Code canonical id), not the raw
+  // filename stem: core-review.agent.md has `name: core-review`, not core-review.agent.
   const content = fs.readFileSync(path.join(process.cwd(), 'src', 'index.js'), 'utf-8');
   assert.match(
     content,

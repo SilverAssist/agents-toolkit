@@ -173,6 +173,7 @@ add unrelated noise). Run it as a dedicated read-only pass. Options by agent:
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).
 
 A fix often leaves or introduces an adjacent issue (a now-stale doc
+line, a broken link, a table missing the new asset) that would trigger yet another Copilot round.
 Apply everything the pass flags, re-run the checks above, and only then proceed to Step 4.
 Running this once over the completed batch — rather than per thread — keeps the review cost
 bounded.
