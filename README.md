@@ -15,6 +15,8 @@ Reusable AI agent prompts for development workflows — supports **GitHub Copilo
 - ✅ **Modular Partials**: Reusable prompt fragments
 - ✅ **Customizable**: Easy to extend and modify
 - ✅ **PostToolUse Hooks**: Automated validation and formatting after Copilot edits
+- ✅ **Model-tier optimization**: All 19 prompts carry hardcoded `model:` pins — 13 on the cheap tier (Claude Haiku 4.5) for mechanical work, 6 on the smart tier (Claude Sonnet 5) for design tasks
+- ✅ **Subagent overrides**: `core-review.agent.md` (Copilot) and `Explore.md` (Claude Code) install cheap-tier pinned agents
 - ✅ **CLI Tool**: Quick installation in any project
 
 ## Installation
@@ -64,17 +66,8 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── analyze-ticket.prompt.md
 │   ├── create-plan.prompt.md
 │   ├── work-ticket.prompt.md
-│   └── ...                           # 10 prompts total (depends on --tracker)
+│   └── ...                           # 19 prompts total (filtered by --tracker and --stack)
 ├── instructions/
-│   ├── typescript.instructions.md
-│   ├── react-components.instructions.md
-│   └── ...                           # filtered by --stack
-├── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
-│   ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-│   ├── testing-patterns       -> ../../.agents/skills/testing-patterns
-│   └── ...                           # filtered by --stack
-└── agents/                           # Copilot custom agents (model-pinned overrides)
-    └── core-review.agent.md          # cheap-tier inline reviewer (@core-review)
 .agents/
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
@@ -109,12 +102,14 @@ CLAUDE.md                             # Project instructions for Claude Code (pr
     ├── testing-patterns/
     └── ...                           # 13 skills total, filtered by --stack
 .claude/
+├── agents/
+│   └── Explore.md                    # cheap-tier Explore override (replaces built-in)
 ├── commands/
 │   ├── _partials/
 │   ├── analyze-ticket.md
 │   ├── create-plan.md
 │   ├── work-ticket.md
-│   └── ...                           # 10 commands total (depends on --tracker)
+│   └── ...                           # 19 commands total (filtered by --tracker and --stack)
 └── skills/                           # Symlinks → ../../.agents/skills/ (read natively by Claude Code)
     ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
     ├── testing-patterns       -> ../../.agents/skills/testing-patterns
@@ -155,7 +150,7 @@ AGENTS.md                             # Project instructions for Codex (project 
 │   ├── analyze-ticket.prompt.md
 │   ├── create-plan.prompt.md
 │   ├── work-ticket.prompt.md
-│   └── ...                           # 10 prompts total (depends on --tracker)
+│   └── ...                           # 19 prompts total (filtered by --tracker and --stack)
 ├── instructions/
 │   ├── typescript.instructions.md
 │   ├── react-components.instructions.md
@@ -281,6 +276,30 @@ The same set of prompts is available for all supported tools.
 └──────────────────────┘     └──────────────────────┘  └─────────────────┘
 ```
 
+## Model Pins
+
+All 19 shipped prompts carry a hardcoded `model:` pin. There is no configuration
+block, no CLI flag, and nothing resolved at install time — to change a tier, edit
+the `model:` line in the installed file.
+
+| Tier | Model | Prompts |
+|------|-------|---------|
+| **Cheap** | `Claude Haiku 4.5` | `add-tests`, `analyze-github-issue`, `analyze-ticket`, `audit-ai-seo`, `finalize-github-pr`, `finalize-pr`, `fix-issues`, `new-wp-component`, `new-wp-plugin`, `prepare-github-release`, `prepare-pr`, `quality-check`, `review-code` |
+| **Smart** | `Claude Sonnet 5` | `create-github-pr`, `create-plan`, `create-pr`, `resolve-github-reviews`, `work-github-issue`, `work-ticket` |
+
+**Per-agent behavior:**
+
+- **GitHub Copilot** — the `model:` pin wins over the Copilot picker. Skills inherit the invoking prompt’s model; use `@core-review` (the custom agent) or a standalone cheap-tier chat for the cheap-tier pass.
+- **Claude Code** — Copilot model names are mapped to Claude aliases at install time: `Claude Haiku 4.5` → `haiku`, `Claude Sonnet 5` → `sonnet`. Each skill or slash-command establishes its own model boundary, so `@core-review` from a smart-tier orchestrator stays cheap.
+- **Codex** — `model:` is ignored entirely. Control the session tier with `codex --model`.
+
+**Subagent overrides (both cheap tier):**
+
+- **Copilot**: `core-review.agent.md` installs to `.github/agents/`. @-mention it directly as `@core-review` in the chat picker — establishes its own model boundary so the cheap pin is honoured even when called from a smart-tier orchestrator.
+- **Claude Code**: `Explore.md` installs to `.claude/agents/`, overriding Claude Code’s built-in `Explore` agent with a cheap-tier pin. `Explore` runs on nearly every autonomous cycle, so pinning it cheap stops the parent’s smart tier from being inherited.
+
+Suppress both: `npx @silverassist/agents-toolkit@latest install --no-agent-overrides`
+
 ## CLI Reference
 
 ### install
@@ -307,6 +326,7 @@ npx @silverassist/agents-toolkit@latest install [options]
 | `--skills-only` | Only install skills |
 | `--hooks-only` | Only install hooks (PostToolUse validation scripts) |
 | `--copy` | Copy skills into each agent dir instead of symlinking to `.agents/skills/` |
+| `--no-agent-overrides` | Skip installing agent overrides (`.github/agents/` for Copilot, `.claude/agents/` for Claude Code) |
 | `--dry-run` | Show what would be installed without making changes |
 
 **Examples:**
@@ -456,7 +476,7 @@ Specialized knowledge guides for domain-specific patterns:
 |-------|-------------|
 | `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
-| `core-review` | Whole-repo pre-review (before a PR / before pushing review fixes) run as a read-only pass — inline or via `@core-review` on Copilot, optionally a subagent on Claude Code — to preempt Copilot iterations |
+| `core-review` | Whole-repo pre-review run as a read-only pass — cheap tier (`model: haiku`). Inline or via `@core-review` custom agent on Copilot (establishes its own model boundary); optionally a subagent on Claude Code. Installs as both a skill and as `core-review.agent.md` in `.github/agents/`. |
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |
