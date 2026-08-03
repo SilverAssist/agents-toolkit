@@ -1,8 +1,8 @@
 import { defineBuildConfig } from 'unbuild';
 
-// src/cli entry is added in PR D when src/cli.ts is created.
+// src/cli added in PR D when src/cli.ts was created.
 export default defineBuildConfig({
-  entries: ['src/index'],
+  entries: ['src/cli', 'src/index'],
   declaration: true,
   clean: true,
   rollup: {

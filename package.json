@@ -28,21 +28,20 @@
     "code-review"
   ],
   "type": "module",
-  "main": "src/index.js",
+  "main": "dist/index.mjs",
   "bin": {
-    "agents-toolkit": "bin/cli.js"
+    "agents-toolkit": "dist/cli.mjs"
   },
   "files": [
-    "bin",
-    "src/index.js",
     "dist",
     "templates",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "install-prompts": "node bin/cli.js install",
+    "install-prompts": "node dist/cli.mjs install",
     "test": "node --test",
+    "pretest": "npm run build",
     "typecheck": "tsc --noEmit",
     "build": "unbuild",
     "lint": "eslint .",

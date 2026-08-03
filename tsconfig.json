@@ -25,5 +25,5 @@
     "noEmit": true
   },
   "include": ["src", "build.config.ts"],
-  "exclude": ["node_modules", "dist", "src/index.js", "src/cli.test.js", "src/validate-prompts.test.js"]
+  "exclude": ["node_modules", "dist", "src/cli.test.js", "src/validate-prompts.test.js"]
 }

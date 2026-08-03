@@ -114,4 +114,4 @@ export const CLAUDE_FILES: {
 // Names use the frontmatter `name:` field (the VS Code canonical identifier),
 // not the raw filename stem — `core-review.agent.md` has `name: core-review`.
 // Suppress both with --no-agent-overrides.
-export const AGENTS: readonly string[] = ['Explore', 'core-review'];
+export const AGENTS = ['Explore', 'core-review'] as const;

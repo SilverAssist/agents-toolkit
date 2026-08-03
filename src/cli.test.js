@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const CLI_PATH = path.join(__dirname, '..', 'bin', 'cli.js');
+const CLI_PATH = path.join(__dirname, '..', 'dist', 'cli.mjs');
 
 function stripAnsi(text) {
   return text.replace(/\u001b\[[0-9;]*m/g, '');
@@ -890,7 +890,7 @@ test('--no-agent-overrides skips .github/agents/ for copilot install', (t) => {
 test('AGENTS export contains Explore and core-review', () => {
   // Names use the frontmatter `name:` field (VS Code canonical id), not the raw
   // filename stem: core-review.agent.md has `name: core-review`, not core-review.agent.
-  const content = fs.readFileSync(path.join(process.cwd(), 'src', 'index.js'), 'utf-8');
+  const content = fs.readFileSync(path.join(process.cwd(), 'src', 'index.ts'), 'utf-8');
   assert.match(
     content,
     /export const AGENTS\s*=\s*\['Explore',\s*'core-review'\]/,
