@@ -12,7 +12,7 @@
  *   (`model: Expected string, received array`), so pins must stay scalar.
  * - A duplicate key is last-one-wins in YAML and hides the earlier value.
  * - A tab inside the block is not valid YAML indentation.
- *
+ * - `tools:` must be a non-empty list; the VS Code allowlist requires at least one entry.
  *
  * Exits non-zero with a per-file report on the first failing rule set.
  */
