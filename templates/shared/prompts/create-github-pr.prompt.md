@@ -126,10 +126,13 @@ Run the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`
 (diff + one-hop neighbours: importers, indexes, sibling files). This is the pre-PR pass — the
 diff is complete, so a `quick` pass would miss cross-file drift, but `thorough` (whole-repo) is
 normally overkill at this stage unless the change touches architecture or renames symbols across
-layers. Run it as a dedicated, read-only pass. It works on every agent — only the mechanism
-differs (subagents are a Claude-Code-only optimization, not a requirement):
+layers. Run it as a dedicated, read-only pass. The invocation mechanism varies by agent:
 
-- **GitHub Copilot / Codex** — no subagents; run the checklist **inline as a distinct pass** over
+- **GitHub Copilot** — run the checklist **inline as a distinct pass** over the scope defined by
+  `--budget medium`. Or, if `.github/agents/core-review.agent.md` is installed, @-mention
+  `@core-review` with **`--budget quick`** and **pass the file list from the `git diff` above in the brief** —
+  the agent has no shell and cannot run `git diff` itself.
+- **Codex** — no subagents; run the checklist inline as a distinct pass over
   the scope defined by `--budget medium` (diff + one-hop neighbours), producing the prioritized
   findings list.
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).

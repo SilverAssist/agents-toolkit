@@ -856,6 +856,48 @@ test('--no-agent-overrides skips .claude/agents/ install', (t) => {
   assert.equal(fs.existsSync(agentsDir), false, '.claude/agents/ must not be created with --no-agent-overrides');
 });
 
+test('claude install does not copy Copilot-format .agent.md to .claude/agents/', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--target', 'claude', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentFile = path.join(tempDir, '.claude', 'agents', 'core-review.agent.md');
+  assert.ok(!fs.existsSync(agentFile), 'Claude install must not copy Copilot-format .agent.md to .claude/agents/');
+});
+
+test('copilot install writes core-review.agent.md to .github/agents/', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentFile = path.join(tempDir, '.github', 'agents', 'core-review.agent.md');
+  assert.ok(fs.existsSync(agentFile), '.github/agents/core-review.agent.md must be installed by default');
+
+  const content = fs.readFileSync(agentFile, 'utf-8');
+  assert.match(content, /model: Claude Haiku 4\.5/, 'core-review.agent.md must pin the cheap Copilot tier');
+  assert.match(content, /user-invocable: true/, 'core-review.agent.md must be user-invocable so it can be @-mentioned');
+});
+
+test('--no-agent-overrides skips .github/agents/ for copilot install', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--prompts-only', '--no-agent-overrides'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentsDir = path.join(tempDir, '.github', 'agents');
+  assert.equal(fs.existsSync(agentsDir), false, '.github/agents/ must not be created with --no-agent-overrides');
+});
+
+test('AGENTS export contains Explore and core-review', () => {
+  // Names use the frontmatter `name:` field (VS Code canonical id), not the raw
+  // filename stem: core-review.agent.md has `name: core-review`, not core-review.agent.
+  const content = fs.readFileSync(path.join(process.cwd(), 'src', 'index.js'), 'utf-8');
+  assert.match(
+    content,
+    /export const AGENTS\s*=\s*\['Explore',\s*'core-review'\]/,
+    "AGENTS must be exactly ['Explore', 'core-review'] in this order",
+  );
+});
+
 test('core-review skill ships model: haiku and --budget hint', () => {
   const skillPath = path.join(process.cwd(), 'templates', 'shared', 'skills', 'core-review', 'SKILL.md');
   const content = fs.readFileSync(skillPath, 'utf-8');

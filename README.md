@@ -69,10 +69,12 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 │   ├── typescript.instructions.md
 │   ├── react-components.instructions.md
 │   └── ...                           # filtered by --stack
-└── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
-    ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
-    ├── testing-patterns       -> ../../.agents/skills/testing-patterns
-    └── ...                           # filtered by --stack
+├── skills/                           # Symlinks → ../../.agents/skills/ (npx skills standard)
+│   ├── domain-driven-design   -> ../../.agents/skills/domain-driven-design
+│   ├── testing-patterns       -> ../../.agents/skills/testing-patterns
+│   └── ...                           # filtered by --stack
+└── agents/                           # Copilot custom agents (model-pinned overrides)
+    └── core-review.agent.md          # cheap-tier inline reviewer (@core-review)
 .agents/
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
@@ -454,7 +456,7 @@ Specialized knowledge guides for domain-specific patterns:
 |-------|-------------|
 | `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
-| `core-review` | Whole-repo pre-review (before a PR / before pushing review fixes) run as a read-only pass — inline on Copilot/Codex, optionally a subagent on Claude Code — to preempt Copilot iterations |
+| `core-review` | Whole-repo pre-review (before a PR / before pushing review fixes) run as a read-only pass — inline or via `@core-review` on Copilot, optionally a subagent on Claude Code — to preempt Copilot iterations |
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |

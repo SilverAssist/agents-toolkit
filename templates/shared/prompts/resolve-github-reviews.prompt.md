@@ -23,9 +23,11 @@ Works for both **Copilot** and **human** reviews.
 > The `core-review` pass invoked from Step 3 pins itself cheap **only on Claude Code** (its
 > `SKILL.md model: haiku` frontmatter is honoured per-turn there). On **Copilot** skills
 > inherit the invoking prompt's model, so `core-review` runs on this prompt's smart tier when
-> invoked inline; to keep that pass cheap on Copilot, invoke `core-review` from a separate
-> cheap-tier chat instead of inline. On **Codex** the pass runs whatever session model is
-> active (`codex --model`).
+> invoked inline. Two cheap alternatives: (a) invoke `core-review` from a separate cheap-tier
+> chat instead of inline, or (b) if `.github/agents/core-review.agent.md` is installed,
+> @-mention `@core-review` — custom agents establish their own model boundary, so the
+> cheap pin is honoured when no explicit invocation model is supplied. On **Codex**
+> the pass runs whatever session model is active (`codex --model`).
 
 ## Prerequisites
 
@@ -164,8 +166,13 @@ For every unresolved thread from Step 2:
 run a single consistency pass (the *core review*) before committing the batch. Use the
 **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget quick`**
 (diff + directly-touched files — the batch is small and scoped, so `medium`/`thorough` would only
-add unrelated noise). Run it as a dedicated read-only pass (inline on Copilot/Codex; optionally
-a subagent on Claude Code). A fix often leaves or introduces an adjacent issue (a now-stale doc
+add unrelated noise). Run it as a dedicated read-only pass. Options by agent:
+
+- **GitHub Copilot** — run inline as a distinct pass, or use `@core-review` for a cheap-tier pass — if using the agent, pass the current batch's changed-file list in the brief (the agent has no shell tool).
+- **Codex** — run inline as a distinct pass.
+- **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).
+
+A fix often leaves or introduces an adjacent issue (a now-stale doc
 line, a broken link, a table missing the new asset) that would trigger yet another Copilot round.
 Apply everything the pass flags, re-run the checks above, and only then proceed to Step 4.
 Running this once over the completed batch — rather than per thread — keeps the review cost

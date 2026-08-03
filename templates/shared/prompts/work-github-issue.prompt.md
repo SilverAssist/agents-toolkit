@@ -115,5 +115,6 @@ Report:
 ## Next Steps
 
 - Begin implementation following the plan
+- Use `@core-review` with **`--budget quick`** (if installed) for cheap-tier consistency checks during development — pass the changed-file list in the brief (the agent has no shell and cannot run `git diff` itself)
 - Use `prepare-pr` when ready for review
 - Use `create-github-pr` to submit pull request
