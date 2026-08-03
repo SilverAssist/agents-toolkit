@@ -4,16 +4,10 @@
   "globs": ["**/*.md"],
   "ignores": [
     "node_modules",
-    // Installed copies of the templates, produced by `agents-toolkit install/update`.
-    // They are refreshed wholesale from `templates/`, so a fix applied here is
-    // overwritten on the next refresh — lint the source, not the artifact.
-    ".github/prompts",
-    ".github/instructions",
+    // .github/skills and .claude/skills are symlinks to .agents/skills — keeping
+    // them ignored avoids linting the same canonical files twice.
     ".github/skills",
-    ".claude/commands",
     ".claude/skills",
-    ".claude/agents",
-    ".agents/skills",
   ],
   "config": {
     // Prose is hard-wrapped at widths chosen per file; an 80-column rule would
@@ -37,5 +31,7 @@
     "MD007": false,
     // <details>/<summary> is used in prompt files as collapsible rationale blocks.
     "MD033": { "allowed_elements": ["details", "summary"] },
+    // Instructions files start with YAML frontmatter, not an H1.
+    "MD041": false,
   },
 }

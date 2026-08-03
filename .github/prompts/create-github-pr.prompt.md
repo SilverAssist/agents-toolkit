@@ -8,6 +8,7 @@ description: Create a pull request for the current branch linked to a GitHub iss
 Create a pull request for the current branch linked to GitHub issue **#{issue-number}**.
 
 ## Prerequisites
+
 - Run `prepare-pr` first to ensure code is ready
 - GitHub MCP connection or `gh` CLI required
 - Reference: `.github/prompts/_partials/pr-template.md`
@@ -24,6 +25,7 @@ git status
 ```
 
 Verify:
+
 - Branch follows convention: `feature/{issue-number}-*` or `bugfix/{issue-number}-*`
 - All changes are committed
 - Not on protected branch
@@ -42,6 +44,7 @@ git diff "$BASE_BRANCH" --name-only
 ### 3. Read GitHub Issue
 
 Fetch issue **#{issue-number}** details:
+
 - Get title for PR title
 - Extract acceptance criteria
 - Get any context from comments
@@ -71,7 +74,8 @@ git push -u origin $(git branch --show-current)
 ### 6. Create Pull Request
 
 #### PR Title
-```
+
+```text
 {Issue title}
 ```
 
@@ -129,6 +133,7 @@ EOF
 ```
 
 #### PR Settings
+
 - **Source**: Current branch
 - **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
 - **Reviewers**: Based on changed files

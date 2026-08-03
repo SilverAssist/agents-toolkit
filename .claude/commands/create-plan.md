@@ -8,6 +8,7 @@ description: Create a detailed implementation plan for a feature
 Create a detailed implementation plan for: **{feature-description}**
 
 ## Prerequisites
+
 - Reference: `.github/prompts/_partials/documentation.md` for plan template
 - Reference: `AGENTS.md` for agent workflow conventions
 - Reference: `.github/copilot-instructions.md` (if present) for additional project conventions
@@ -15,11 +16,13 @@ Create a detailed implementation plan for: **{feature-description}**
 ## Steps
 
 ### 1. Analyze Request
+
 - Break down the feature into components
 - Identify affected areas of the codebase
 - Search for related implementations
 
 ### 2. Research Current State
+
 - Read relevant source files
 - Understand current architecture
 - Document existing patterns
@@ -30,14 +33,16 @@ Save to: `docs/{feature-name}-plan.md`
 
 Include these sections:
 
----
+````markdown
 
 # {Feature Name} Implementation Plan
 
 ## Problem Statement
+
 What problem are we solving? Why is this change needed?
 
 ## Current Architecture
+
 - How does the current system work?
 - What components are involved?
 - What are the limitations?
@@ -45,14 +50,17 @@ What problem are we solving? Why is this change needed?
 ## Proposed Changes
 
 ### Overview
+
 High-level description of the solution.
 
 ### Technical Approach
+
 - Component 1: Changes needed
 - Component 2: Changes needed
 - New components to create
 
 ### API Changes
+
 If applicable, document any API changes.
 
 ## Risk Assessment
@@ -65,6 +73,7 @@ If applicable, document any API changes.
 ## Phase Breakdown
 
 ### Phase 1: {Phase Name}
+
 **Objective**: What this phase accomplishes
 
 - [ ] Task 1
@@ -74,6 +83,7 @@ If applicable, document any API changes.
 **Validation**: How to verify this phase is complete
 
 ### Phase 2: {Phase Name}
+
 **Objective**: What this phase accomplishes
 
 - [ ] Task 1
@@ -84,25 +94,30 @@ If applicable, document any API changes.
 ## Testing Strategy
 
 ### Unit Tests
+
 - Test case 1
 - Test case 2
 
 ### Integration Tests
+
 - Scenario 1
 - Scenario 2
 
 ### Manual Testing
+
 - Steps to manually verify
 
 ## Rollback Plan
+
 How to revert changes if issues arise.
 
 ## Dependencies
+
 - External dependencies
 - Internal dependencies
 - Team coordination needed
 
----
+````
 
 ### 4. Commit Plan
 
@@ -115,4 +130,5 @@ git commit -m "{ticket-id}: Add {feature-name} implementation plan"
 ```
 
 ## Output
+
 The planning document at `docs/{feature-name}-plan.md` ready for implementation.

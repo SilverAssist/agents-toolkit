@@ -38,11 +38,13 @@ node -e "import('@silverassist/agents-toolkit').then(m => console.log(Object.key
 ### Debugging a Failing Test
 
 1. Run the specific test file:
+
    ```bash
    node --test src/cli.test.js
    ```
 
 2. Add `console.log` statements to the `runCli()` helper to inspect stdout/stderr:
+
    ```js
    const result = runCli(['install', '--target', 'copilot', '--dry-run'], tempDir);
    console.log('stdout:', result.stdout);
@@ -50,6 +52,7 @@ node -e "import('@silverassist/agents-toolkit').then(m => console.log(Object.key
    ```
 
 3. Run the CLI manually in a temp directory:
+
    ```bash
    mkdir /tmp/test-project && cd /tmp/test-project
    node /path/to/agents-toolkit/bin/cli.js install --target copilot --dry-run
@@ -99,6 +102,7 @@ npm pack --dry-run
 ```
 
 Files that should **never** be published:
+
 - `src/cli.test.js`
 - `.github/`, `.agents/`, `.claude/`
 - `node_modules/`

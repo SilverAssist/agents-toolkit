@@ -20,6 +20,7 @@ git diff --name-only
 ### 2. Review Each File
 
 #### `bin/cli.js` — CLI logic
+
 - [ ] No `console.log` debug statements (use `info()`/`warn()`/`success()`/`error()` helpers)
 - [ ] No hardcoded paths — use `getTargetDir()`, `getClaudeTargetDir()`, `getAgentsSkillsDir()`
 - [ ] JSDoc on new/modified functions
@@ -28,17 +29,20 @@ git diff --name-only
 - [ ] No duplicate code — reuse existing helpers (`copyDir`, `linkSkill`, etc.)
 
 #### `src/index.js` — exports
+
 - [ ] All arrays sorted alphabetically
 - [ ] Every file in `templates/shared/` has a corresponding export entry
 - [ ] No entry references a file that doesn't exist in `templates/shared/`
 
 #### `src/cli.test.js` — tests
+
 - [ ] Symlink tests gated by `symlinkSupported(tempDir)`
 - [ ] `symlinkSupported()` uses `'dir'` as the third argument to `symlinkSync`
 - [ ] New CLI flags have a corresponding `help shows --flag` test
 - [ ] Global install tests use `HOME`/`USERPROFILE` env override
 
 #### `templates/shared/` — content files
+
 - [ ] Prompt frontmatter uses `agent: agent` (not `mode: agent`)
 - [ ] No Copilot-specific references in generic templates
 
@@ -66,10 +70,13 @@ git diff --name-only
 ### Issues Found
 
 #### ❌ Critical (must fix)
+
 - Issue description
 
 #### ⚠️ Warnings (should fix)
+
 - Warning description
 
 ### Overall
+
 **Status**: Ready / Needs Work
