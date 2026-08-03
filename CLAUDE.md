@@ -43,7 +43,7 @@ CLI flags → project `.agents-toolkit.json` → global `~/.agents-toolkit.json`
 
 ## Conventions
 
-- **ESM only** (`"type": "module"`); Node ≥ 18. Use `import`, `fileURLToPath` for `__dirname`.
+- **ESM only** (`"type": "module"`); Node ≥ 22. Use `import`, `fileURLToPath` for `__dirname`.
 - **File naming**: kebab-case. Templates use `.instructions.md`, `.prompt.md`, `SKILL.md`.
   **Exception — Claude Code subagent overrides** (`templates/shared/agents/*.md`): the filename stem **must match the target subagent's `name:` frontmatter exactly** (case-sensitive), because Claude Code loads `.claude/agents/<name>.md` and resolves overrides by filename stem. A mismatch registers a *new* subagent instead of overriding the built-in one, silently defeating the purpose — e.g. renaming `Explore.md` to `EXPLORE.md` or `explore.md` would leave Claude's built-in `Explore` running on its default (smart) tier and the shipped `haiku` pin would never take effect. This is a Claude Code protocol requirement, not a stylistic choice — platform naming wins over the repo convention. Any new subagent override added under `templates/shared/agents/` must follow the same rule.
 - **JSDoc** on functions in `bin/cli.js`, written in English.

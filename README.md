@@ -568,7 +568,7 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 22+
 - Git installed and configured
 - **For Jira tracker:** Atlassian MCP configured (see below)
 - **For GitHub tracker:** GitHub MCP configured (see below)
