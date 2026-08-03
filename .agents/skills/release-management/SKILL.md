@@ -22,7 +22,7 @@ This skill covers the release pipeline for `@silverassist/agents-toolkit`, an np
 ```text
 agents-toolkit/
 ├── package.json             # Version number lives here
-├── src/index.js             # VERSION constant (must match package.json)
+├── src/index.ts             # VERSION constant (must match package.json)
 ├── CHANGELOG.md             # Follows Keep a Changelog format
 └── .github/
     └── workflows/
@@ -63,10 +63,10 @@ Update **two places** — they must stay in sync:
 }
 ```
 
-**`src/index.js`:**
+**`src/index.ts`:**
 
-```js
-export const VERSION = "2.4.0";
+```ts
+export const VERSION = '2.4.0';
 ```
 
 ### Step 2: Update CHANGELOG.md
@@ -100,12 +100,12 @@ npm pack --dry-run   # Preview what will be published
 
 Verify the `npm pack --dry-run` output only includes:
 
-- `bin/`, `src/index.js`, `templates/`, `README.md`, `LICENSE`
+- `dist/`, `src/index.ts`, `templates/`, `README.md`, `LICENSE`
 
 ### Step 4: Commit and Push
 
 ```bash
-git add package.json src/index.js CHANGELOG.md
+git add package.json src/index.ts CHANGELOG.md
 git commit -m "chore: bump version to 2.4.0 for release"
 git push origin main
 ```
@@ -133,7 +133,7 @@ Controlled by the `files` field in `package.json`:
 ```json
 "files": [
   "bin",
-  "src/index.js",
+  "src/index.ts",
   "templates",
   "README.md",
   "LICENSE"

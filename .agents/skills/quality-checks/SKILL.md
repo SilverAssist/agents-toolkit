@@ -55,7 +55,8 @@ node -e "import('@silverassist/agents-toolkit').then(m => console.log(Object.key
 
    ```bash
    mkdir /tmp/test-project && cd /tmp/test-project
-   node /path/to/agents-toolkit/bin/cli.js install --target copilot --dry-run
+   npm run build
+   node /path/to/agents-toolkit/dist/cli.mjs install --target copilot --dry-run
    ```
 
 ### Common Failures
@@ -94,8 +95,8 @@ Before releasing, verify the package contents are correct:
 npm pack --dry-run
 
 # Expected top-level entries:
-# bin/cli.js
-# src/index.js
+# dist/cli.mjs
+# dist/index.mjs
 # templates/...
 # README.md
 # LICENSE

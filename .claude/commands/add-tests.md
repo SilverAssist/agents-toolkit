@@ -15,7 +15,7 @@ Add tests for **{target-behavior}** in `src/cli.test.js`.
 
 ### 1. Analyze Target
 
-Read the relevant code in `bin/cli.js` to understand:
+Read the relevant code in `src/commands/` and the domain module under test to understand:
 
 - What command/flag/behavior to test
 - What filesystem changes it produces

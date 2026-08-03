@@ -40,6 +40,7 @@
   ],
   "scripts": {
     "install-prompts": "node dist/cli.mjs install",
+    "preinstall-prompts": "npm run build",
     "test": "node --test",
     "pretest": "npm run build",
     "prepack": "npm run build",

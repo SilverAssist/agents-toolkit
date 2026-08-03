@@ -42,12 +42,17 @@ export function readLockfile(cwd = process.cwd()): Lockfile | null {
     const cfg = config as Record<string, unknown>;
     if (typeof cfg['stack'] !== 'string' || typeof cfg['tracker'] !== 'string') return null;
 
-    // Validate skills map — each entry must have an agents array.
+    // Validate skills map — each entry must have an agents array of strings and a string/null hash.
     const skills = obj['skills'];
     if (typeof skills !== 'object' || skills === null) return null;
     for (const entry of Object.values(skills as Record<string, unknown>)) {
       if (typeof entry !== 'object' || entry === null) return null;
-      if (!Array.isArray((entry as Record<string, unknown>)['agents'])) return null;
+      const e = entry as Record<string, unknown>;
+      const agents = e['agents'];
+      if (!Array.isArray(agents)) return null;
+      if (!(agents as unknown[]).every((a) => typeof a === 'string')) return null;
+      const hash = e['computedHash'];
+      if (hash !== null && typeof hash !== 'string') return null;
     }
 
     return raw as Lockfile;
