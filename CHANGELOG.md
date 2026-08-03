@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-08-03
+
 Cheap-first model-tier discipline on Copilot and Claude Code ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)). Every shipped prompt and the `core-review` skill carry a **hardcoded** `model:` pin: mechanical work runs on the cheap tier, design work on the smart tier. There is no tier configuration, no CLI flag, and nothing resolved at install time — to change a tier you edit the `model:` line in the installed file. (Codex ignores `model:` pins entirely; control the session tier with `codex --model`.)
 
 **Why no configuration surface.** An earlier draft of this release shipped a `models` block in `.agents-toolkit.json`, a `--model-pins {on,off}` flag, and install-time frontmatter rewriting for Copilot and skills. It was removed before merge: a model-selection layer spanning three agents whose catalogues move independently costs more to maintain than it saves, and it made the shipped documentation wrong in a way that was not obvious (the docs said "reinstall to apply", but `install` skips files that already exist — only `update` overwrites). Pins in files, documented, are the whole mechanism.
