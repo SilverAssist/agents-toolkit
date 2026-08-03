@@ -18,10 +18,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      # The dev tooling sets the floor here, not the package: markdownlint-cli2
-      # requires Node >= 22 and lint-staged >= 20.17. `engines.node` stays at
-      # >= 18 for consumers, and the `compat` job below proves the CLI still
-      # runs there.
+      # Quality job runs on Node 22 (the current engines.node floor); all dev
+      # tooling (markdownlint-cli2, lint-staged) requires Node >= 22.
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
