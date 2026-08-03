@@ -25,8 +25,8 @@ Works for both **Copilot** and **human** reviews.
 > inherit the invoking prompt's model, so `core-review` runs on this prompt's smart tier when
 > invoked inline. Two cheap alternatives: (a) invoke `core-review` from a separate cheap-tier
 > chat instead of inline, or (b) if `.github/agents/core-review.agent.md` is installed,
-> @-mention `@agent-core-review` — custom agents establish their own model boundary, so the
-> cheap pin is honoured even when invoked from within this smart-tier prompt. On **Codex**
+> @-mention `@core-review` — custom agents establish their own model boundary, so the
+> cheap pin is honoured when no explicit invocation model is supplied. On **Codex**
 > the pass runs whatever session model is active (`codex --model`).
 
 ## Prerequisites
@@ -168,7 +168,7 @@ run a single consistency pass (the *core review*) before committing the batch. U
 (diff + directly-touched files — the batch is small and scoped, so `medium`/`thorough` would only
 add unrelated noise). Run it as a dedicated read-only pass. Options by agent:
 
-- **GitHub Copilot** — run inline as a distinct pass, or use `@agent-core-review` for a cheap-tier pass — if using the agent, pass the current batch's changed-file list in the brief (the agent has no shell tool).
+- **GitHub Copilot** — run inline as a distinct pass, or use `@core-review` for a cheap-tier pass — if using the agent, pass the current batch's changed-file list in the brief (the agent has no shell tool).
 - **Codex** — run inline as a distinct pass.
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).
 

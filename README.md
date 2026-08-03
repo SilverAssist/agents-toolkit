@@ -454,7 +454,7 @@ Specialized knowledge guides for domain-specific patterns:
 |-------|-------------|
 | `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
-| `core-review` | Whole-repo pre-review (before a PR / before pushing review fixes) run as a read-only pass — inline or via `@agent-core-review` on Copilot, optionally a subagent on Claude Code — to preempt Copilot iterations |
+| `core-review` | Whole-repo pre-review (before a PR / before pushing review fixes) run as a read-only pass — inline or via `@core-review` on Copilot, optionally a subagent on Claude Code — to preempt Copilot iterations |
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |

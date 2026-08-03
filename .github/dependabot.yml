@@ -24,10 +24,6 @@ updates:
     commit-message:
       prefix: 'chore(deps)'
       include: 'scope'
-    # lint-staged@17+ requires node >=22.22.1; package floor is >=18. Unblock when floor rises.
-    ignore:
-      - dependency-name: 'lint-staged'
-        versions: ['>=17']
 
   # Maintain GitHub Actions workflows
   - package-ecosystem: 'github-actions'

@@ -1,6 +1,6 @@
 ---
 name: core-review
-description: "Run a consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline or via @agent-core-review on Copilot; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Scope follows `--budget`: the diff (`quick`), the diff plus one-hop neighbours (`medium`, the default), or the whole repository (`thorough`). Use when about to push a branch for review or to push a batch of review fixes."
+description: "Run a consistency review before opening a PR or before pushing fixes in response to a reviewer — as a dedicated read-only pass (inline or via @core-review on Copilot; optionally a subagent on Claude Code) — to preempt Copilot/reviewer iterations. Scope follows `--budget`: the diff (`quick`), the diff plus one-hop neighbours (`medium`, the default), or the whole repository (`thorough`). Use when about to push a branch for review or to push a batch of review fixes."
 model: haiku
 argument-hint: --budget quick|medium|thorough
 ---
@@ -60,7 +60,7 @@ The caller applies the fixes, so the review stays unbiased by the intent behind 
 pass works the same on every agent — **Copilot** (the primary reviewer to preempt), **Codex**,
 and **Claude Code**; only the *mechanism* differs:
 
-- **GitHub Copilot** — run the checklist **inline as a distinct pass** or use `@agent-core-review` (`.github/agents/core-review.agent.md`) for a cheap-tier pass; pass the resolved file list in the brief — the agent has no shell. Trigger before
+- **GitHub Copilot** — run the checklist **inline as a distinct pass** or use `@core-review` (`.github/agents/core-review.agent.md`) for a cheap-tier pass; pass the resolved file list in the brief — the agent has no shell. Trigger before
   pushing (not folded into the edit under review). The scope of the pass is set by the
   caller-supplied `--budget` (see the next section) — `quick` is diff + directly-touched files,
   `medium` adds one-hop neighbours, `thorough` is the whole repo. On Copilot the effective model
