@@ -929,6 +929,21 @@ test('orchestrator prompts pass explicit --budget to core-review', () => {
   );
 });
 
+test('every shipped prompt declares a non-empty tools: block', () => {
+  // Use a simple regex instead of js-yaml so this test works in the compat
+  // job that runs `npm ci --omit=dev` (js-yaml is a devDependency).
+  const promptsDir = path.join(process.cwd(), 'templates', 'shared', 'prompts');
+  const names = fs.readdirSync(promptsDir).filter((n) => n.endsWith('.prompt.md'));
+  assert.ok(names.length > 0, 'expected at least one prompt template');
+  for (const name of names) {
+    const source = fs.readFileSync(path.join(promptsDir, name), 'utf-8');
+    const end = source.indexOf('---', 3);
+    assert.ok(end !== -1, `${name}: missing closing frontmatter delimiter`);
+    const fm = source.slice(4, end);
+    assert.match(fm, /^tools:\s*\n(\s+-\s+\S)/m, `${name}: tools: must be a non-empty list`);
+  }
+});
+
 // ─── Planning-doc removal: the shipped shell block must not eat other docs ────
 
 /**

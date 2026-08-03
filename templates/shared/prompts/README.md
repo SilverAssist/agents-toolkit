@@ -77,6 +77,19 @@ Every shipped prompt carries an explicit `model:` pin — on Copilot and Claude 
 
 Because the pin is a single scalar, an unavailable model falls back to the agent's own default rather than to a second entry — the toolkit does not ship fallback chains. A prioritized `model:` array is undocumented for prompt files and is rejected outright by GitHub Copilot CLI.
 
+## Tool scoping
+
+Every prompt declares a `tools:` allowlist in its frontmatter. This is a **Copilot-only optimisation**: VS Code uses it to restrict which tools (and therefore which MCP server schemas) are sent to the model on each turn. Claude Code's `allowed-tools` field has opposite semantics — it is a permission pre-approval that does not reduce context — so the toolkit does not mirror `tools:` onto Claude commands.
+
+Two groups of prompts include MCP wildcard entries:
+
+| Wildcard | Prompts | What it covers |
+| --- | --- | --- |
+| `github/*` | `analyze-github-issue`, `work-github-issue`, `create-github-pr`, `finalize-github-pr`, `resolve-github-reviews` | All tools exposed by the GitHub MCP server |
+| `atlassian/*` | `analyze-ticket`, `work-ticket`, `create-pr`, `finalize-pr` | All tools exposed by the Atlassian MCP server |
+
+**Portability note**: `github/*` resolves only when the GitHub MCP server is registered under the name `github` in the user's `mcp.json`; `atlassian/*` similarly requires the name `atlassian`. These are the common default names used by the official MCP packages. If your installation uses a different server name (e.g. `github-mcp`, `jira`), edit the `tools:` list in the installed files to match.
+
 ## Workflow Stages
 
 ```text

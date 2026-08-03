@@ -2,6 +2,11 @@
 agent: agent
 description: Create a detailed implementation plan for a feature
 model: Claude Sonnet 5
+tools:
+  - read_file
+  - grep_search
+  - create_file
+  - run_in_terminal
 ---
 
 # Create Implementation Plan

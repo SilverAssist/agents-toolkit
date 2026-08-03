@@ -2,6 +2,11 @@
 agent: agent
 description: Analyze a GitHub issue without creating branches or making changes
 model: Claude Haiku 4.5
+tools:
+  - read_file
+  - grep_search
+  - run_in_terminal
+  - github/*
 ---
 
 # Analyze GitHub Issue

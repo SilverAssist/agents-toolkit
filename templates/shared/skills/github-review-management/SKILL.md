@@ -10,6 +10,16 @@ backs the `/resolve-github-reviews` prompt: it explains the data model, which AP
 the exact commands, and the Copilot-specific edge cases. Use it when a PR has review threads
 (Copilot or human) that need to be addressed, replied to, resolved, and verified to `0`.
 
+## Tool preference
+
+**`gh` CLI is the primary tool for every GitHub operation in this skill** — listing threads,
+posting replies, resolving, checking CI, viewing workflows. Do **not** use MCP tools
+(`mcp_github_mcp_*`, `github-pull-request_*`) as the primary approach.
+
+**ALWAYS prefix `gh api` calls with `GH_PAGER=cat`** (or append `| cat` to `gh pr`/`gh run`
+commands). Without this the pager blocks the terminal on long output and the command appears
+to hang.
+
 ## When to Use
 
 - A PR has open Copilot or human review comments to clear before merge
@@ -69,7 +79,7 @@ while : ; do
   else
     AFTER_ARGS=(-f after="$CURSOR")
   fi
-  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" "${AFTER_ARGS[@]}" -f query='
+  PAGE=$(GH_PAGER=cat gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" "${AFTER_ARGS[@]}" -f query='
     query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
       repository(owner:$owner, name:$repo) {
         pullRequest(number:$pr) {
@@ -112,11 +122,11 @@ Each row gives `threadId` (to resolve) and `commentId` = `databaseId` (to reply)
 
 ```bash
 # Primary: reply directly on the thread.
-gh api "repos/$OWNER/$REPO/pulls/$PR/comments/$COMMENT_ID/replies" \
+GH_PAGER=cat gh api "repos/$OWNER/$REPO/pulls/$PR/comments/$COMMENT_ID/replies" \
   -f body="Fixed in <sha>: <what changed>."
 
 # Fallback when the replies endpoint 404s: link via in_reply_to.
-gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
+GH_PAGER=cat gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
   -f body="Fixed in <sha>: <what changed>." \
   -F in_reply_to="$COMMENT_ID"
 ```
@@ -124,7 +134,7 @@ gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
 ## 3. Resolve the thread (GraphQL — the only way)
 
 ```bash
-gh api graphql -f id="$THREAD_ID" -f query='
+GH_PAGER=cat gh api graphql -f id="$THREAD_ID" -f query='
   mutation($id:ID!) {
     resolveReviewThread(input:{threadId:$id}) {
       thread { isResolved }
@@ -136,7 +146,7 @@ Batch all addressed threads:
 
 ```bash
 for THREAD_ID in $THREAD_IDS; do
-  gh api graphql -f id="$THREAD_ID" -f query='mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { isResolved } } }'
+  GH_PAGER=cat gh api graphql -f id="$THREAD_ID" -f query='mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { isResolved } } }'
 done
 ```
 
@@ -153,7 +163,7 @@ while : ; do
   else
     AFTER_ARGS=(-f after="$CURSOR")
   fi
-  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" "${AFTER_ARGS[@]}" -f query='
+  PAGE=$(GH_PAGER=cat gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" "${AFTER_ARGS[@]}" -f query='
     query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
       repository(owner:$owner, name:$repo) {
         pullRequest(number:$pr) {
@@ -203,6 +213,35 @@ fi
   with `gh pr comment $PR --body "@copilot review"` (unquoted `$PR` — it is the integer PR
   number set earlier via `gh pr view --json number -q .number`, and `gh pr comment` takes
   it as a positional argument, not a string flag value).
+
+## 5. CI status and workflow checks
+
+Check PR CI status and dig into failures before merging.
+
+```bash
+# Summary: all checks for the PR head commit.
+gh pr checks $PR | cat
+
+# List recent workflow runs on the branch.
+GH_PAGER=cat gh run list --branch $(git branch --show-current) --limit 5
+
+# View a run's job summary and annotations.
+GH_PAGER=cat gh run view <run-id>
+
+# Watch a run in real time (streams until complete).
+gh run watch <run-id>
+
+# View a specific failing job's log.
+GH_PAGER=cat gh run view <run-id> --log-failed
+```
+
+When a push triggers multiple CI jobs, wait for all of them before concluding they passed:
+
+```bash
+# Wait for all checks; exit non-zero if any fail.
+# GH_PAGER=cat preserves the non-zero exit when any check fails; piping to `| cat` would not.
+GH_PAGER=cat gh pr checks $PR --watch
+```
 
 ## Common failures
 

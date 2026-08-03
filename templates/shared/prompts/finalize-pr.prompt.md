@@ -2,6 +2,10 @@
 agent: agent
 description: Finalize a pull request after approval and prepare for merge
 model: Claude Haiku 4.5
+tools:
+  - read_file
+  - run_in_terminal
+  - atlassian/*
 ---
 
 # Finalize Pull Request

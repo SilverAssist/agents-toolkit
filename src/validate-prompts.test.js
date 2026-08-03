@@ -40,7 +40,8 @@ function runValidator(files) {
 
 test('validate-prompts: valid frontmatter passes', () => {
   const r = runValidator({
-    'my.prompt.md': '---\ndescription: A valid prompt\nagent: agent\nmodel: Claude Haiku 4.5\n---\n\n# Body\n',
+    'my.prompt.md':
+      '---\ndescription: A valid prompt\nagent: agent\nmodel: Claude Haiku 4.5\ntools:\n  - read_file\n  - grep_search\n---\n\n# Body\n',
   });
   assert.equal(r.status, 0, `expected exit 0; stderr: ${r.stderr}`);
   assert.match(r.stdout, /1 prompt template/);
@@ -109,7 +110,48 @@ test('validate-prompts: malformed YAML fails', () => {
 
 test('validate-prompts: CRLF input passes', () => {
   const r = runValidator({
-    'crlf.prompt.md': '---\r\ndescription: CRLF prompt\r\nagent: agent\r\n---\r\n\r\n# Body\r\n',
+    'crlf.prompt.md':
+      '---\r\ndescription: CRLF prompt\r\nagent: agent\r\ntools:\r\n  - read_file\r\n---\r\n\r\n# Body\r\n',
   });
   assert.equal(r.status, 0, `CRLF input must be accepted; stderr: ${r.stderr}`);
+});
+
+test('validate-prompts: missing tools fails', () => {
+  const r = runValidator({
+    'bad.prompt.md': '---\ndescription: A prompt\nagent: agent\n---\n# Body\n',
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /missing or empty required key `tools`/);
+});
+
+test('validate-prompts: empty tools list fails', () => {
+  const r = runValidator({
+    'bad.prompt.md': '---\ndescription: A prompt\nagent: agent\ntools: []\n---\n# Body\n',
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /`tools` must be a non-empty list/);
+});
+
+test('validate-prompts: scalar tools fails', () => {
+  const r = runValidator({
+    'bad.prompt.md': '---\ndescription: A prompt\nagent: agent\ntools: read_file\n---\n# Body\n',
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /`tools` must be a non-empty list/);
+});
+
+test('validate-prompts: tools list with empty-string entry fails', () => {
+  const r = runValidator({
+    'bad.prompt.md': "---\ndescription: A prompt\nagent: agent\ntools:\n  - read_file\n  - ''\n---\n# Body\n",
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /`tools` entries must be non-empty strings/);
+});
+
+test('validate-prompts: tools list with null entry fails', () => {
+  const r = runValidator({
+    'bad.prompt.md': '---\ndescription: A prompt\nagent: agent\ntools:\n  - read_file\n  - ~\n---\n# Body\n',
+  });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /`tools` entries must be non-empty strings/);
 });

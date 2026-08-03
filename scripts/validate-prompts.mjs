@@ -12,11 +12,7 @@
  *   (`model: Expected string, received array`), so pins must stay scalar.
  * - A duplicate key is last-one-wins in YAML and hides the earlier value.
  * - A tab inside the block is not valid YAML indentation.
- *
- * Rules are limited to what is true of the repo today. `tools:` is *not*
- * required yet — only a handful of prompts declare it — and making it required
- * is tracked as part of the tools-scoping work, which adds the declarations
- * and flips REQUIRED_KEYS in the same change.
+ * - `tools:` must be a non-empty list; the VS Code allowlist requires at least one entry.
  *
  * Exits non-zero with a per-file report on the first failing rule set.
  */
@@ -32,7 +28,10 @@ const jsYaml = require('js-yaml');
 const PROMPTS_DIR = path.join(process.cwd(), 'templates', 'shared', 'prompts');
 
 /** Keys every prompt must declare. */
-const REQUIRED_KEYS = ['description'];
+const REQUIRED_KEYS = ['description', 'tools'];
+
+/** Keys that must hold a non-empty array, never a scalar. */
+const LIST_KEYS = ['tools'];
 
 /** Keys that must hold a single scalar value, never a list. */
 const SCALAR_ONLY_KEYS = ['description', 'agent', 'model', 'name'];
@@ -104,10 +103,27 @@ function validate(file) {
     seen.set(key, index + 2);
   }
 
+  // LIST_KEYS must be non-empty arrays of non-empty strings.
+  for (const key of LIST_KEYS) {
+    const val = parsed[key];
+    if (val !== undefined && val !== null) {
+      if (!Array.isArray(val) || val.length === 0) {
+        problems.push(`\`${key}\` must be a non-empty list`);
+      } else if (val.some((entry) => typeof entry !== 'string' || entry.trim() === '')) {
+        problems.push(`\`${key}\` entries must be non-empty strings`);
+      }
+    }
+  }
+
   // Required keys must be present and non-empty in the parsed output.
   for (const key of REQUIRED_KEYS) {
     const val = parsed[key];
-    if (val === undefined || val === null || String(val).trim() === '') {
+    if (val === undefined || val === null) {
+      problems.push(`missing or empty required key \`${key}\``);
+      continue;
+    }
+    // For list keys, emptiness is already checked above; skip String() coercion.
+    if (!LIST_KEYS.includes(key) && String(val).trim() === '') {
       problems.push(`missing or empty required key \`${key}\``);
     }
   }
