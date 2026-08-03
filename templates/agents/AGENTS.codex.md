@@ -59,6 +59,8 @@ Every shipped prompt carries a hardcoded `model:` pin. **Codex ignores it** — 
 
 Because Codex does not recognise `model:` as a prompt field, your editor's linter may flag it as an unknown key. That warning is **expected and non-blocking** — the field is inert on Codex, not invalid.
 
+**The same applies to `.agent.md` files** installed to `.github/agents/` — Codex does not recognise the custom-agent format, and the `model:` field there is also inert. Use `codex --model` to set the session tier.
+
 ---
 
 ## ⚙️ Code Conventions (Quick Reference)

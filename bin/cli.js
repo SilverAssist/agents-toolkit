@@ -825,6 +825,7 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
     copy = false,
     global: isGlobal = false,
     filters = { stack: 'all', tracker: 'all' },
+    noAgentOverrides = false,
   } = options;
   const isCodex = target === 'codex';
   const targetDir = getTargetDir(isGlobal);
@@ -919,6 +920,20 @@ function installGitBasedTarget(options = {}, target = 'copilot') {
 
   const configResult = ensureConfigFile({ dryRun, global: isGlobal });
   totalChanges += getChangeCount(configResult, dryRun);
+
+  // Install Copilot subagent overrides (e.g. core-review.agent.md → cheap tier).
+  if (scope.shouldInstallPrompts && !noAgentOverrides && !isCodex && !isGlobal) {
+    info('Installing Copilot subagent overrides...');
+    const result = copyDir(path.join(TEMPLATES_DIR, 'shared', 'agents'), path.join(targetDir, 'agents'), {
+      force,
+      dryRun,
+      filter: (name) => name.endsWith('.agent.md'),
+    });
+    totalChanges += getChangeCount(result, dryRun);
+    if (!dryRun && result.written > 0) {
+      success(`Installed ${result.written} Copilot agent override(s) to .github/agents/`);
+    }
+  }
 
   if (!isGlobal && scope.shouldInstallInstructions && !isCodex) {
     const copilotInstructionsResult = installCopilotInstructions({ targetDir, dryRun });
@@ -1415,7 +1430,7 @@ function showHelp() {
   console.log('  --skills-only       Only install skills');
   console.log('  --hooks-only        Only install hooks (PostToolUse validation scripts)');
   console.log('  --copy              Copy skills instead of symlinking to .agents/skills/');
-  console.log('  --no-agent-overrides  Skip installing .claude/agents/ overrides (Claude only)');
+  console.log('  --no-agent-overrides  Skip installing agent overrides (.claude/agents/ and .github/agents/)');
   console.log('  --dry-run           Show what would be installed');
 
   console.log('');

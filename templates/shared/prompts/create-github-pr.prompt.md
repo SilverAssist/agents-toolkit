@@ -129,7 +129,11 @@ normally overkill at this stage unless the change touches architecture or rename
 layers. Run it as a dedicated, read-only pass. It works on every agent — only the mechanism
 differs (subagents are a Claude-Code-only optimization, not a requirement):
 
-- **GitHub Copilot / Codex** — no subagents; run the checklist **inline as a distinct pass** over
+- **GitHub Copilot** — run the checklist **inline as a distinct pass** over the scope defined by
+  `--budget medium`. Or, if `.github/agents/core-review.agent.md` is installed, @-mention
+  `@agent-core-review` instead — custom agents establish their own model boundary, so the
+  cheap pin is honoured even when invoked from within this smart-tier prompt.
+- **Codex** — no subagents; run the checklist inline as a distinct pass over
   the scope defined by `--budget medium` (diff + one-hop neighbours), producing the prioritized
   findings list.
 - **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`).

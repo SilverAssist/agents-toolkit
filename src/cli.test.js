@@ -856,6 +856,36 @@ test('--no-agent-overrides skips .claude/agents/ install', (t) => {
   assert.equal(fs.existsSync(agentsDir), false, '.claude/agents/ must not be created with --no-agent-overrides');
 });
 
+test('copilot install writes core-review.agent.md to .github/agents/', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--prompts-only'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentFile = path.join(tempDir, '.github', 'agents', 'core-review.agent.md');
+  assert.ok(fs.existsSync(agentFile), '.github/agents/core-review.agent.md must be installed by default');
+
+  const content = fs.readFileSync(agentFile, 'utf-8');
+  assert.match(content, /model: Claude Haiku 4\.5/, 'core-review.agent.md must pin the cheap Copilot tier');
+  assert.match(content, /user-invocable: false/, 'core-review.agent.md must be hidden from the chat picker');
+});
+
+test('--no-agent-overrides skips .github/agents/ for copilot install', (t) => {
+  const tempDir = createTempProject(t);
+  const { status, stderr } = runCli(['install', '--prompts-only', '--no-agent-overrides'], tempDir);
+  assert.equal(status, 0, stderr);
+
+  const agentsDir = path.join(tempDir, '.github', 'agents');
+  assert.equal(fs.existsSync(agentsDir), false, '.github/agents/ must not be created with --no-agent-overrides');
+});
+
+test('AGENTS export contains Explore and core-review', () => {
+  // Read the source directly — avoids async import in a sync test context.
+  const content = fs.readFileSync(path.join(process.cwd(), 'src', 'index.js'), 'utf-8');
+  assert.match(content, /export const AGENTS\s*=\s*\[/, 'AGENTS must be exported');
+  assert.match(content, /'Explore'/, 'AGENTS must include Explore');
+  assert.match(content, /'core-review'/, 'AGENTS must include core-review');
+});
+
 test('core-review skill ships model: haiku and --budget hint', () => {
   const skillPath = path.join(process.cwd(), 'templates', 'shared', 'skills', 'core-review', 'SKILL.md');
   const content = fs.readFileSync(skillPath, 'utf-8');

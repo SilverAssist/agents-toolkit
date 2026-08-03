@@ -23,9 +23,11 @@ Works for both **Copilot** and **human** reviews.
 > The `core-review` pass invoked from Step 3 pins itself cheap **only on Claude Code** (its
 > `SKILL.md model: haiku` frontmatter is honoured per-turn there). On **Copilot** skills
 > inherit the invoking prompt's model, so `core-review` runs on this prompt's smart tier when
-> invoked inline; to keep that pass cheap on Copilot, invoke `core-review` from a separate
-> cheap-tier chat instead of inline. On **Codex** the pass runs whatever session model is
-> active (`codex --model`).
+> invoked inline. Two cheap alternatives: (a) invoke `core-review` from a separate cheap-tier
+> chat instead of inline, or (b) if `.github/agents/core-review.agent.md` is installed,
+> @-mention `@agent-core-review` — custom agents establish their own model boundary, so the
+> cheap pin is honoured even when invoked from within this smart-tier prompt. On **Codex**
+> the pass runs whatever session model is active (`codex --model`).
 
 ## Prerequisites
 
