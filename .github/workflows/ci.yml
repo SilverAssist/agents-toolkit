@@ -83,6 +83,5 @@ jobs:
         run: node bin/cli.js list
 
       - name: Run tests
-        # validate-prompts tests spawn scripts/validate-prompts.mjs which needs
-        # js-yaml (a devDep); skip them here — the quality job covers them fully.
-        run: node --test --test-name-pattern '^(?!validate-prompts)'
+        # validate-prompts.test.js requires js-yaml (devDep) — run only the dep-free CLI tests.
+        run: node --test src/cli.test.js
