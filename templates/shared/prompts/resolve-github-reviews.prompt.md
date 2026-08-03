@@ -105,7 +105,7 @@ thread's `id` (needed to resolve it) and its first comment's `databaseId`, `path
 > /tmp/review-threads.jsonl
 CURSOR=null
 while : ; do
-  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -F after="$CURSOR" -f query='
+  PAGE=$(GH_PAGER=cat gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -F after="$CURSOR" -f query='
     query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
       repository(owner:$owner, name:$repo) {
         pullRequest(number:$pr) {
@@ -247,7 +247,7 @@ reasoning instead of a SHA, e.g. `-f body="Not applicable — <why>."`. Otherwis
 fix commit:
 
 ```bash
-gh api "repos/$OWNER/$REPO/pulls/$PR/comments/$COMMENT_ID/replies" \
+GH_PAGER=cat gh api "repos/$OWNER/$REPO/pulls/$PR/comments/$COMMENT_ID/replies" \
   -f body="Fixed in $SHA: <what changed>. Thanks!"
 ```
 
@@ -257,7 +257,7 @@ Some threads reject the direct replies endpoint (404). Only in that case, post a
 comment linked to the original via `in_reply_to`:
 
 ```bash
-gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
+GH_PAGER=cat gh api "repos/$OWNER/$REPO/pulls/$PR/comments" \
   -f body="Fixed in $SHA: <what changed>." \
   -F in_reply_to="$COMMENT_ID"
 ```
@@ -271,7 +271,7 @@ Prefer to resolve them all at once? Skip this per-thread call and use the batch 
 use **either** 5.4 **or** 5.5, never both, or every mutation runs twice.
 
 ```bash
-gh api graphql -f id="$THREAD_ID" -f query='
+GH_PAGER=cat gh api graphql -f id="$THREAD_ID" -f query='
   mutation($id:ID!) {
     resolveReviewThread(input:{threadId:$id}) {
       thread { isResolved }
@@ -288,7 +288,7 @@ without this check the failure is silent and Step 6 reports leftover threads wit
 
 ```bash
 jq -r 'select(.isResolved == false) | .id' /tmp/review-threads.jsonl | while read -r THREAD_ID; do
-  RESULT=$(gh api graphql -f id="$THREAD_ID" -f query='mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { isResolved } } }')
+  RESULT=$(GH_PAGER=cat gh api graphql -f id="$THREAD_ID" -f query='mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { isResolved } } }')
   if [ "$(echo "$RESULT" | jq -r '.data.resolveReviewThread.thread.isResolved')" != "true" ]; then
     echo "ERROR: failed to resolve $THREAD_ID: $RESULT" >&2
     exit 1
@@ -308,7 +308,7 @@ when threads remain so this step can gate CI or a script.
 > /tmp/review-threads-remaining.jsonl
 CURSOR=null
 while : ; do
-  PAGE=$(gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -F after="$CURSOR" -f query='
+  PAGE=$(GH_PAGER=cat gh api graphql -F owner="$OWNER" -F repo="$REPO" -F pr="$PR" -F after="$CURSOR" -f query='
     query($owner:String!, $repo:String!, $pr:Int!, $after:String) {
       repository(owner:$owner, name:$repo) {
         pullRequest(number:$pr) {

@@ -6,7 +6,6 @@ tools:
   - read_file
   - grep_search
   - create_file
-  - replace_string_in_file
   - run_in_terminal
   - github/*
 ---
