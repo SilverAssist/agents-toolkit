@@ -130,7 +130,7 @@ layers. Run it as a dedicated, read-only pass. The invocation mechanism varies b
 
 - **GitHub Copilot** — run the checklist **inline as a distinct pass** over the scope defined by
   `--budget medium`. Or, if `.github/agents/core-review.agent.md` is installed, @-mention
-  `@core-review` and **pass the file list from the `git diff` above in the brief** —
+  `@core-review` with **`--budget quick`** and **pass the file list from the `git diff` above in the brief** —
   the agent has no shell and cannot run `git diff` itself.
 - **Codex** — no subagents; run the checklist inline as a distinct pass over
   the scope defined by `--budget medium` (diff + one-hop neighbours), producing the prioritized
