@@ -7,14 +7,12 @@ import { getAgentsSkillsDir } from '../paths.js';
 import type { CopyOptions, InstallResult, SkillInstallResult } from '../types.js';
 
 /**
- * Copy dir.
+ * Recursively copies `src` into `dest`, applying optional rename, transform, and filter callbacks.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param src - TODO(tsdoc): describe src.
- * @param dest - TODO(tsdoc): describe dest.
- * @param options - TODO(tsdoc): describe options (optional).
- * @returns TODO(tsdoc): describe the return value.
+ * @param src - Source directory.
+ * @param dest - Destination directory (created if absent).
+ * @param options - Copy options: force, dryRun, renameFile, transformContent, filter, dirFilter, partialsFilter.
+ * @returns Written and planned change counts.
  */
 export function copyDir(src: string, dest: string, options: CopyOptions = {}): InstallResult {
   const {
@@ -80,11 +78,9 @@ export function copyDir(src: string, dest: string, options: CopyOptions = {}): I
 }
 
 /**
- * Append skills to gitignore.
+ * Appends managed skill directory entries to `.gitignore` if not already present.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param cwd - TODO(tsdoc): describe cwd.
+ * @param cwd - Project root directory.
  */
 export function appendSkillsToGitignore(cwd: string): void {
   const gitignorePath = path.join(cwd, '.gitignore');
@@ -117,14 +113,13 @@ interface LinkSkillOptions {
 }
 
 /**
- * Link skill.
+ * Creates a symlink from an agent's skills directory to the canonical store entry,
+ * falling back to a file copy when symlinks are unsupported.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param canonicalSkillDir - TODO(tsdoc): describe canonicalSkillDir.
- * @param agentSkillLinkPath - TODO(tsdoc): describe agentSkillLinkPath.
- * @param options - TODO(tsdoc): describe options (optional).
- * @returns TODO(tsdoc): describe the return value.
+ * @param canonicalSkillDir - Skill folder in the canonical `.agents/skills/` store.
+ * @param agentSkillLinkPath - Target path in the agent's skills directory.
+ * @param options - `dryRun`, `force`, and `copy` (force a real copy instead of a symlink).
+ * @returns Written and planned change counts.
  */
 export function linkSkill(
   canonicalSkillDir: string,
@@ -196,12 +191,11 @@ interface InstallSkillsParams {
 }
 
 /**
- * Install skills standard.
+ * Installs skills following the `npx skills` standard: copies each skill once into the
+ * canonical `.agents/skills/` store, then symlinks the agent’s skills directory entries to it.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options.
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - `isGlobal`, `agentSkillsDir`, `force`, `dryRun`, `copy`, and `dirFilter`.
+ * @returns Change counts plus a map of installed skill names to their canonical directories.
  */
 export function installSkillsStandard({
   isGlobal,

@@ -1,12 +1,10 @@
 import type { ClaudeAlias } from '../types.js';
 
 /**
- * Extracts the claude alias.
+ * Reads the `model:` value from Copilot frontmatter and maps it to a Claude Code alias.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param frontmatterBody - TODO(tsdoc): describe frontmatterBody.
- * @returns TODO(tsdoc): describe the return value.
+ * @param frontmatterBody - Raw frontmatter content without `---` delimiters.
+ * @returns The Claude alias (`haiku`, `sonnet`, `opus`, `fable`), or `null` when the model is not a Claude variant.
  */
 export function extractClaudeAlias(frontmatterBody: string): ClaudeAlias {
   const match = frontmatterBody.match(/^model:[ \t]+([^\n]+)$/m);

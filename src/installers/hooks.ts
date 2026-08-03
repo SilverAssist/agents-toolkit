@@ -34,12 +34,10 @@ function finalizeHookConfigs(hooksDest: string, isGlobal: boolean): void {
 }
 
 /**
- * Install hooks.
+ * Copies hook configs and scripts, makes `.sh` files executable, and finalizes hook config paths.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options.
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - Target directory, `force`, `dryRun`, and `global` flags.
+ * @returns Written and planned change counts.
  */
 export function installHooks({
   targetDir,

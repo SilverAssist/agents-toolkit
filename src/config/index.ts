@@ -5,11 +5,7 @@ import { error, info, success } from '../logger.js';
 import { getHomeDir } from '../paths.js';
 import type { AgentToolkitConfig, InstallFilters, InstallOptions, InstallResult, InstallScope } from '../types.js';
 
-/**
- * Default config.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Default values written to `.agents-toolkit.json` on first install. */
 export const DEFAULT_CONFIG: AgentToolkitConfig = {
   stack: 'all',
   tracker: 'all',
@@ -52,12 +48,14 @@ function loadConfig(configPath: string): AgentToolkitConfig | null {
 }
 
 /**
- * Resolves the filters.
+ * Resolves the active stack and tracker filters.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
+ * @remarks
+ * Resolution order: CLI flags → project `.agents-toolkit.json` → global `~/.agents-toolkit.json` → defaults.
+ * Exits with an error message when a CLI flag value is not a recognised enum value.
  *
- * @param options - TODO(tsdoc): describe options.
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - CLI flags that override config-file values.
+ * @returns Resolved `stack` and `tracker` strings.
  */
 export function resolveFilters(options: Pick<InstallOptions, 'stack' | 'tracker'>): InstallFilters {
   const validStacks = ['react', 'wordpress', 'all'] as const;
@@ -104,12 +102,10 @@ export function resolveFilters(options: Pick<InstallOptions, 'stack' | 'tracker'
 }
 
 /**
- * Gets the install scope.
+ * Derives which content categories to install from the selective install flags.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options.
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - The subset of `InstallOptions` flags that select content categories.
+ * @returns Booleans indicating whether each category should be installed.
  */
 export function getInstallScope(
   options: Partial<
@@ -134,25 +130,21 @@ export function getInstallScope(
 }
 
 /**
- * Gets the change count.
+ * Returns the relevant change count for the active mode.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param result - TODO(tsdoc): describe result.
- * @param dryRun - TODO(tsdoc): describe dryRun.
- * @returns TODO(tsdoc): describe the return value.
+ * @param result - An install result with `planned` and `written` counts.
+ * @param dryRun - When `true`, returns planned changes; otherwise actual written count.
+ * @returns The change count to display or accumulate.
  */
 export function getChangeCount(result: InstallResult, dryRun: boolean): number {
   return dryRun ? result.planned : result.written;
 }
 
 /**
- * Ensure config file.
+ * Creates `.agents-toolkit.json` with default values if it does not already exist.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options (optional).
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - `dryRun` previews without writing; `global` targets `~/` instead of `process.cwd()`.
+ * @returns Install result indicating whether a config file was created.
  */
 export function ensureConfigFile(options: { dryRun?: boolean; global?: boolean } = {}): InstallResult {
   const { dryRun = false, global: isGlobal = false } = options;

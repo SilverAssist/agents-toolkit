@@ -6,12 +6,10 @@ import { info, success } from '../logger.js';
 import type { InstallResult } from '../types.js';
 
 /**
- * Install copilot instructions.
+ * Installs or appends `copilot-instructions.md` in the target directory.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options (optional).
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - Target directory and `dryRun` flag.
+ * @returns Written and planned change counts.
  */
 export function installCopilotInstructions(
   options: { targetDir: string; dryRun?: boolean } = { targetDir: '' },

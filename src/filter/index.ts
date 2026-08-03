@@ -8,11 +8,7 @@ type CategoryEntries = {
   github?: readonly string[];
 };
 
-/**
- * File categories.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Maps stack and tracker filter keys to the file names belonging to each category. */
 export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
   instructions: {
     react: [
@@ -75,19 +71,15 @@ export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
 /**
  * File category key.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Valid content category keys used by `shouldIncludeFile` and `FILE_CATEGORIES`. */
 export type FileCategoryKey = 'instructions' | 'prompts' | 'partials' | 'skills';
 
 /**
- * Reports whether include file.
+ * Returns `true` when a file should be included given the active stack and tracker filters.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param filename - TODO(tsdoc): describe filename.
- * @param category - TODO(tsdoc): describe category.
- * @param filters - TODO(tsdoc): describe filters.
- * @returns TODO(tsdoc): describe the return value.
+ * @param filename - File basename without extension.
+ * @param category - Content category (instructions, prompts, partials, skills).
+ * @param filters - Resolved stack and tracker values.
  */
 export function shouldIncludeFile(filename: string, category: FileCategoryKey, filters: InstallFilters): boolean {
   const cats = FILE_CATEGORIES[category];

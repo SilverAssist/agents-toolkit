@@ -17,12 +17,11 @@ import type { InstallFilters, InstallOptions, SkillMeta } from '../types.js';
 type GitBasedTargetOptions = Partial<InstallOptions> & { filters?: InstallFilters };
 
 /**
- * Install git based target.
+ * Orchestrates the full Copilot or Codex install: prompts, instructions, skills, hooks,
+ * config, subagent overrides, and lockfile write.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options (optional).
- * @param target - TODO(tsdoc): describe target (optional).
+ * @param options - Install options including resolved filters, `force`, `dryRun`, and `copy`.
+ * @param target - Install target: `'copilot'` (default) or `'codex'`.
  */
 export function installGitBasedTarget(options: GitBasedTargetOptions = {}, target = 'copilot'): void {
   const {

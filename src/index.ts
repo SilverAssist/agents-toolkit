@@ -1,15 +1,7 @@
-/**
- * Version.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Current package version — must match `package.json`. */
 export const VERSION = '2.6.0';
 
-/**
- * Prompts.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Prompt names grouped by `workflow` and `utility` categories. */
 export const PROMPTS: { workflow: readonly string[]; utility: readonly string[] } = {
   workflow: [
     'analyze-github-issue',
@@ -36,11 +28,7 @@ export const PROMPTS: { workflow: readonly string[]; utility: readonly string[] 
   ],
 };
 
-/**
- * Partials.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Partial names installed into the `_partials/` subdirectory. */
 export const PARTIALS: readonly string[] = [
   'documentation',
   'git-operations',
@@ -52,11 +40,7 @@ export const PARTIALS: readonly string[] = [
   'validations',
 ];
 
-/**
- * Instructions.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Instruction file names installed into `.github/instructions/`. */
 export const INSTRUCTIONS: readonly string[] = [
   'caching',
   'css-styling',
@@ -73,11 +57,7 @@ export const INSTRUCTIONS: readonly string[] = [
   'wordpress-plugin-architecture',
 ];
 
-/**
- * Skills.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Skill names installed to the canonical `.agents/skills/` store. */
 export const SKILLS: readonly string[] = [
   'ai-seo-optimization',
   'component-architecture',
@@ -94,20 +74,12 @@ export const SKILLS: readonly string[] = [
   'tsdoc-standards',
 ];
 
-/**
- * Hooks.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Hook config names installed to the hooks directory. */
 export const HOOKS: readonly string[] = ['lint-format', 'validate-tsx'];
 
 // Skills follow the `npx skills` standard: a single canonical copy lives in
 // .agents/skills/ and each agent's skills directory symlinks to it.
-/**
- * Skills layout.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Directory layout for the `npx skills` standard: canonical store and per-agent symlink targets. */
 export const SKILLS_LAYOUT: {
   canonicalDir: string;
   agentDirs: { claude: string; copilot: string };
@@ -119,11 +91,7 @@ export const SKILLS_LAYOUT: {
   },
 };
 
-/**
- * Claude commands.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Prompt names converted to Claude Code slash commands during `--claude` install. */
 export const CLAUDE_COMMANDS: readonly string[] = [
   'analyze-ticket',
   'create-plan',
@@ -136,11 +104,7 @@ export const CLAUDE_COMMANDS: readonly string[] = [
   'add-tests',
 ];
 
-/**
- * Claude files.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Install-target paths for Claude Code (instructions root file, commands dir, skills dir, agents dir). */
 export const CLAUDE_FILES: {
   instructions: string;
   commandsDir: string;
@@ -159,9 +123,5 @@ export const CLAUDE_FILES: {
 // Names use the frontmatter `name:` field (the VS Code canonical identifier),
 // not the raw filename stem — `core-review.agent.md` has `name: core-review`.
 // Suppress both with --no-agent-overrides.
-/**
- * Agents.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Subagent override names shipped by the toolkit (uses frontmatter `name:` field, not filename stem). */
 export const AGENTS = ['Explore', 'core-review'] as const;

@@ -16,35 +16,17 @@ import type { InstallFilters, InstallOptions, SkillMeta } from '../types.js';
 
 type CommandOptions = Partial<InstallOptions> & { filters?: InstallFilters };
 
-/**
- * Install.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options (optional).
- */
+/** Installs all content for GitHub Copilot into `.github/`. */
 export function install(options: CommandOptions = {}): void {
   installGitBasedTarget(options, 'copilot');
 }
 
-/**
- * Install codex.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options (optional).
- */
+/** Installs all content for Codex into `.github/`. */
 export function installCodex(options: CommandOptions = {}): void {
   installGitBasedTarget(options, 'codex');
 }
 
-/**
- * Install claude.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options (optional).
- */
+/** Installs all content for Claude Code: slash commands, skills, CLAUDE.md, and subagent overrides. */
 export function installClaude(options: CommandOptions = {}): void {
   const {
     force = false,

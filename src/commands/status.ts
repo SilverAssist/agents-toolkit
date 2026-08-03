@@ -8,11 +8,7 @@ import type { ColorKey } from '../logger.js';
 import { getAgentsSkillsDir } from '../paths.js';
 import { computeSkillHash, readLockfile, LOCKFILE_NAME } from '../lockfile/index.js';
 
-/**
- * Status.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Compares installed skill hashes against the lockfile and prints a status table. Exits with code `1` if any skill is missing or modified. */
 export function status(): void {
   log('\n📊 Agents Toolkit Status\n', 'bright');
 
@@ -76,11 +72,7 @@ export function status(): void {
   console.log('');
 }
 
-/**
- * List.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Lists available prompts, partials, skills, and hooks from the bundled templates. */
 export function list(): void {
   log('\n📋 Available Prompts\n', 'bright');
 

@@ -15,11 +15,9 @@ interface RestoreOptions {
 }
 
 /**
- * Restore.
+ * Restores skills from `agents-toolkit-lock.json`, reinstalls with the recorded filters, and verifies hashes.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options (optional).
+ * @param options - `dryRun` and `copy` flags.
  */
 export function restore(options: RestoreOptions = {}): void {
   const { dryRun = false, copy = false } = options;

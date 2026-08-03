@@ -1,9 +1,5 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-/**
- * Templates dir.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Absolute path to the bundled `templates/` directory, resolved at runtime from `import.meta.url`. */
 export const TEMPLATES_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'templates');

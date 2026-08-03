@@ -1,11 +1,7 @@
 import { log, error } from '../logger.js';
 import type { InstallOptions } from '../types.js';
 
-/**
- * Show help.
- *
- * @remarks TODO(tsdoc): verify this generated summary.
- */
+/** Prints the CLI help text to stdout. */
 export function showHelp(): void {
   log('\n📦 Agents Toolkit\n', 'bright');
   console.log('Usage: agents-toolkit <command> [options]\n');
@@ -58,11 +54,9 @@ export function showHelp(): void {
 }
 
 /**
- * Parses the args.
+ * Parses `process.argv` into a command name and install options.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @returns TODO(tsdoc): describe the return value.
+ * @returns The command name and the full set of parsed option flags.
  */
 export function parseArgs(): { command: string; options: InstallOptions } {
   const args = process.argv.slice(2);
@@ -133,12 +127,10 @@ export function parseArgs(): { command: string; options: InstallOptions } {
 }
 
 /**
- * Resolves the install target.
+ * Resolves the install target from `--target`, `--claude`, or `--codex` flags.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options.
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - The parsed flag subset that specifies the target.
+ * @returns The resolved target string (`'copilot'`, `'claude'`, or `'codex'`). Exits on conflicts.
  */
 export function resolveInstallTarget(options: Pick<InstallOptions, 'claude' | 'codex' | 'target'>): string {
   const legacyTargets: string[] = [];

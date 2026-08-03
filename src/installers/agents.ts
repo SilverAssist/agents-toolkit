@@ -22,12 +22,10 @@ interface InstallAgentsFileOptions {
 }
 
 /**
- * Install agents file.
+ * Installs or appends `AGENTS.md` at the project root.
  *
- * @remarks TODO(tsdoc): verify this generated summary.
- *
- * @param options - TODO(tsdoc): describe options.
- * @returns TODO(tsdoc): describe the return value.
+ * @param options - Template path plus `force`, `append`, and `dryRun` flags.
+ * @returns Written and planned change counts.
  */
 export function installAgentsFile({
   templatePath,
