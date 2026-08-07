@@ -70,7 +70,7 @@
     "eslint-plugin-tsdoc-require-2": "^1.2.4",
     "husky": "^9.1.7",
     "js-yaml": "5.2.3",
-    "lint-staged": "^16.4.0",
+    "lint-staged": "^17.3.0",
     "markdownlint-cli2": "^0.23.2",
     "prettier": "^3.9.6",
     "typescript": "^5.9.3",
