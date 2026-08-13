@@ -34,7 +34,7 @@ Ask the user:
    - `includes/Model/` for Models (plain object, no LoadableInterface)
    - `includes/Repository/` for Repositories (no LoadableInterface, used by Services)
 
-3. **Register in Plugin.php** — If the component implements LoadableInterface, add it to the `$components` array in `Plugin.php` with the correct priority.
+3. **Register in Plugin.php** — If the component implements LoadableInterface, return it from `Plugin.php`'s `get_components()` method (the `abstract protected` method required by `AbstractPlugin` from `silverassist/wp-plugin-kernel`) with the correct priority grouping.
 
 4. **Create test file** — Generate a corresponding test file at `tests/` following the testing conventions:
    - Test class extends the plugin's base `TestCase` (which extends `WP_UnitTestCase`)

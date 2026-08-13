@@ -28,7 +28,7 @@ Ask the user:
 
 Follow the plugin-creation skill instructions completely. The skill has the full file structure, templates, and configuration for:
 
-1. **Core files** — Main plugin file, `Plugin.php` with singleton + LoadableInterface loader, `Activator.php`
+1. **Core files** — Main plugin file, `Plugin.php` extending `AbstractPlugin` from `silverassist/wp-plugin-kernel`, `Activator.php`
 2. **Composer setup** — `composer.json` with PSR-4 autoloading, dev dependencies (PHPCS, PHPStan, PHPUnit)
 3. **Quality configs** — `phpcs.xml`, `phpstan.neon`, `phpunit.xml.dist`
 4. **CI/CD** — GitHub Actions workflows for quality checks and releases
