@@ -55,9 +55,16 @@ composer test
 
 ### Configuration
 
-File: `phpcs.xml` — standard across all Silver Assist plugins.
+File: `phpcs.xml` — a thin file across all Silver Assist plugins that references
+the shared `SilverAssistWP` ruleset from `silverassist/wp-coding-standards`
+(require-dev, alongside `silverassist/coding-standards`) plus the plugin's own
+`PrefixAllGlobals` prefixes:
 
-**Base Standard**: `WordPress-Extra` with these exclusions:
+```xml
+<rule ref="SilverAssistWP"/>
+```
+
+**`SilverAssistWP` (the shared ruleset) is `WordPress-Extra` with these exclusions**:
 
 - `Generic.Arrays.DisallowShortArraySyntax` — short arrays allowed (`[]` not `array()`)
 - `WordPress.Files.FileName.NotHyphenatedLowercase` — PSR-4 PascalCase filenames
@@ -65,14 +72,20 @@ File: `phpcs.xml` — standard across all Silver Assist plugins.
 - `Generic.Functions.OpeningFunctionBraceKernighanRitchie` — K&R brace style allowed
 - `Generic.Classes.OpeningBraceSameLine` — same-line braces allowed
 
-**Additional Standards Enforced**:
+**Plus, also from the shared ruleset**:
 
 - `WordPress-Docs` — PHPDoc coverage
-- `WordPress.NamingConventions.PrefixAllGlobals` — plugin-specific prefixes
 - `Generic.CodeAnalysis.UnusedFunctionParameter`
 - `Generic.Commenting.Todo`
 - PHP compatibility: `8.2-`
 - Min WP version: `6.5`
+
+**Declared per-plugin, on top of the shared ruleset** (it can't live in the
+shared file):
+
+- `WordPress.NamingConventions.PrefixAllGlobals` — plugin-specific prefixes
+
+See the **plugin-creation** skill for the full `phpcs.xml` template.
 
 ### Common Commands
 
@@ -184,24 +197,29 @@ This ensures the step only fails on actual errors, not warnings.
 
 ### Configuration
 
-File: `phpstan.neon`
+File: `phpstan.neon`. `level: 8` is set by the shared
+`silverassist/coding-standards` base config — do not redeclare `level:` in a
+plugin's own `phpstan.neon`. All three shared files are `includes:`-ed
+directly (relative `includes:` inside `wp-coding-standards/phpstan/base.neon`
+can't chain to the other two once consumed as a dependency):
 
 ```yaml
 includes:
+    - vendor/silverassist/coding-standards/phpstan/base.neon
+    - vendor/silverassist/wp-coding-standards/phpstan/base.neon
     - vendor/szepeviktor/phpstan-wordpress/extension.neon
 
 parameters:
-    level: 8
     paths:
         - includes
     bootstrapFiles:
         - plugin-main-file.php
-    scanDirectories:
-        - vendor
     excludePaths:
         - tests/*
         - build/*
 ```
+
+See the **plugin-creation** skill for the full `phpstan.neon` template.
 
 ### Level 8 Requirements
 
@@ -346,6 +364,12 @@ Install via:
 bash scripts/install-wp-tests.sh wordpress_test root 'root' localhost latest true
 ```
 
+`scripts/install-wp-tests.sh` is a ~10-line thin wrapper delegating to the
+real implementation in `vendor/silverassist/wp-coding-standards/scripts/` —
+CLI usage above is unchanged, only the file's own contents changed from a
+full standalone script to a wrapper. See the **plugin-creation** skill for
+the exact wrapper contents.
+
 See the **testing** skill for full details on test patterns and bootstrap.
 
 ---
@@ -355,6 +379,15 @@ See the **testing** skill for full details on test patterns and bootstrap.
 File: `scripts/run-quality-checks.sh`
 
 This script centralizes all quality checks for consistent execution.
+
+For a brand-new plugin whose quality checks are generic, prefer thin-wrapping
+this script too — delegate to
+`vendor/silverassist/wp-coding-standards/scripts/run-quality-checks.sh`, the
+same pattern as `install-wp-tests.sh` above — rather than hand-maintaining
+the full script below. Only keep the full local script (and the pattern
+described next) when the plugin's checks do genuinely repo-specific extra
+setup that the shared script can't do generically — e.g. installing Contact
+Form 7, WPGraphQL, or ACF before running PHPUnit.
 
 ### Usage
 

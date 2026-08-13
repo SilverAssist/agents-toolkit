@@ -33,10 +33,8 @@ This skill covers adding new components to an existing Silver Assist WordPress p
 ```text
 includes/
 ├── Core/                    # Priority 10 — Bootstrap & lifecycle
-│   ├── Plugin.php           # Main plugin bootstrap (singleton)
-│   ├── Activator.php        # Activation/deactivation logic
-│   └── Interfaces/
-│       └── LoadableInterface.php
+│   ├── Plugin.php           # Main plugin bootstrap (extends AbstractPlugin)
+│   └── Activator.php        # Activation/deactivation logic
 ├── Service/                 # Priority 20 — Business logic
 │   ├── Loader.php           # Service loader (optional)
 │   └── Category/            # Group related services
@@ -80,7 +78,7 @@ Services contain business logic. They implement `LoadableInterface` and use the 
 
 namespace SilverAssist\PluginName\Service\Category;
 
-use SilverAssist\PluginName\Core\Interfaces\LoadableInterface;
+use SilverAssist\PluginKernel\Interfaces\LoadableInterface;
 
 \defined( 'ABSPATH' ) || exit;
 
@@ -169,7 +167,7 @@ Controllers handle HTTP/admin requests. They coordinate between Services (data) 
 
 namespace SilverAssist\PluginName\Controller\Admin;
 
-use SilverAssist\PluginName\Core\Interfaces\LoadableInterface;
+use SilverAssist\PluginKernel\Interfaces\LoadableInterface;
 use SilverAssist\PluginName\Service\Category\ServiceName;
 use SilverAssist\PluginName\View\Admin\ViewName;
 
@@ -553,10 +551,13 @@ After creating a component class that implements `LoadableInterface`:
 
 ### 1. Register in Plugin.php
 
-Edit `includes/Core/Plugin.php` — add the class to `get_components()`:
+`includes/Core/Plugin.php` extends `\SilverAssist\PluginKernel\AbstractPlugin`
+(from `silverassist/wp-plugin-kernel`), which declares `get_components()` as
+`abstract protected` — every concrete plugin must override it. Edit that
+override to add the new class:
 
 ```php
-private function get_components(): array {
+protected function get_components(): array {
     return [
         // Core - Priority 10.
         \SilverAssist\PluginName\Core\Activator::class,

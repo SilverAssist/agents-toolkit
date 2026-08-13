@@ -58,10 +58,8 @@ plugin-name/
 │       └── quality-checks.yml
 ├── includes/                    # PSR-4 classes
 │   ├── Core/
-│   │   ├── Plugin.php           # Main plugin bootstrap (singleton)
-│   │   ├── Activator.php        # Activation/deactivation logic
-│   │   └── Interfaces/
-│   │       └── LoadableInterface.php
+│   │   ├── Plugin.php           # Main plugin bootstrap (extends AbstractPlugin)
+│   │   └── Activator.php        # Activation/deactivation logic
 │   ├── Service/                 # Business logic services
 │   │   └── Loader.php
 │   ├── Admin/                   # WordPress admin integration
@@ -106,18 +104,28 @@ Namespace: `SilverAssist\PluginName\`
 
 ### LoadableInterface Priority System
 
+`LoadableInterface` and the `AbstractPlugin` bootstrap it powers both ship from the
+`silverassist/wp-plugin-kernel` package (`composer require silverassist/wp-plugin-kernel`) —
+plugins implement `\SilverAssist\PluginKernel\Interfaces\LoadableInterface`, they do not
+hand-write it per repo.
+
 All components implement `LoadableInterface` with three methods:
 
 - `init()` — Initialize the component
 - `get_priority()` — Loading order (lower = first)
 - `should_load()` — Conditional loading
 
-Priority values:
+Priority values (unchanged from before the kernel package existed):
 
 - **10**: Core components (Plugin, Activator, critical services)
 - **20**: Services (business logic, API clients)
 - **30**: Admin components (controllers, settings pages)
 - **40**: Utils & Assets (helpers, loggers)
+
+`Plugin.php` itself extends `\SilverAssist\PluginKernel\AbstractPlugin`, which provides
+`instance()`, `init()`, and the priority-ordered load loop — the concrete plugin only
+implements `get_components(): array` (and, optionally, `init_hooks()` for non-component
+plugin-level hooks such as `wp-github-updater` initialization). See Step 3 below.
 
 ---
 
@@ -147,6 +155,7 @@ Create `composer.json`:
     "require": {
         "php": ">=8.2",
         "composer/installers": "^2.0",
+        "silverassist/wp-plugin-kernel": "^1.0",
         "silverassist/wp-github-updater": "^1.1",
         "silverassist/wp-settings-hub": "^1.0"
     },
@@ -154,12 +163,11 @@ Create `composer.json`:
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "php-stubs/wordpress-stubs": "^6.6",
         "php-stubs/wordpress-tests-stubs": "^6.6",
-        "phpcompatibility/phpcompatibility-wp": "^2.1",
         "phpstan/phpstan": "*",
         "phpunit/phpunit": "^9.6",
-        "squizlabs/php_codesniffer": "^3.7 || ^4.0",
+        "silverassist/coding-standards": "^1.0",
+        "silverassist/wp-coding-standards": "^1.0",
         "szepeviktor/phpstan-wordpress": "^1.3 || ^2.0",
-        "wp-coding-standards/wpcs": "^3.0",
         "yoast/phpunit-polyfills": "^4.0"
     },
     "autoload": {
@@ -293,56 +301,29 @@ register_activation_hook(
 
 #### LoadableInterface
 
-File: `includes/Core/Interfaces/LoadableInterface.php`
-
-```php
-<?php
-namespace SilverAssist\PluginName\Core\Interfaces;
-
-/**
- * LoadableInterface defines the contract for loadable components.
- *
- * @package SilverAssist\PluginName\Core\Interfaces
- */
-interface LoadableInterface {
-    /**
-     * Initialize the component.
-     *
-     * @return void
-     */
-    public function init(): void;
-
-    /**
-     * Get the loading priority.
-     *
-     * Lower numbers = higher priority.
-     * - 10: Core components
-     * - 20: Services
-     * - 30: Admin components
-     * - 40: Utils & Assets
-     *
-     * @return int
-     */
-    public function get_priority(): int;
-
-    /**
-     * Check if component should load.
-     *
-     * @return bool
-     */
-    public function should_load(): bool;
-}
-```
+Not hand-written per plugin. `silverassist/wp-plugin-kernel` ships
+`\SilverAssist\PluginKernel\Interfaces\LoadableInterface` (require it via
+`composer require silverassist/wp-plugin-kernel`); components implement that
+interface directly rather than a local `includes/Core/Interfaces/LoadableInterface.php`
+copy. The contract is unchanged: `init(): void`, `get_priority(): int`, `should_load(): bool`,
+with the same priority bands (10 core, 20 services, 30 admin, 40 utils).
 
 #### Plugin.php (Main Bootstrap)
 
 File: `includes/Core/Plugin.php`
 
+`Plugin` extends `\SilverAssist\PluginKernel\AbstractPlugin`, which provides
+`instance()` (per-subclass singleton), `init()` (final — do not override it),
+and the should_load()-filter/priority-sort/init() loading loop. The concrete
+plugin only implements `get_components()` and, if it needs plugin-level hooks
+that aren't themselves a `LoadableInterface` component (e.g. the GitHub
+updater), overrides `init_hooks()`:
+
 ```php
 <?php
 namespace SilverAssist\PluginName\Core;
 
-use SilverAssist\PluginName\Core\Interfaces\LoadableInterface;
+use SilverAssist\PluginKernel\AbstractPlugin;
 
 /**
  * Main Plugin Class.
@@ -350,80 +331,13 @@ use SilverAssist\PluginName\Core\Interfaces\LoadableInterface;
  * @package SilverAssist\PluginName\Core
  * @since 1.0.0
  */
-class Plugin implements LoadableInterface {
-    /**
-     * Plugin instance.
-     *
-     * @var Plugin|null
-     */
-    private static ?Plugin $instance = null;
-
-    /**
-     * Initialization flag.
-     *
-     * @var bool
-     */
-    private bool $initialized = false;
-
-    /**
-     * Get plugin instance.
-     *
-     * @return Plugin
-     */
-    public static function instance(): Plugin {
-        if ( self::$instance === null ) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-
-    /**
-     * Private constructor to prevent direct instantiation.
-     */
-    private function __construct() {
-        // Initialization logic.
-    }
-
-    /**
-     * Initialize plugin.
-     *
-     * @return void
-     */
-    public function init(): void {
-        if ( $this->initialized ) {
-            return;
-        }
-
-        $this->load_components();
-        $this->init_hooks();
-
-        $this->initialized = true;
-    }
-
-    /**
-     * Get loading priority.
-     *
-     * @return int
-     */
-    public function get_priority(): int {
-        return 10;
-    }
-
-    /**
-     * Should this component load?
-     *
-     * @return bool
-     */
-    public function should_load(): bool {
-        return true;
-    }
-
+final class Plugin extends AbstractPlugin {
     /**
      * Get components to load.
      *
-     * @return array<class-string<LoadableInterface>>
+     * @return array<class-string<\SilverAssist\PluginKernel\Interfaces\LoadableInterface>>
      */
-    private function get_components(): array {
+    protected function get_components(): array {
         return [
             // Add component classes here.
             // \SilverAssist\PluginName\Service\ServiceName::class,
@@ -432,37 +346,11 @@ class Plugin implements LoadableInterface {
     }
 
     /**
-     * Load all components by priority.
+     * Plugin-level hooks that aren't themselves a LoadableInterface component.
      *
      * @return void
      */
-    private function load_components(): void {
-        $components = [];
-
-        foreach ( $this->get_components() as $class ) {
-            if ( method_exists( $class, 'instance' ) ) {
-                $instance = $class::instance();
-                if ( $instance->should_load() ) {
-                    $components[] = $instance;
-                }
-            }
-        }
-
-        // Sort by priority (lower first).
-        usort( $components, fn( $a, $b ) => $a->get_priority() <=> $b->get_priority() );
-
-        // Initialize all.
-        foreach ( $components as $component ) {
-            $component->init();
-        }
-    }
-
-    /**
-     * Initialize plugin hooks.
-     *
-     * @return void
-     */
-    private function init_hooks(): void {
+    protected function init_hooks(): void {
         $this->init_updater();
     }
 
@@ -548,6 +436,16 @@ class Activator {
 
 #### phpcs.xml
 
+Requires `silverassist/coding-standards` and `silverassist/wp-coding-standards` as
+require-dev (see the `composer.json` template above). The shared `SilverAssistWP`
+ruleset — registered by `silverassist/wp-coding-standards` via Composer's
+`phpcodesniffer-composer-installer` — already includes `WordPress-Extra` (with the
+PSR-4 file-naming and K&R brace exclusions), `WordPress-Docs`,
+`Generic.CodeAnalysis.UnusedFunctionParameter`, `Generic.Commenting.Todo`, and the
+`testVersion`/`minimum_supported_wp_version` config. A plugin's own `phpcs.xml` only
+needs to reference it and declare its own `PrefixAllGlobals` prefixes — it is **not**
+a long list of `WordPress-Extra` rules with manual `<exclude>` lines:
+
 ```xml
 <?xml version="1.0"?>
 <ruleset name="SilverAssist Plugin Standards">
@@ -563,23 +461,10 @@ class Activator {
     <exclude-pattern>*/assets/js/*</exclude-pattern>
     <exclude-pattern>*/assets/css/*</exclude-pattern>
 
-    <arg value="ps"/>
-    <arg name="colors"/>
+    <rule ref="SilverAssistWP"/>
 
-    <config name="testVersion" value="8.2-"/>
-
-    <rule ref="WordPress-Extra">
-        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
-        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
-        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
-        <exclude name="Generic.Functions.OpeningFunctionBraceKernighanRitchie"/>
-        <exclude name="Generic.Classes.OpeningBraceSameLine"/>
-    </rule>
-
-    <rule ref="Universal.Arrays.DisallowShortArraySyntax">
-        <exclude name="Universal.Arrays.DisallowShortArraySyntax.Found"/>
-    </rule>
-
+    <!-- Plugin-specific: PrefixAllGlobals must be declared per-plugin,
+         it can't live in the shared ruleset. -->
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
             <property name="prefixes" type="array">
@@ -588,12 +473,6 @@ class Activator {
             </property>
         </properties>
     </rule>
-
-    <rule ref="WordPress-Docs"/>
-    <rule ref="Generic.CodeAnalysis.UnusedFunctionParameter"/>
-    <rule ref="Generic.Commenting.Todo"/>
-
-    <config name="minimum_supported_wp_version" value="6.5"/>
 </ruleset>
 ```
 
@@ -601,24 +480,37 @@ class Activator {
 
 #### phpstan.neon
 
+`level: 8` is set by the shared `silverassist/coding-standards` base config — a
+plugin's own `phpstan.neon` must **not** redeclare `level:` itself. All three shared
+files must be `includes:`-ed directly (relative `includes:` inside
+`wp-coding-standards/phpstan/base.neon` can't chain to the other two once this file
+is consumed as a dependency — see that package's own comments for why):
+
 ```yaml
 includes:
+    - vendor/silverassist/coding-standards/phpstan/base.neon
+    - vendor/silverassist/wp-coding-standards/phpstan/base.neon
     - vendor/szepeviktor/phpstan-wordpress/extension.neon
 
 parameters:
-    level: 8
     paths:
         - includes
     bootstrapFiles:
         - plugin-main-file.php
-    scanDirectories:
-        - vendor
     excludePaths:
         - tests/*
         - build/*
+    ignoreErrors:
+        # Plugin-specific scoped ignores only, with a reason.
 ```
 
 **IMPORTANT**: Replace `plugin-main-file.php` with the actual main plugin filename.
+
+If the plugin's tests use `silverassist/wp-plugin-kernel`'s `Testing\TestCase` (which
+extends `WP_UnitTestCase`), add `tests` to `paths` and a `scanFiles` entry for
+`vendor/php-stubs/wordpress-tests-stubs/wordpress-tests-stubs.php` — see the
+**testing** skill and `silverassist/wp-coding-standards`'s own README for why
+`scanFiles`, not `stubFiles`, is required there.
 
 #### phpunit.xml.dist
 
@@ -690,6 +582,16 @@ See the **release-management** skill for `release.yml` and the CI workflow templ
 
 File: `.github/workflows/ci.yml`
 
+The PHP-version quality-check jobs call `silverassist/wp-coding-standards`'s
+reusable `quality-checks.yml` workflow (`@v1` is a floating major-version tag,
+same convention as `actions/checkout@v4`) instead of a locally-defined
+`quality-checks.yml` job — so a new plugin does **not** get its own
+`.github/workflows/quality-checks.yml` file at all; delete it if one exists
+from an older scaffold. Only keep a local `quality-checks.yml` if the
+plugin's checks do genuinely repo-specific extra setup (installing Contact
+Form 7, WPGraphQL, ACF, etc. as part of the checks) that the shared workflow
+can't do generically.
+
 ```yaml
 name: CI
 permissions:
@@ -705,15 +607,17 @@ on:
 jobs:
   quality-checks-82:
     name: Quality Checks (PHP 8.2)
-    uses: ./.github/workflows/quality-checks.yml
+    uses: SilverAssist/wp-coding-standards/.github/workflows/quality-checks.yml@v1
     with:
       php-version: '8.2'
       skip-wp-setup: false
-      upload-coverage: true
+      # Only set true if phpunit.xml.dist actually generates coverage.xml
+      # (a <coverage> clover report) -- otherwise this silently no-ops.
+      upload-coverage: false
 
   quality-checks-83:
     name: Quality Checks (PHP 8.3)
-    uses: ./.github/workflows/quality-checks.yml
+    uses: SilverAssist/wp-coding-standards/.github/workflows/quality-checks.yml@v1
     with:
       php-version: '8.3'
       skip-wp-setup: false
@@ -721,7 +625,7 @@ jobs:
 
   quality-checks-84:
     name: Quality Checks (PHP 8.4)
-    uses: ./.github/workflows/quality-checks.yml
+    uses: SilverAssist/wp-coding-standards/.github/workflows/quality-checks.yml@v1
     with:
       php-version: '8.4'
       skip-wp-setup: false
@@ -767,9 +671,50 @@ jobs:
           extensions: mbstring, intl, mysql, pdo_mysql
           coverage: none
       - run: composer install --no-interaction --no-progress --optimize-autoloader
+      - name: Install Subversion (required for WordPress Test Suite)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq subversion
       - run: bash scripts/install-wp-tests.sh wordpress_test root 'root' 127.0.0.1 ${{ matrix.wordpress-version }} false
       - run: vendor/bin/phpunit
 ```
+
+This `compatibility` job's `scripts/install-wp-tests.sh` call is unchanged —
+CLI usage is the same — but the file it calls should be a ~10-line thin
+wrapper delegating to `vendor/silverassist/wp-coding-standards/scripts/install-wp-tests.sh`,
+not a full standalone copy. See the **Scripts** note below.
+
+#### Scripts
+
+`silverassist/wp-coding-standards` ships the real implementations of
+`install-wp-tests.sh` and `run-quality-checks.sh` at
+`vendor/silverassist/wp-coding-standards/scripts/`. A new plugin's own
+`scripts/install-wp-tests.sh` (and, when applicable, `run-quality-checks.sh`)
+should be a thin wrapper, not a full copy-pasted script:
+
+```bash
+#!/usr/bin/env bash
+#
+# Thin wrapper — delegates to the shared script in silverassist/wp-coding-standards
+# so local dev commands and docs referencing `scripts/install-wp-tests.sh` keep
+# working without every consumer hand-maintaining its own copy.
+#
+# @package SilverAssist\PluginName
+#
+set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec bash "$SCRIPT_DIR/../vendor/silverassist/wp-coding-standards/scripts/install-wp-tests.sh" "$@"
+```
+
+CLI usage is unchanged: `bash scripts/install-wp-tests.sh <db-name> <db-user> <db-pass> [db-host] [wp-version] [skip-database-creation]`.
+
+**Caveat**: only thin-wrap `run-quality-checks.sh` too if the plugin's quality
+checks are otherwise generic. A plugin whose checks do genuinely repo-specific
+extra setup (e.g. installing Contact Form 7 or WPGraphQL before running
+PHPUnit) keeps its own full local `run-quality-checks.sh` and `quality-checks.yml`
+— only `install-wp-tests.sh` gets thin-wrapped in that case, since that
+sub-step has no plugin-specific logic. `scripts/build-release.sh` and
+`scripts/update-version-simple.sh` are **not** provided by
+`silverassist/wp-coding-standards` — see the **release-management** skill;
+those stay hand-copied per plugin for now.
 
 ### Step 7: Create .gitignore
 
@@ -956,6 +901,17 @@ sprintf(
 
 ## SilverAssist Required Packages
 
+### wp-plugin-kernel
+
+Ships the `LoadableInterface`/`AbstractPlugin` bootstrap pattern — see
+"LoadableInterface Priority System" and Step 3 above.
+
+```bash
+composer require silverassist/wp-plugin-kernel
+```
+
+Runtime dependency, not `--dev` — `Plugin.php` calls its classes directly.
+
 ### wp-github-updater
 
 Enables automatic updates from GitHub releases.
@@ -1080,18 +1036,18 @@ Should contain:
 ## Checklist for New Plugin
 
 - [ ] Directory created with correct slug
-- [ ] `composer.json` with correct namespace, prefixes, and packages
+- [ ] `composer.json` with correct namespace, prefixes, and packages (including `silverassist/wp-plugin-kernel` and `silverassist/wp-coding-standards`)
 - [ ] Main plugin file with all required headers (including `Update URI`)
-- [ ] `includes/Core/Interfaces/LoadableInterface.php` created
-- [ ] `includes/Core/Plugin.php` with singleton, components, and updater
+- [ ] `includes/Core/Plugin.php` extending `\SilverAssist\PluginKernel\AbstractPlugin`, implementing `get_components()`
 - [ ] `includes/Core/Activator.php` with activate/deactivate methods
-- [ ] `phpcs.xml` with correct prefixes for the plugin
-- [ ] `phpstan.neon` with correct bootstrap file
+- [ ] `phpcs.xml` referencing the `SilverAssistWP` ruleset with correct `PrefixAllGlobals` prefixes
+- [ ] `phpstan.neon` with the three shared `includes:` and correct bootstrap file (no `level:` override)
 - [ ] `phpunit.xml.dist` with correct constant prefix
 - [ ] `tests/bootstrap.php` with correct constants and plugin file
-- [ ] `tests/Helpers/TestCase.php` extending `WP_UnitTestCase`
-- [ ] `.github/workflows/ci.yml` created
+- [ ] `tests/Helpers/TestCase.php` extending `WP_UnitTestCase` (or `\SilverAssist\PluginKernel\Testing\TestCase`)
+- [ ] `.github/workflows/ci.yml` created, calling the reusable `quality-checks.yml@v1` workflow (no local `quality-checks.yml` unless the plugin needs custom check setup)
 - [ ] `.github/workflows/release.yml` created (see release-management skill)
+- [ ] `scripts/install-wp-tests.sh` is a thin wrapper delegating to `vendor/silverassist/wp-coding-standards/scripts/`
 - [ ] `scripts/build-release.sh` copied from existing plugin
 - [ ] `scripts/update-version-simple.sh` created
 - [ ] `.gitignore` configured

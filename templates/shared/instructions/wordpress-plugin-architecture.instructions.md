@@ -31,7 +31,11 @@ Namespace `SilverAssist\PluginName\` maps to `includes/`:
 
 ## LoadableInterface Priority System
 
-All components implement `LoadableInterface` with three methods:
+`LoadableInterface` ships from the `silverassist/wp-plugin-kernel` package
+(`composer require silverassist/wp-plugin-kernel`, runtime dependency — not
+`--dev`) as `\SilverAssist\PluginKernel\Interfaces\LoadableInterface`.
+Components implement that interface directly; it is not redefined locally
+per plugin. Its contract (three methods, unchanged):
 
 ```php
 interface LoadableInterface {
@@ -79,32 +83,23 @@ class ServiceName implements LoadableInterface {
 
 ### Component Loading (Plugin.php)
 
-```php
-private function get_components(): array {
-    return [
-        // Core — Priority 10.
-        \SilverAssist\PluginName\Core\Activator::class,
-        // Services — Priority 20.
-        \SilverAssist\PluginName\Service\ServiceName::class,
-        // Controllers — Priority 30.
-        \SilverAssist\PluginName\Controller\Admin\PageController::class,
-        // Utils — Priority 40.
-    ];
-}
+`Plugin.php` extends `\SilverAssist\PluginKernel\AbstractPlugin`, which
+provides `instance()`, `init()`, and the should_load()-filter /
+priority-sort / init() loading loop. The concrete plugin only implements
+`get_components()` — it does not hand-write a `load_components()` loop:
 
-private function load_components(): void {
-    $components = [];
-    foreach ( $this->get_components() as $class ) {
-        if ( method_exists( $class, 'instance' ) ) {
-            $instance = $class::instance();
-            if ( $instance->should_load() ) {
-                $components[] = $instance;
-            }
-        }
-    }
-    usort( $components, fn( $a, $b ) => $a->get_priority() <=> $b->get_priority() );
-    foreach ( $components as $component ) {
-        $component->init();
+```php
+final class Plugin extends \SilverAssist\PluginKernel\AbstractPlugin {
+    protected function get_components(): array {
+        return [
+            // Core — Priority 10.
+            \SilverAssist\PluginName\Core\Activator::class,
+            // Services — Priority 20.
+            \SilverAssist\PluginName\Service\ServiceName::class,
+            // Controllers — Priority 30.
+            \SilverAssist\PluginName\Controller\Admin\PageController::class,
+            // Utils — Priority 40.
+        ];
     }
 }
 ```
@@ -163,9 +158,8 @@ plugin-name/
 ├── phpcs.xml / phpstan.neon / phpunit.xml.dist
 ├── includes/                    # PSR-4 classes
 │   ├── Core/                    # Priority 10
-│   │   ├── Plugin.php
-│   │   ├── Activator.php
-│   │   └── Interfaces/LoadableInterface.php
+│   │   ├── Plugin.php           # extends AbstractPlugin
+│   │   └── Activator.php
 │   ├── Service/                 # Priority 20
 │   ├── Controller/              # Priority 30
 │   ├── View/                    # Static HTML rendering
@@ -183,6 +177,15 @@ plugin-name/
 ---
 
 ## SilverAssist Packages
+
+### wp-plugin-kernel
+
+Ships `LoadableInterface` and `AbstractPlugin` — see "LoadableInterface
+Priority System" above. Runtime dependency.
+
+```bash
+composer require silverassist/wp-plugin-kernel
+```
 
 ### wp-github-updater
 

@@ -210,6 +210,14 @@ abstract class TestCase extends \WP_UnitTestCase {
 }
 ```
 
+`silverassist/wp-plugin-kernel` (the same package that provides `AbstractPlugin`/
+`LoadableInterface`, see the **plugin-creation** skill) also ships
+`\SilverAssist\PluginKernel\Testing\TestCase`, a thin `WP_UnitTestCase` base a
+plugin's own `TestCase` can extend instead of `\WP_UnitTestCase` directly —
+check its class docblock for the two non-obvious rules every subclass needs
+(the deprecated `$this->factory` trap, and why `CREATE TABLE` must go in
+`wpSetUpBeforeClass()`).
+
 ### Directory Structure
 
 ```text
@@ -488,7 +496,7 @@ class PluginTest extends TestCase {
         $plugin = Plugin::instance();
 
         $this->assertInstanceOf(
-            \SilverAssist\PluginName\Core\Interfaces\LoadableInterface::class,
+            \SilverAssist\PluginKernel\Interfaces\LoadableInterface::class,
             $plugin
         );
     }
@@ -626,6 +634,10 @@ vendor/bin/phpunit --testdox
 
 ### WordPress Test Suite Installation
 
+`scripts/install-wp-tests.sh` is a ~10-line thin wrapper that delegates to the
+real script shipped in `vendor/silverassist/wp-coding-standards/scripts/` —
+CLI usage is unchanged:
+
 ```bash
 bash scripts/install-wp-tests.sh <db-name> <db-user> <db-pass> <db-host> <wp-version> <skip-database-creation>
 
@@ -633,9 +645,14 @@ bash scripts/install-wp-tests.sh <db-name> <db-user> <db-pass> <db-host> <wp-ver
 bash scripts/install-wp-tests.sh wordpress_test root 'root' localhost latest true
 ```
 
+See the **quality-checks** skill for the wrapper's exact contents and the
+caveat for plugins with genuinely custom check setup (CF7, WPGraphQL, ACF).
+
 ### CI Pipeline
 
-Tests run automatically in CI via `quality-checks.yml`:
+Tests run automatically in CI via `silverassist/wp-coding-standards`'s
+reusable `quality-checks.yml@v1` workflow (called from the plugin's own
+`.github/workflows/ci.yml` — see the **plugin-creation** skill), across:
 
 - PHP 8.2 (with coverage)
 - PHP 8.3
