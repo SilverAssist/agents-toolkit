@@ -1,6 +1,6 @@
 ---
 name: nextjs-caching
-description: Caching strategy for Next.js (App Router) frontends consuming the CCDS API and headless WordPress. Use when asked about caching, ISR, "revalidate", "stale data", "page not cached", "private / no-store header", POST requests not caching, CloudFront/CDN invalidation, `next: { revalidate, tags }`, or when a page unexpectedly renders dynamically.
+description: Caching strategy for Next.js (App Router) frontends consuming the CCDS API and headless WordPress. Use when asked about caching, ISR, "revalidate", "stale data", "page not cached", "private / no-store header", POST requests not caching, CloudFront/CDN invalidation, `next: { revalidate, tags }`, a page unexpectedly renders dynamically, `notFound()` returning HTTP 200, a 404 or error page getting cached as if valid, or a data-fetching function collapsing errors into `null`.
 ---
 
 # Next.js Caching Skill
@@ -72,16 +72,43 @@ sufficient** to make the page CDN-cacheable. You must additionally pick a render
 
 Pick one (ordered by risk, lowest first):
 
-1. **CDN edge override (current, lowest risk).** `src/proxy.ts` matches the city/community paths and
-   sets `Cache-Control: public, s-maxage=2592000, stale-while-revalidate=2592000` — the **same**
-   header the ISR pages emit (see `expireTime` under ISR tiers), so the CDN policy is uniform across
-   static and dynamic routes. The origin stays dynamic; the CDN caches the deterministic-per-URL
-   response. Per-repo regex, no build-time risk — this is what WEB-1069 shipped. **Requires:** a
-   per-repo path regex in `src/proxy.ts` that matches exactly the routes you want cached **and**
-   those routes must be **public and deterministic per URL** — no auth-, cookie-, or session-
-   dependent output. A `public` edge cache serves one stored response to *every* visitor, so a
-   personalized route matched here would leak one user's content to others. Never match
-   authenticated or personalized paths.
+0. **Native ISR via `generateStaticParams() { return [] }` (preferred when achievable).** A dynamic
+   segment (`[state]`, `[city]`, `[community]`, …) needs *some* `generateStaticParams` export to be
+   ISR-eligible at all — `export const revalidate` alone, with no `generateStaticParams` export,
+   leaves the route fully dynamic (`ƒ`) regardless of what the fetches inside it cache (confirmed
+   empirically across an 8-repo fleet audit, 2026-08: two repos had this exact gap — `revalidate` set,
+   no `generateStaticParams`, still `ƒ`). Returning `[]` (not omitting the export) is the fix: it
+   marks the segment as ISR-eligible with **zero pages pre-built at compile time** — `dynamicParams`
+   defaults to `true`, so every real param renders on first request and is cached from then on per
+   `revalidate`. This is not the same as strategy 2 (`force-static`) — no build-time fetch, no
+   build-time null-safety requirement, build time doesn't change. Once every segment in the route
+   (including parallel-route `@slot`s, if any — **every** slot needs its own
+   `generateStaticParams() { return [] }` or the whole route silently reverts to dynamic) is
+   ISR-eligible this way, Next's own per-status `Cache-Control` applies correctly — a real page caches,
+   a confirmed `notFound()` caches (as a legitimate 404), and a thrown error does not — and **strategy
+   1's CDN override becomes unnecessary and should be removed**, since it can't do that per-status
+   distinction (see the warning below). Verify with `next build` route output (`●` not `ƒ`) and
+   `curl -sI` on both a real and a confirmed-missing URL.
+1. **CDN edge override (fallback, when native ISR isn't achievable).** `src/proxy.ts` matches the
+   city/community paths and sets `Cache-Control: public, s-maxage=2592000,
+   stale-while-revalidate=2592000` — the **same** header the ISR pages emit (see `expireTime` under
+   ISR tiers), so the CDN policy is uniform across static and dynamic routes. The origin stays
+   dynamic; the CDN caches the deterministic-per-URL response. Per-repo regex, no build-time risk —
+   this is what WEB-1069 shipped. **Requires:** a per-repo path regex in `src/proxy.ts` that matches
+   exactly the routes you want cached **and** those routes must be **public and deterministic per
+   URL** — no auth-, cookie-, or session-dependent output. A `public` edge cache serves one stored
+   response to *every* visitor, so a personalized route matched here would leak one user's content to
+   others. Never match authenticated or personalized paths.
+
+   > ⚠️ **This override is inherently status-blind.** It runs in middleware, before the downstream
+   > page has rendered, so it has no visibility into the eventual response status — it sets the same
+   > 30-day public cache on a `200`, a confirmed `notFound()` 404, **and** a transient upstream 5xx
+   > alike. Confirmed live across a 2026-08 fleet audit: 5 of 8 sibling repos had this exact bug,
+   > including one case where pointing the API at an unreachable host and reloading still returned the
+   > override's `public, s-maxage=2592000` on the resulting 500 — a transient outage cached publicly
+   > for 30 days. If a route matched by this override can ever throw (see the discriminated-union
+   > section below), prefer strategy 0 once its prerequisites are met; don't leave the override in
+   > place "because it already works" for the 200 case without checking what it does to the error case.
 2. **`export const dynamic = "force-static"` (interim).** Forces the POST read to `force-cache` and
    prerenders the route as real ISR (confirmed via `prerender-manifest.json`). Removed in WEB-1058
    because a CCDS failure at build time cached a **blank page**; safer now that reads throw on 5xx at
@@ -94,9 +121,92 @@ Pick one (ordered by risk, lowest first):
 3. **`cacheComponents: true` + `use cache` (strategic).** Wrap the POST read in `use cache` so its data
    lands in the static shell (PPR). Next-recommended long term; larger migration. **Requires:** a
    deliberate PPR migration for the whole route segment; do **not** mix ad hoc with route-segment
-   `export const revalidate` (the two models conflict).
+   `export const revalidate` (the two models conflict). Inside a `use cache` scope, `cacheLife()` can
+   be called *after* inspecting the fetched result — e.g. a longer TTL for a confirmed-found record and
+   a much shorter one for a confirmed-not-found one — something the static route-segment `revalidate`
+   export can never express (it's one literal value for the whole segment, chosen before any fetch
+   runs). Route-segment config can only approximate this by taking the *minimum* `revalidate` across
+   every fetch/`unstable_cache` call in the segment when no static `export const revalidate` overrides
+   it — a workable but non-obvious mechanism; `cacheLife()` is the direct way to do it once on Cache
+   Components.
 
 ---
+
+## The `notFound()` → HTTP 200 gotcha (ancestor `loading.tsx`)
+
+A route can call `notFound()` correctly, render the right "not found" UI, and **still return HTTP
+200** — silently breaking every caching assumption that depends on status code (crawlers index it as
+a real page, the CDN/ISR layer caches it as a `200`, monitoring never sees the 404). Root cause,
+confirmed live (family-nextjs, 2026-08, then reproduced in 5+ sibling repos): any ancestor
+`loading.tsx` file automatically wraps its whole subtree in a React `<Suspense>` boundary — a plain
+Next.js file-convention, not a bug in the file itself. If a route inside that subtree calls
+`notFound()`, the response has **already begun streaming as `200`** by the time the check resolves,
+and the status cannot change once streaming has started. Per Next's own docs: *"Because the check
+runs inside the `<Suspense>` boundary, the response has already begun streaming as a `200`, and the
+status can't change once streaming has started."*
+
+**This is easy to miss** because the rendered UI is correct — only the HTTP status is wrong, and
+nothing in local dev (`npm run dev`) surfaces it unless you specifically check the status header;
+`npm run build && npm run start` does reproduce it.
+
+**Fix:** find every `loading.tsx` that sits as an ancestor of any route calling `notFound()`, and
+delete it or restructure the loading UI into a component-level `<Suspense>` that is *not* an ancestor
+of that route. Don't do this reflexively — grep for `loading.tsx` first, then check whether anything
+beneath it in the tree calls `notFound()`; a `loading.tsx` with no `notFound()`-calling descendant is
+not part of this bug.
+
+**Verify, don't assume:**
+
+```bash
+npm run build && npm run start
+curl -sv https://localhost:3000/<a-confirmed-missing-path> 2>&1 | grep "^< HTTP"
+# expect: HTTP/1.1 404 Not Found — not 200
+```
+
+Structural similarity to a previously-confirmed case (same file layout as another repo that had this
+bug) is strong circumstantial evidence, but treat it as a hypothesis to verify with the curl check
+above, not a settled fact — one fleet audit found a repo with the identical file structure that
+turned out **not** to be affected once actually tested.
+
+## Discriminated-union data fetching (don't collapse errors into `null`)
+
+A data-fetching function that collapses distinct failure modes — confirmed-not-found vs.
+incomplete/malformed data vs. a transient API error (5xx, timeout, unexpected response shape) — into
+a single `null`/falsy return is a caching-correctness bug, not just a type-safety nitpick: if every
+caller reacts to that `null` with `notFound()`, a transient upstream outage gets **cached as a
+permanent 404** for the full `revalidate` window (up to 30d per the tiers above), and stays wrong
+until the next on-demand invalidation or webhook.
+
+**Fix:** return a discriminated union instead of `T | null`:
+
+```ts
+type LookupResult<T> =
+  | { status: "found"; data: T }
+  | { status: "not_found" }                              // confirmed absent — a real, cacheable 404
+  | { status: "incomplete"; data: Partial<T>; missingFields: string[] }  // present but malformed
+  | { status: "api_error"; code: number };                // transient — never cache as not-found
+```
+
+Callers branch via a shared resolver, not an inline `if`:
+
+```ts
+function resolveOrThrow(result: LookupResult<T>): T {
+  switch (result.status) {
+    case "found": return result.data;
+    case "not_found": return notFound();                  // real 404, safe to cache
+    case "incomplete": throw new IncompleteDataError(result.missingFields);
+    case "api_error": throw new ApiError(result.code);
+  }
+}
+```
+
+The `throw` branches are the load-bearing part: Next.js does **not** cache a response when page
+generation throws during ISR revalidation — it preserves the last good cached version instead of
+overwriting it with the transient failure. This reuses an existing mechanism rather than building new
+caching logic. Give `generateMetadata` the same branching (and call `notFound()` there too for the
+`not_found` case specifically) — Next only uses the nearest `not-found` boundary's ancestor-layout
+metadata once a segment's own page body calls `notFound()`, so metadata returned by `generateMetadata`
+for that same status is silently discarded otherwise; mirroring the call keeps both paths consistent.
 
 ## Canonical API client (read vs. mutation)
 
@@ -217,6 +327,12 @@ expires; an operator must retry the CloudFront invalidation manually.
   valid option only once those guards exist.
 - ❌ Mixing `cacheComponents: true` (`"use cache"`) with route-segment `export const revalidate` —
   that is a separate, deliberate migration; do not introduce it ad hoc.
+- ❌ A CDN/edge cache override (strategy 1) applied to a route that can also throw or call
+  `notFound()` without checking `response.status` first — it caches the error the same as the 200.
+- ❌ Collapsing "not found" / "malformed" / "upstream error" into one `null` return — see
+  "Discriminated-union data fetching" above; a transient failure gets cached as a permanent 404.
+- ❌ Assuming a `notFound()` call returns a real 404 without checking the response header — a
+  correct-looking UI can still be serving `200`; see the `loading.tsx` gotcha above.
 
 ---
 
@@ -227,9 +343,22 @@ expires; an operator must retry the CloudFront invalidation manually.
 2. **Find the dynamic trigger.** Usually an uncached fetch (a POST read without `next`, or
    `revalidate: 0`), or a request-time API (`cookies()`, `headers()`, `searchParams`).
 3. **Fix layer 2 first.** Give read fetches `next: { revalidate, tags }`; mark mutations `no-store`.
-4. **Confirm the route exports `revalidate`.**
+4. **Confirm the route exports `revalidate`** *and* has some `generateStaticParams` (even `return []`)
+   — without the latter, `revalidate` on a dynamic segment is silently a no-op (see strategy 0 above).
 5. **Reconcile CDN vs. ISR TTLs.** If ISR is 24h but CDN `s-maxage` is shorter, an ISR revalidation
    should trigger a CloudFront invalidation for that path.
+
+## Diagnosing "a 404/error page is cached as if it were valid"
+
+1. **Check the status code, not just the cache header.** `curl -sv` a confirmed-missing URL and read
+   the `HTTP/1.1 ___` line — a `200` there means the response is being cached as if it were real
+   content, regardless of what the rendered UI shows. See the `loading.tsx` gotcha above.
+2. **Check whether the data layer collapses errors.** If the fetching function returns `T | null`
+   instead of a discriminated union, a transient failure and a real not-found are indistinguishable to
+   every caller — see "Discriminated-union data fetching" above.
+3. **Check whether a CDN/edge override is status-blind.** If `src/proxy.ts` (or equivalent) sets
+   `Cache-Control` on a path pattern without first checking `response.status`, it caches every status
+   that matches the pattern identically — see the warning under strategy 1 above.
 
 ---
 

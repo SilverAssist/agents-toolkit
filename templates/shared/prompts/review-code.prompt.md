@@ -78,6 +78,26 @@ For each changed file:
 - [ ] Cacheable routes export `revalidate`; not added to form/personalized routes
 - [ ] `React.cache()` not used as a substitute for cross-request caching
 - [ ] On-demand revalidation invalidates both Next.js (`revalidateTag`/`revalidatePath`) and the CDN
+- [ ] A dynamic route (`[slug]`-style) exports `revalidate` AND has a `generateStaticParams` (even
+      `return []`) — `revalidate` alone is a silent no-op without it
+- [ ] Data fetchers return a discriminated union (`found`/`not_found`/`incomplete`/`api_error`), not
+      `T | null` — a collapsed error gets cached as a permanent 404
+- [ ] Any CDN/edge cache override (e.g. `proxy.ts`) checks `response.status` before applying a public
+      cache, or is only applied to routes that provably can't throw
+- [ ] No `loading.tsx` sits as an ancestor of a route that calls `notFound()` — verify with a status
+      check (`curl -sv`), not just that the UI looks right
+
+### 6. Component Architecture (React/Next.js)
+
+> See `.github/instructions/react-components.instructions.md`.
+
+- [ ] Components use `export default function`, not a named export
+- [ ] Each file exports exactly one component — a desktop/mobile pair or a set of small related
+      variants (e.g. skeleton loaders) still gets one folder each, not one file with multiple exports
+- [ ] Folder is kebab-case with an `index.tsx`, props interface defined in the same file
+- [ ] Domain barrel (`index.ts`) re-exports new components with a named alias
+- [ ] No inline `<script type="application/ld+json" dangerouslySetInnerHTML>` — structured data goes
+      through a shared `<JsonLD>`-style component
 
 ## Output
 
