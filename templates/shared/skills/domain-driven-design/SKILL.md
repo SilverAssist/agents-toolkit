@@ -260,6 +260,31 @@ src/
     └── checkout/
 ```
 
+## Framework-Aware Logic Doesn't Belong in `lib/`
+
+A function that calls a routing/navigation primitive from the framework (e.g. Next.js `notFound()`,
+`redirect()`) is response-shaping, route-layer logic — not data-layer logic — even if it wraps a
+data-fetching call. Colocate it with the route(s) that call it, not inside a generic `lib/` domain
+folder. Two independent, concrete reasons, not just a style preference:
+
+1. **`lib/` importing a routing primitive is itself a signal something's in the wrong layer** — `lib/`
+   should be framework-agnostic-ish data logic, testable without a router in scope.
+2. **A resolver in `lib/` invites a second route to import and reuse it under a different
+   not-found/error contract than the first route needed**, silently coupling two routes' error
+   handling together. Keeping it colocated per-route keeps that coupling from happening by
+   construction.
+
+```text
+❌ src/lib/orders/resolve-order.ts        — calls notFound(), lives in a generic domain folder
+✅ src/app/orders/[id]/resolve-order.ts   — colocated with the one route that calls it
+```
+
+If the same resolver logic is genuinely needed by more than one route that don't share a parent
+segment, that's a real signal worth surfacing rather than quietly duplicating or importing across
+route boundaries — a shared, framework-private location (e.g. a Next.js underscore-prefixed folder
+like `app/_shared/`, which is excluded from routing) is a reasonable resolution once more than one
+unrelated route needs the exact same not-found/error contract.
+
 ## Migration Strategy
 
 When refactoring to DDD:

@@ -1,5 +1,5 @@
 ---
-applyTo: "**/next.config.*,**/src/proxy.ts,**/src/lib/**/*.ts,**/src/app/**/route.ts,**/src/app/**/page.tsx"
+applyTo: "**/next.config.*,**/src/proxy.ts,**/src/lib/**/*.ts,**/src/app/**/route.ts,**/src/app/**/page.tsx,**/src/app/**/loading.tsx"
 ---
 # Caching Standards (CRITICAL)
 
@@ -34,15 +34,42 @@ the others.
 
 2b. **Make a POST-read page cacheable at the rendering/edge layer.** Pick one (lowest risk first):
 
-   - **CDN edge override (current/default):** `src/proxy.ts` matches city/community paths and sets
+   - **Native ISR via `generateStaticParams() { return [] }` (preferred):** a dynamic segment needs
+     *some* `generateStaticParams` export to be ISR-eligible — `revalidate` alone, with none, leaves
+     the route fully dynamic (`ƒ`) no matter what its fetches cache. Returning `[]` fixes this with
+     **zero pages pre-built at compile time** (not the same as `force-static` below — no build-time
+     fetch). Every parallel-route `@slot` needs its own `generateStaticParams() { return [] }` too, or
+     the route silently reverts to dynamic. Once ISR-eligible this way, Next's native per-status
+     `Cache-Control` applies correctly and the CDN override below becomes unnecessary — remove it.
+   - **CDN edge override (fallback):** `src/proxy.ts` matches city/community paths and sets
      `Cache-Control: public, s-maxage=2592000, stale-while-revalidate=2592000` — the same header ISR
      pages emit (see rule 7 `expireTime`), so the CDN policy is uniform. Origin stays dynamic; the CDN
      caches the deterministic-per-URL response. No build-time risk. This is what WEB-1069 shipped.
+     **⚠️ Status-blind**: it runs in middleware before the page renders, so it applies the same 30-day
+     public cache to a `200`, a confirmed 404, and a transient 5xx alike — confirmed live in 5 of 8
+     sibling repos during a 2026-08 audit. Only use on routes that genuinely can't throw, or accept the
+     risk explicitly.
    - **`export const dynamic = "force-static"` (interim):** prerenders the route as real ISR, but a
      bad CCDS record/response at build time caches a blank page (the WEB-1058 regression) — use only
      when the page is fully null-safe and reads throw on 5xx at runtime. Validate per repo.
    - **`cacheComponents: true` + `use cache` (strategic):** PPR migration; do not mix ad hoc with
-     route-segment `export const revalidate`.
+     route-segment `export const revalidate`. Inside a cached scope, `cacheLife()` can vary by the
+     fetched result (e.g. shorter TTL for a not-found lookup) — something a static `revalidate` export
+     can never express.
+
+2c. **`notFound()` can silently return HTTP 200.** An ancestor `loading.tsx` wraps its subtree in an
+    implicit `<Suspense>` boundary; if a route inside calls `notFound()`, the response already started
+    streaming as `200` and the status can't change after. Correct-looking UI, wrong status — verify
+    with `curl -sv` on a confirmed-missing URL after `next build && next start`, don't trust dev mode
+    or the rendered UI alone. Fix: delete/relocate the ancestor `loading.tsx` so it's not an ancestor
+    of any `notFound()`-calling route.
+
+2d. **Don't collapse "not found" / "malformed" / "API error" into one `null`.** If a data-fetching
+    function returns `T | null` and every caller reacts with `notFound()`, a transient upstream outage
+    gets cached as a permanent 404 for the full `revalidate` window. Return a discriminated union
+    (`found` / `not_found` / `incomplete` / `api_error`) instead, and only call `notFound()` for the
+    confirmed `not_found` case — `throw` for the other error cases so ISR preserves the last good page
+    instead of caching the failure. See the `nextjs-caching` skill for the full pattern.
 
 3. **Always pair `tags` with a `revalidate` duration.** `next: { tags }` alone either holds stale data
    indefinitely or (Next 16 default) does not cache at runtime at all. Use a `CACHE_DURATIONS`-style
@@ -144,3 +171,6 @@ export async function fetchWPAPI<T>(
 - ❌ Caching a mutation (`submit-review`, lead submit, `PUT`/`DELETE`/`PATCH`).
 - ❌ Mixing `cacheComponents: true` (`"use cache"`) with route-segment `export const revalidate` —
   that is a separate, deliberate migration; do not introduce it ad hoc.
+- ❌ A status-blind CDN/edge override on a route that can also throw or call `notFound()`.
+- ❌ Returning `T | null` from a data fetcher when callers need to distinguish not-found from error.
+- ❌ Trusting that correct-looking "not found" UI means a real 404 status — verify with `curl -sv`.

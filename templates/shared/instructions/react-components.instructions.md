@@ -18,6 +18,37 @@ components/
             └── component-name.test.tsx
 ```
 
+## One Component Per File (CRITICAL)
+
+If a file exports more than one component — even a small, closely-related pair like a desktop/mobile
+variant, or three sibling skeleton-loader components — split it into one folder per component. Found
+independently in 6+ codebases during a 2026-08 audit (`skeleton.tsx` with 3 exports, `menu.tsx` with
+2), so treat it as an easy default to fall into, not a one-off:
+
+```text
+❌ components/skeleton/index.tsx exports PageSkeleton, CardSkeleton, TextSkeleton
+✅ components/page-skeleton/index.tsx, components/card-skeleton/index.tsx, components/text-skeleton/index.tsx
+```
+
+## Structured Data — always through a shared `<JsonLD>` component
+
+Never inline `<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ... }} />`
+directly in a page (found duplicated in every repo audited in 2026-08, once twice in the same file).
+Extract a shared component with an optional `data`/`jsonString` prop pair instead:
+
+```tsx
+// src/components/layout/json-ld/index.tsx
+interface JsonLDProps { data?: object; jsonString?: string; }
+export default function JsonLD({ data, jsonString }: JsonLDProps) {
+  const content = jsonString ?? JSON.stringify(data);
+  if (!content) return null;
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: content }} />;
+}
+```
+
+Keep `data` optional, not required — a required `data` prop breaks the component's own
+`jsonString`-only usage example, a real bug found in three separate repos forked from one template.
+
 ## Export Pattern
 
 ### Components: Default Export

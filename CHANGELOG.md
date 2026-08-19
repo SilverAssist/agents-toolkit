@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Caching and component-architecture skills/instructions updated from a 2026-08 fleet-wide incident** (WEB-1142, 9 Silver Side Next.js repos audited and fixed): `nextjs-caching` skill and `caching.instructions.md` gain the `notFound()` → HTTP 200 gotcha (an ancestor `loading.tsx` locks the response status before a `notFound()` check resolves), the discriminated-union data-fetching pattern (`found`/`not_found`/`incomplete`/`api_error` instead of `T | null`, so a transient upstream error can't get cached as a permanent 404), an explicit status-blindness warning on the CDN/edge-override caching strategy, and a new preferred strategy — native ISR via `generateStaticParams() { return [] }`, which unlocks per-status caching on a dynamic segment with zero pages pre-built at compile time. `component-architecture` skill and `react-components.instructions.md` gain a "one component per file" rule (found violated independently in 6+ repos) and the `<JsonLD>` shared-component pattern for structured data (found duplicated inline in every repo audited, plus a required-`data`-prop bug found in three forks of one template). `domain-driven-design` skill gains a generic rule: a resolver calling a framework navigation primitive (`notFound()`, `redirect()`) belongs colocated with its route, not in `lib/`. `review-code.prompt.md`'s caching checklist and a new Component Architecture checklist section cover the same findings at review time.
+
 ## [2.7.0] - 2026-08-03
 
 Cheap-first model-tier discipline on Copilot and Claude Code ([#39](https://github.com/SilverAssist/agents-toolkit/issues/39)). Every shipped prompt and the `core-review` skill carry a **hardcoded** `model:` pin: mechanical work runs on the cheap tier, design work on the smart tier. There is no tier configuration, no CLI flag, and nothing resolved at install time — to change a tier you edit the `model:` line in the installed file. (Codex ignores `model:` pins entirely; control the session tier with `codex --model`.)

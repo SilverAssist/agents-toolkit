@@ -37,6 +37,66 @@ src/components/payment-form/
     └── payment-form.test.tsx
 ```
 
+## One Component Per File (CRITICAL)
+
+If a file exports more than one component, split it — even when the components are small and closely
+related. This surfaced repeatedly in a 2026-08 multi-repo audit: a `skeleton/index.tsx` exporting
+`PageSkeleton`/`CardSkeleton`/`TextSkeleton`, and a `menu/index.tsx` exporting `Menu`/`MobileMenu`,
+each in a **single file with multiple named exports** — found independently in 6+ separate codebases
+that had never seen each other's code, meaning it's an easy default to fall into, not a one-off
+mistake.
+
+```text
+❌ INCORRECT: components/skeleton/index.tsx exports PageSkeleton, CardSkeleton, TextSkeleton
+
+✅ CORRECT: split into sibling folders, one export each
+components/page-skeleton/index.tsx    → export default function PageSkeleton
+components/card-skeleton/index.tsx    → export default function CardSkeleton
+components/text-skeleton/index.tsx    → export default function TextSkeleton
+components/skeleton-base/index.tsx    → export default function SkeletonBase (the shared primitive
+                                          all three compose, if one exists — don't duplicate it
+                                          three times just to avoid a fourth folder)
+```
+
+The same applies to a desktop/mobile variant pair (`Menu`/`MobileMenu`) — two folders, not one file
+with two exports, even though they're visually/logically paired. If they share a prop type, put it in
+one of the two folders' `types.ts` and have the other import it from there.
+
+## Structured Data / JSON-LD: always through a shared component
+
+Never inline `<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ... }} />`
+directly in a page or component. This was found duplicated across **every** repo in a 2026-08 audit —
+in one file, twice in the same component (once per conditional branch). Extract one reusable
+component instead:
+
+```tsx
+// src/components/layout/json-ld/index.tsx
+interface JsonLDProps {
+  data?: object;        // a typed schema object — optional so `jsonString`-only usage still type-checks
+  jsonString?: string;  // a pre-built string (e.g. from a buildJsonLdGraph()-style helper)
+}
+
+export default function JsonLD({ data, jsonString }: JsonLDProps) {
+  const content = jsonString ?? JSON.stringify(data);
+  if (!content) return null;
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: content }} />;
+}
+```
+
+```tsx
+// ✅ CORRECT: every page renders structured data through the shared component
+import JsonLD from "@/components/layout/json-ld";
+<JsonLD data={{ "@context": "https://schema.org", "@type": "WebSite", name, url }} />
+
+// ❌ INCORRECT: hand-rolled script tag, easy to duplicate and easy to typo the __html key
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({ ... }) }} />
+```
+
+A double-optional `data`/`jsonString` prop type (rather than making `data` required) matters: a
+component whose only documented usage example is `jsonString`-only will fail its own JSDoc example
+under a required `data` prop — a real bug independently found and fixed in three separate repos during
+the same audit, all forked from a common template that had the bug at its source.
+
 ## Component File Template
 
 ### Server Component (Default)
