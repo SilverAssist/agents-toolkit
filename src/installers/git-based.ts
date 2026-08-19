@@ -11,6 +11,7 @@ import { shouldIncludeFile } from '../filter/index.js';
 import { installHooks } from './hooks.js';
 import { installCopilotInstructions } from './instructions.js';
 import { installAgentsFile } from './agents.js';
+import { stripModelAndToolsPins } from '../transforms/index.js';
 import type { FileCategoryKey } from '../filter/index.js';
 import type { InstallFilters, InstallOptions, SkillMeta } from '../types.js';
 
@@ -68,6 +69,7 @@ export function installGitBasedTarget(options: GitBasedTargetOptions = {}, targe
       dryRun,
       filter: promptsFilter,
       partialsFilter,
+      transformContent: stripModelAndToolsPins,
     });
     totalChanges += getChangeCount(result, dryRun);
     if (!dryRun && result.written > 0) success(`Installed ${result.written} prompt files`);
