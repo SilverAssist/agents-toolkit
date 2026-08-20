@@ -1,5 +1,5 @@
 /** Current package version — must match `package.json`. */
-export const VERSION = '2.7.0';
+export const VERSION = '2.8.0';
 
 /** Prompt names grouped by `workflow` and `utility` categories. */
 export const PROMPTS: { workflow: readonly string[]; utility: readonly string[] } = {
