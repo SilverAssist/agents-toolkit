@@ -489,7 +489,7 @@ Specialized knowledge guides for domain-specific patterns:
 |-------|-------------|
 | `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
-| `core-review` | Whole-repo pre-review run as a read-only pass — cheap tier (`model: haiku`). Inline or via `@core-review` custom agent on Copilot (establishes its own model boundary); optionally a subagent on Claude Code. Installs as both a skill and as `core-review.agent.md` in `.github/agents/`. |
+| `core-review` | Pre-review read-only pass scoped by `--budget` (`quick` / `medium` / `thorough`) — cheap tier (`model: haiku`). Wired into `create-pr` and `create-github-pr` alike; it touches no forge API. Inline or via `@core-review` custom agent on Copilot (establishes its own model boundary); optionally a subagent on Claude Code. Installs as both a skill and as `core-review.agent.md` in `.github/agents/`. |
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |

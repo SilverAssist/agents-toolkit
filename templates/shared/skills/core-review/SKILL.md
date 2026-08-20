@@ -30,14 +30,15 @@ issues that trigger multi-round review loops — doc↔code drift, invalid code 
 in the first push instead of round 5.
 
 This skill is the reviewer's knowledge; the **action** (run the review, apply the findings) is
-invoked as a step from `create-github-pr`, `resolve-github-reviews`, and `finalize-github-pr`.
+invoked as a step from `create-pr`, `create-github-pr`, `resolve-github-reviews`, and
+`finalize-github-pr`.
 
 ## When to Use
 
 Run this review at **two integration points**:
 
-1. **Pre-PR** — after the code is written and local checks pass, **before** `create-github-pr`
-   pushes the branch and opens the PR.
+1. **Pre-PR** — after the code is written and local checks pass, **before** `create-pr` /
+   `create-github-pr` pushes the branch and opens the PR.
 2. **Pre-push during review resolution** — inside `resolve-github-reviews` / `finalize-github-pr`,
    **before** pushing each batch of fixes, so a fix does not leave (or introduce) an adjacent
    issue that triggers yet another reviewer round.
@@ -68,7 +69,7 @@ and **Claude Code**; only the *mechanism* differs:
   Copilot), so the shipped `model: haiku` in this skill's frontmatter is **advisory-only on
   Copilot** — it is honoured only when the invoking prompt is itself cheap-pinned (e.g.
   `finalize-github-pr`, which is a cheap-tier orchestrator) or when this skill is invoked
-  standalone from a fresh chat. Smart-tier orchestrators (`create-github-pr`,
+  standalone from a fresh chat. Smart-tier orchestrators (`create-pr`, `create-github-pr`,
   `resolve-github-reviews`) run their inline `core-review` pass on the
   smart tier on Copilot; to keep the pass cheap there, invoke this skill as a **standalone
   chat** with the picker set to a cheap model.
@@ -107,8 +108,8 @@ The review pass is **cheap-tier by default on Claude Code** (the shipped `model:
 frontmatter is honoured per-turn there). On **Copilot** the pass inherits the invoking prompt's
 model (skills have no independent `model:` boundary), so "cheap by default" holds only when the
 caller is itself cheap-pinned (`finalize-github-pr`) or the skill is invoked standalone with a
-cheap picker; when invoked inline from a smart-tier orchestrator (`create-github-pr`,
-`resolve-github-reviews`), the pass runs smart. On **Codex** the pass runs whatever the session
+cheap picker; when invoked inline from a smart-tier orchestrator (`create-pr`,
+`create-github-pr`, `resolve-github-reviews`), the pass runs smart. On **Codex** the pass runs whatever the session
 model is (`codex --model`). The skill still ships `model: haiku` because it runs at least once
 per PR plus once per review round, so a `sonnet`-tier default would multiply the token cost of
 every autonomous cycle wherever the pin *is* honoured. Callers pass `--budget` to scope the pass
@@ -117,14 +118,14 @@ to the amount of drift the current step can realistically introduce:
 | Budget       | Scope                                                                            | When callers use it                                                             |
 | ------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `quick`      | Just the diff (`git diff` vs the base branch) plus the files it directly touches | `finalize-github-pr` and `resolve-github-reviews` pre-push fix batches          |
-| `medium`     | Diff + one-hop neighbours: importers/consumers, docs & indexes that list the changed symbol or asset, sibling files in the same folder | `create-github-pr` pre-PR pass — the default when unspecified                   |
+| `medium`     | Diff + one-hop neighbours: importers/consumers, docs & indexes that list the changed symbol or asset, sibling files in the same folder | `create-pr` / `create-github-pr` pre-PR pass — the default when unspecified     |
 | `thorough`   | Whole repository — every file, index, README, workflow, and cross-repo doc claim | Standalone pre-release review, or when the diff touches architecture / renaming |
 
-> **Only the GitHub-tracker orchestrators wire this skill today** (`create-github-pr`,
-> `finalize-github-pr`, `resolve-github-reviews`). The Jira-tracker variants (`create-pr`,
-> `finalize-pr`) do **not** invoke `core-review` — they run validations and push directly.
-> Standalone callers on Jira projects can invoke `core-review` manually with an explicit
-> `--budget`; the callers table above lists only the actual auto-wired invocations.
+> **`finalize-pr` is the one orchestrator that still does not wire this skill.** Both pre-PR
+> flows do (`create-pr` for Jira/Bitbucket, `create-github-pr` for GitHub), as do
+> `finalize-github-pr` and `resolve-github-reviews`. `finalize-pr` runs validations and pushes
+> directly; standalone callers there can invoke `core-review` manually with an explicit
+> `--budget`. The callers table above lists only the actual auto-wired invocations.
 
 **Cheap tier is safe at every budget.** `thorough` does not automatically switch to the smart
 tier — it just widens the file set. Callers who genuinely need reasoning (architecture reviews,
