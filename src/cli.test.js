@@ -1156,8 +1156,12 @@ test('npm pack --dry-run includes dist/cli.mjs and dist/index.mjs', () => {
     encoding: 'utf-8',
   });
   assert.equal(packResult.status, 0, `npm pack --dry-run failed: ${packResult.stderr}`);
-  const manifest = JSON.parse(packResult.stdout);
-  const files = manifest[0].files.map((f) => f.path);
+  // npm <= 11 prints an array of manifests; npm 12 prints an object keyed by
+  // package name. Normalize so this test survives whichever npm the runner ships.
+  const parsed = JSON.parse(packResult.stdout);
+  const manifest = Array.isArray(parsed) ? parsed[0] : Object.values(parsed)[0];
+  assert.ok(manifest?.files, `unexpected npm pack --json shape: ${packResult.stdout.slice(0, 200)}`);
+  const files = manifest.files.map((f) => f.path);
   assert.ok(files.includes('dist/cli.mjs'), 'tarball must include dist/cli.mjs');
   assert.ok(files.includes('dist/index.mjs'), 'tarball must include dist/index.mjs');
   assert.ok(!files.some((f) => f.startsWith('bin/')), 'tarball must not include bin/ (deleted)');
