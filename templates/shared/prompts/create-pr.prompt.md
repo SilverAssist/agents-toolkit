@@ -73,14 +73,15 @@ npm run build --if-present
 
 Fix any issues before proceeding. If a validation command fails and the fix is not straightforward (e.g. requires business logic decisions or takes more than one iteration), stop and report the failure to the user with the exact error output before attempting further changes.
 
-### 5. Remove the planning document
+### 5. Pre-PR core review
 
-The planning document created by `work-ticket` or `create-plan` has served its purpose. Delete it now so it stays out of the base branch after merge.
+Two things happen here, **in this order**: the planning document is removed, then the branch gets a consistency review. The order is load-bearing — reviewing *after* the removal is what catches the links, indexes and mentions the removal left stale.
+
+**5.1 — Remove the planning document.** It was created by `work-ticket` or `create-plan` and has served its purpose. Delete it now, at PR creation rather than at finalization, so it stays out of the base branch instead of accumulating in `docs/` after the merge.
 
 1. Find `docs/*.md` files **added on this branch** vs `$BASE_BRANCH`.
 2. Keep only files whose **first line** matches `<!-- agents-toolkit:planning-doc … -->` (bare token or with optional metadata like `ticket={ticket-id}`).
 3. `git rm` matching files and commit. If none match, skip.
-4. Stage and commit any remaining working-tree changes, then verify the tree is clean.
 
 ```bash
 MARKER='agents-toolkit:planning-doc'
@@ -99,10 +100,22 @@ else
 fi
 ```
 
+**5.2 — Run the consistency review.** This is the pass that catches doc↔code drift, invalid code examples, broken links and stale indexes *before* a reviewer spends a round-trip on them. It is a local, agent-side pass — it reads the branch, never the forge — so it applies to Bitbucket exactly as it does to GitHub; the only difference is that here the reviewer whose time it saves is a person.
+
+Run the **`core-review` skill** (`.agents/skills/core-review/SKILL.md`) with **`--budget medium`** — the diff plus one-hop neighbours (importers, indexes, sibling files). The diff is complete at this point, so `quick` would miss cross-file drift, while `thorough` (whole repo) is overkill unless the change touches architecture or renames symbols across layers. Run it as a dedicated, **read-only** pass; the invocation mechanism varies by agent:
+
+- **GitHub Copilot** — run the checklist inline as a distinct pass over the `--budget medium` scope. Or, if `.github/agents/core-review.agent.md` is installed, @-mention `@core-review` with **`--budget quick`** and **pass the file list from Step 2 in the brief** — the agent has no shell and cannot run `git diff` itself.
+- **Codex** — no subagents; run the checklist inline as a distinct pass over the same scope.
+- **Claude Code** — optionally delegate to a read-only subagent (`Explore` / `general-purpose`). **Resolve the file list first and paste it into the brief** — the shipped `Explore` override is read-only (`tools: Read, Grep, Glob, WebFetch`) and cannot run `git diff`. Reuse the `git diff --name-only "$BASE_BRANCH"` output from Step 2 plus its one-hop neighbours (importers/consumers, sibling files, docs and indexes naming the changed symbol), then brief it: "review these files — `<list>` — against the core-review checklist; report `severity | file:line | problem | suggested fix`; do not edit files." The explicit list is what scopes the pass to `--budget medium`.
+
+Apply every `critical` and `warning` finding — including any stale reference exposed by removing the planning doc — then re-run the checks from Step 4. **Re-review until the pass reports zero findings** before continuing. See the skill for the full checklist.
+
+**5.3 — Commit and verify a clean tree.** Stage and commit whatever 5.1 and 5.2 produced, then confirm nothing is left behind, so the push in Step 6 can never carry uncommitted work.
+
 ```bash
 if [ -n "$(git status --porcelain)" ]; then
   git add -A
-  git commit -m "{ticket-id}: Apply pre-PR validation fixes"
+  git commit -m "{ticket-id}: Apply pre-PR validation and review fixes"
 fi
 
 if [ -n "$(git status --porcelain)" ]; then

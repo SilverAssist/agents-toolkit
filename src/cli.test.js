@@ -734,18 +734,39 @@ test('github-review-management skill is included for --tracker github, excluded 
 
 // ─── #35: Pre-review core-review skill ─────────────────────────────────────────
 
-test('core-review skill is included for --tracker github, excluded for --tracker jira', (t) => {
+test('core-review skill is included for every tracker', (t) => {
   const tempDir = createTempProject(t);
 
-  const github = runCli(['install', '--dry-run', '--tracker', 'github'], tempDir);
-  assert.equal(github.status, 0, github.stderr);
-  // Assert the skill's canonical SKILL.md explicitly (Windows-safe separator) so the match
-  // cannot be satisfied by an unrelated path that merely contains "core-review".
-  assert.match(github.stdout, /core-review[\\/]SKILL\.md/);
+  // #63: core-review is a local, agent-side consistency pass that touches no forge
+  // API, and `create-pr` (the Jira/Bitbucket flow) invokes it too. Scoping it to
+  // github shipped Jira projects a prompt referencing a skill they never installed.
+  for (const tracker of ['github', 'jira', 'all']) {
+    const run = runCli(['install', '--dry-run', '--tracker', tracker], tempDir);
+    assert.equal(run.status, 0, run.stderr);
+    // Assert the skill's canonical SKILL.md explicitly (Windows-safe separator) so the match
+    // cannot be satisfied by an unrelated path that merely contains "core-review".
+    assert.match(run.stdout, /core-review[\\/]SKILL\.md/, `--tracker ${tracker} must install core-review`);
+  }
 
+  // The forge-specific sibling stays github-scoped — it drives the GitHub review API.
   const jira = runCli(['install', '--dry-run', '--tracker', 'jira'], tempDir);
-  assert.equal(jira.status, 0, jira.stderr);
-  assert.doesNotMatch(jira.stdout, /core-review[\\/]SKILL\.md/);
+  assert.doesNotMatch(jira.stdout, /github-review-management[\\/]SKILL\.md/);
+});
+
+test('both PR-creation prompts run the core-review pass at --budget medium', () => {
+  // #63: the Jira flow drifted from its GitHub sibling for two minor versions.
+  // Asserting both together is what keeps a future edit from dropping one side.
+  for (const name of ['create-pr.prompt.md', 'create-github-pr.prompt.md']) {
+    const content = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
+    assert.match(content, /`core-review` skill/, `${name} must invoke the core-review skill`);
+    assert.match(content, /--budget medium/, `${name} must run the pre-PR pass at --budget medium`);
+    // The review is worthless if it runs before the planning doc is removed: it would
+    // miss every reference the removal leaves stale.
+    assert.ok(
+      content.indexOf('agents-toolkit:planning-doc') < content.indexOf('`core-review` skill'),
+      `${name} must remove the planning doc before running the review`,
+    );
+  }
 });
 
 // ─── #39 M3: Copilot → Claude model: frontmatter remap ────────────────────────
