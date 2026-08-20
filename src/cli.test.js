@@ -797,20 +797,44 @@ test('every shipped prompt pins `model:` as a scalar, never a list', () => {
   }
 });
 
-test('copilot install ships the prompt pin verbatim', (t) => {
+test('copilot install strips the model: pin and tools: allowlist', (t) => {
+  // A hardcoded `model:` display string only works if it matches Copilot's
+  // picker exactly, and a `tools:` allowlist that's missing something the
+  // prompt needs mid-run has wedged Copilot Chat's tool picker and model
+  // picker entirely (stuck until a window reload) instead of degrading
+  // gracefully. Until that's reproducible and fixable upstream, the
+  // git-based (Copilot/Codex) install drops both rather than shipping them.
   const tempDir = createTempProject(t);
   const { status, stderr } = runCli(['install', '--prompts-only'], tempDir);
   assert.equal(status, 0, stderr);
 
-  // No transform runs on the Copilot path any more — the installed file must be
-  // byte-identical to the shipped template.
   const installed = fs.readFileSync(path.join(tempDir, '.github', 'prompts', 'quality-check.prompt.md'), 'utf-8');
   const shipped = fs.readFileSync(
     path.join(process.cwd(), 'templates', 'shared', 'prompts', 'quality-check.prompt.md'),
     'utf-8',
   );
-  assert.equal(installed, shipped, 'copilot prompts must install byte-identical to the template');
-  assert.match(installed, /^model: Claude Haiku 4\.5$/m, 'cheap tier pin must survive');
+  assert.notEqual(installed, shipped, 'copilot install must transform the shipped template, not copy it verbatim');
+  assert.doesNotMatch(installed, /^model:/m, 'model: pin must not reach the installed Copilot prompt');
+  assert.doesNotMatch(installed, /^tools:/m, 'tools: allowlist must not reach the installed Copilot prompt');
+  assert.doesNotMatch(
+    installed,
+    /> \*\*Model:\*\*/,
+    'the model-pin body note must not reach the installed Copilot prompt',
+  );
+  assert.match(installed, /^agent: agent$/m, 'agent: agent must survive — it selects Copilot agent mode');
+  assert.match(installed, /^description:/m, 'description: must survive');
+});
+
+test('the shared template still carries model:/tools: for Claude to derive from', () => {
+  // The strip happens at install time, not in the source: Claude's install
+  // reads this exact file to build its own model alias, so removing the
+  // pins from the template itself would silently regress Claude too.
+  const content = fs.readFileSync(
+    path.join(process.cwd(), 'templates', 'shared', 'prompts', 'quality-check.prompt.md'),
+    'utf-8',
+  );
+  assert.match(content, /^model: Claude Haiku 4\.5$/m);
+  assert.match(content, /^tools:\n(\s+-\s+\S[^\n]*\n)+/m);
 });
 
 test('claude install preserves the > **Model:** blockquote body text', (t) => {
