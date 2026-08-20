@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # Lets the runner mint the OIDC token npm exchanges for publish rights.
+      # Without it `npm publish` falls back to token auth and fails.
+      id-token: write
     steps:
       - uses: actions/checkout@v7
 
@@ -35,9 +38,15 @@ jobs:
       - name: Run tests
         run: npm test
 
+      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1.
+      - name: Upgrade npm for trusted publishing
+        run: npm install -g npm@latest
+
+      # No NODE_AUTH_TOKEN: auth comes from the OIDC token above, exchanged
+      # against the trusted publisher configured for this package on npmjs.com
+      # (org SilverAssist, repo agents-toolkit, workflow publish.yml).
+      # Public repo + public package means provenance is attested automatically.
       - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create summary
         if: success()

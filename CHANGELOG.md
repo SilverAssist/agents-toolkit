@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **npm publishing moved to trusted publishing (OIDC)** ([#66](https://github.com/SilverAssist/agents-toolkit/issues/66)). `publish.yml` no longer reads an `NPM_TOKEN` secret: it requests `id-token: write` and npm exchanges that OIDC token for publish rights against the trusted publisher registered for this package. The long-lived token failed two consecutive attempts on the v2.8.0 release — first `E404` (expired; npm returns 404 rather than 403 on auth failures so it does not leak package existence), then `EOTP` (a classic *Publish* token, which unlike an *Automation* token does not bypass 2FA) — and the granular token that finally worked expires 2026-11-18. npm's own token form now recommends trusted publishing for CI. A step upgrading npm to `latest` was added because Node 22 ships npm 10.x and trusted publishing requires >= 11.5.1. Since the repo and package are both public, publishing over OIDC also attests provenance automatically, which token publishing does not.
+
 ## [2.8.0] - 2026-08-20
 
 ### Fixed

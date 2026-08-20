@@ -103,6 +103,13 @@ Releasing `@silverassist/agents-toolkit` (a Node/npm package published from GitH
 
    Tags are immutable — never reuse a tag; bump again if it already exists.
 
+5. **Auth is OIDC, not a token** — `publish.yml` requests `id-token: write` and npm exchanges that
+   for publish rights against the trusted publisher registered for this package (org `SilverAssist`,
+   repo `agents-toolkit`, workflow `publish.yml`). There is no `NPM_TOKEN` to rotate. If a publish
+   ever fails with an auth error, check the trusted publisher config on npmjs.com — do **not**
+   reintroduce a token. Because the repo and package are public, provenance is attested
+   automatically.
+
 ## Commands
 
 ```bash
