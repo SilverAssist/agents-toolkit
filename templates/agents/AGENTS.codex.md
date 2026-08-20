@@ -24,7 +24,7 @@
 
 [Skills]|root:.github/skills
 |component-architecture/SKILL.md → Component design patterns
-|core-review/SKILL.md            → Whole-repo pre-review (inline read-only pass) to preempt Copilot iterations
+|core-review/SKILL.md            → Pre-review inline read-only pass, scoped by `--budget`, to preempt reviewer iterations
 |domain-driven-design/SKILL.md   → DDD principles and structure
 |github-review-management/SKILL.md → Resolve GitHub PR review threads (gh + GraphQL)
 |testing-patterns/SKILL.md       → Testing strategies and patterns

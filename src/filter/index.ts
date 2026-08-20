@@ -63,7 +63,12 @@ export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
   skills: {
     react: ['component-architecture', 'nextjs-caching', 'testing-patterns', 'tsdoc-standards'],
     wordpress: ['create-component', 'plugin-creation', 'quality-checks', 'testing'],
-    github: ['github-review-management', 'core-review'],
+    // `core-review` is deliberately NOT github-scoped: it is a local, agent-side
+    // consistency pass (doc↔code drift, stale indexes, broken links) that runs
+    // before the PR exists, and nothing in it touches a forge API. `create-pr`
+    // (the Jira/Bitbucket flow) invokes it too, so scoping it to `github` would
+    // ship Jira projects a prompt referencing a skill their install filtered out.
+    github: ['github-review-management'],
     universal: ['domain-driven-design', 'release-management', 'github-review-management', 'core-review'],
   },
 } as const;
