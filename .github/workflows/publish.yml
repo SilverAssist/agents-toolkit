@@ -18,8 +18,13 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: '22.x'
+          # Node 24 ships npm 11.x, which supports trusted publishing natively.
+          # Node 22 ships npm 10.x and needed a global `npm install -g npm@latest`
+          # step, which is one more thing that can silently not take effect.
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+          # npm's trusted-publishing guide: never cache in release builds.
+          package-manager-cache: false
 
       - run: npm ci
 
@@ -38,9 +43,10 @@ jobs:
       - name: Run tests
         run: npm test
 
-      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1.
-      - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@latest
+      # Recorded so a publish failure can be diagnosed without a re-run:
+      # trusted publishing needs npm >= 11.5.1.
+      - name: Report npm version
+        run: npm --version
 
       # No NODE_AUTH_TOKEN: auth comes from the OIDC token above, exchanged
       # against the trusted publisher configured for this package on npmjs.com
