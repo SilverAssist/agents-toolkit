@@ -24,6 +24,13 @@ updates:
     commit-message:
       prefix: 'chore(deps)'
       include: 'scope'
+    ignore:
+      # typescript-eslint doesn't yet support new TypeScript majors on
+      # release day (ERESOLVE on peerDependencies). Tracked upstream:
+      # typescript-eslint/typescript-eslint#10940. Remove once that lands
+      # and `npm run check` passes under the new major.
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
 
   # Maintain GitHub Actions workflows
   - package-ecosystem: 'github-actions'
