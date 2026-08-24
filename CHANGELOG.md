@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.2] - 2026-08-24
+
+### Fixed
+
+- **TypeScript major bumps broke `npm install` on release day** — `typescript-eslint` doesn't support a new TS major until some time after it ships, causing an ERESOLVE peer-dependency conflict (hit on the TS 6.0.3 bump). Added a Dependabot ignore rule for TypeScript major bumps, matching the fix already applied in `icons` (upstream: typescript-eslint/typescript-eslint#10940).
+- Corrected stale claims in the 2.7.0 CHANGELOG entry.
+
+### Changed
+
+- Standardized Dependabot auto-merge and `engines` config.
+- Publish workflow now runs on Node 24, so npm 11.x ships natively.
+
 ## [2.8.1] - 2026-08-20
 
 ### Changed
