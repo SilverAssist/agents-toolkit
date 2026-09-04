@@ -101,9 +101,14 @@ twg bb prs create \
 
 ## Inspecting and merging
 
+**Read with `-o json`.** `prs get` in text mode prints the full payload — the description
+raw and again as rendered HTML — 62 KB on an ordinary docs PR. `-o json` returns the
+compact agent view (~600 bytes) with the fields a decision actually needs. Drop the flag
+only when you need the description body itself.
+
 ```bash
 twg bb prs query                  # open PRs (--state MERGED|DECLINED|SUPERSEDED)
-twg bb prs get <id>
+twg bb prs get <id> -o json
 twg bb prs diff <id>
 twg bb prs diffstat <id>          # scope a review before reading the diff
 twg bb prs activity <id>          # approvals, comments, status changes, in order

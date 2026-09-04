@@ -67,9 +67,15 @@ twg bb prs create \
 
 ### Step: Read a Pull Request
 
+**Add `-o json` when reading a PR.** The default text output of `prs get` dumps the
+whole payload — description raw *and* rendered as HTML — which was 62 KB on a normal
+docs PR. `-o json` returns the CLI's compact agent view instead (~600 bytes: id, title,
+URL, state, author, branches), which is what you actually need to decide anything.
+
 ```bash
 twg bb prs query                 # open PRs for this repo
-twg bb prs get <id>              # full detail
+twg bb prs get <id> -o json      # compact: state, author, branches, URL
+twg bb prs get <id>              # full payload — only when you need the description body
 twg bb prs diff <id>             # raw unified diff
 twg bb prs diffstat <id>         # per-file scope
 twg bb prs activity <id>         # approvals, comments, status changes
