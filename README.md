@@ -45,6 +45,10 @@ npx @silverassist/agents-toolkit@latest install --claude
 npx @silverassist/agents-toolkit@latest install --codex
 ```
 
+> **Before the workflow prompts can open a PR for you**, install and authenticate the CLI
+> for your host: `gh` for GitHub, `twg` for Bitbucket. The Bitbucket one needs two steps —
+> `twg login` **and** `twg setup bitbucket`. See [`docs/cli-setup.md`](docs/cli-setup.md).
+
 ## Setup
 
 ### GitHub Copilot
@@ -85,7 +89,7 @@ AGENTS.md                             # Copilot Coding Agent instructions (proje
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 13 skills total, filtered by --stack
+    └── ...                           # 14 skills total, filtered by --stack
 ```
 
 > **Skills follow the [`npx skills`](https://github.com/vercel-labs/skills) standard.** The real skill files live once in the canonical `.agents/skills/` store, and each agent's `skills/` directory contains symlinks to it — a single source of truth shared across Copilot, Claude Code, and Codex. Use `--copy` to materialize real copies instead of symlinks (e.g. on Windows without developer mode; symlinks also fall back to copies automatically when unsupported).
@@ -113,7 +117,7 @@ CLAUDE.md                             # Project instructions for Claude Code (pr
 └── skills/                           # Canonical skills store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 13 skills total, filtered by --stack
+    └── ...                           # 14 skills total, filtered by --stack
 .claude/
 ├── agents/
 │   └── Explore.md                    # cheap-tier Explore override (replaces built-in)
@@ -176,7 +180,7 @@ AGENTS.md                             # Project instructions for Codex (project 
 └── skills/                           # Canonical store (single source of truth)
     ├── domain-driven-design/
     ├── testing-patterns/
-    └── ...                           # 13 skills total, filtered by --stack
+    └── ...                           # 14 skills total, filtered by --stack
 ```
 
 ### Global Install (Optional)
@@ -456,6 +460,7 @@ Reusable prompt fragments shared between tools:
 | `git-operations.md` | Git workflow operations |
 | `jira-integration.md` | Jira/Atlassian MCP operations |
 | `github-integration.md` | GitHub issue operations (MCP) |
+| `bitbucket-integration.md` | Bitbucket PR & repo operations via the `twg` CLI (used by the Jira tracker workflow) |
 | `documentation.md` | Documentation standards |
 | `pr-template.md` | Pull request templates (GitHub Issues + Jira) |
 | `release-node.md` | Node/npm release bump & quality checks (used by `prepare-github-release`) |
@@ -493,6 +498,7 @@ Specialized knowledge guides for domain-specific patterns:
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface) |
 | `domain-driven-design` | DDD principles, domain organization, barrel exports |
 | `github-review-management` | Fetch, reply to, resolve & close GitHub PR review threads via `gh` CLI + GraphQL (backs `resolve-github-reviews`) |
+| `bitbucket-review-management` | Create, review, comment on, resolve & merge Bitbucket PRs via the `twg` CLI (backs `create-pr` / `finalize-pr`) |
 | `nextjs-caching` | Next.js caching strategy: read-vs-mutation fetch, ISR tiers, CDN invalidation, diagnosing dynamic-render leaks |
 | `plugin-creation` | Scaffold a new Silver Assist WordPress plugin from scratch (PSR-4, LoadableInterface, CI/CD) |
 | `quality-checks` | Run PHPCS, PHPStan (level 8), and PHPUnit for Silver Assist WordPress plugins |
@@ -605,11 +611,19 @@ Installed at the project root with `--claude`. Contains project-wide instruction
 
 - Node.js 22+
 - Git installed and configured
-- **For Jira tracker:** Atlassian MCP configured (see below)
-- **For GitHub tracker:** GitHub MCP configured (see below)
+- **For Jira tracker:** Atlassian MCP configured (see below), plus the **TWG CLI** (`twg`)
+  for Bitbucket — `twg login` **and** `twg setup bitbucket`, which are two separate steps
+- **For GitHub tracker:** GitHub MCP configured (see below), plus the **GitHub CLI**
+  (`gh auth login`)
 - **For GitHub Copilot:** VS Code with GitHub Copilot extension
 - **For Claude Code:** Claude Code CLI or VS Code extension
 - **For Codex:** Codex CLI/session running at project root
+
+`gh` and `twg` are not interchangeable — `gh` cannot talk to Bitbucket. Full install
+commands, verification steps, and the gotchas that cost the most time are in
+[`docs/cli-setup.md`](docs/cli-setup.md). Without the CLI the prompts still work: they
+push the branch and hand you a ready-to-paste description and PR URL, they just stop
+short of opening the PR for you.
 
 ### MCP Server Configuration
 

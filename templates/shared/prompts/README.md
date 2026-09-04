@@ -20,8 +20,12 @@ prompts/
 │   ├── validations.md          # Code quality validation steps
 │   ├── git-operations.md       # Git workflow operations
 │   ├── jira-integration.md     # Jira/Atlassian MCP operations
+│   ├── github-integration.md   # GitHub issue & PR operations (gh CLI)
+│   ├── bitbucket-integration.md # Bitbucket PR & repo operations (twg CLI)
 │   ├── documentation.md        # Documentation standards
-│   └── pr-template.md          # Pull request templates
+│   ├── pr-template.md          # Pull request templates
+│   ├── release-node.md         # Node/npm release bump & checks
+│   └── release-wordpress.md    # WordPress plugin release bump & checks
 │
 ├── # Workflow Prompts
 ├── analyze-ticket.prompt.md         # Analyze a Jira ticket

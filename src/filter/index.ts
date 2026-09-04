@@ -56,7 +56,7 @@ export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
   partials: {
     react: ['release-node'],
     wordpress: ['release-wordpress'],
-    jira: ['jira-integration'],
+    jira: ['jira-integration', 'bitbucket-integration'],
     github: ['github-integration'],
     universal: ['git-operations', 'pr-template', 'validations', 'documentation'],
   },
@@ -69,7 +69,17 @@ export const FILE_CATEGORIES: Record<FileCategoryKey, CategoryEntries> = {
     // (the Jira/Bitbucket flow) invokes it too, so scoping it to `github` would
     // ship Jira projects a prompt referencing a skill their install filtered out.
     github: ['github-review-management'],
-    universal: ['domain-driven-design', 'release-management', 'github-review-management', 'core-review'],
+    // The Jira tracker workflow is the Bitbucket workflow: `create-pr` / `finalize-pr`
+    // drive Bitbucket through the `twg` CLI, so its review skill ships with that tracker
+    // exactly as `github-review-management` ships with GitHub.
+    jira: ['bitbucket-review-management'],
+    universal: [
+      'domain-driven-design',
+      'release-management',
+      'github-review-management',
+      'bitbucket-review-management',
+      'core-review',
+    ],
   },
 } as const;
 

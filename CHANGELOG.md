@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-09-04
+
+### Added
+
+- **Bitbucket is now driven from the terminal, like GitHub always was.** `create-pr` and `finalize-pr` described the PR *content* but never opened or merged anything — the Jira tracker workflow ended with a human clicking through the Bitbucket UI, while the GitHub track had `gh` wired end to end. Both prompts now call the **TWG CLI** (`twg bb`): `create-pr` opens the PR with `twg bb prs create --description-file`, and `finalize-pr` reads status and review comments, replies, resolves threads, and merges with `twg bb prs merge`. Merging is gated on explicit user confirmation.
+- **`bitbucket-integration.md` partial** — the Bitbucket counterpart to `github-integration.md`: PR create/read/comment/approve/merge, repo and file reads without cloning, branch operations, and pipeline debugging. Installed with the `jira` tracker.
+- **`bitbucket-review-management` skill** — the counterpart to `github-review-management`: the reply → resolve → verify loop, inline comment anchoring, merge strategies, and failing-pipeline triage. Installed with the `jira` tracker.
+- **`docs/cli-setup.md`** — developer setup for both CLIs: install commands per platform, authentication, verification, and the gotchas. `README.md`'s Requirements section now names both.
+
+### Notes
+
+- **`twg bb` needs a Bitbucket token that `twg login` does not create.** OAuth login covers Jira and Confluence; Bitbucket is a separate credential added by `twg setup bitbucket`. Skipping it produces a working `twg whoami` and a failing `twg bb` — documented in every asset above, because the symptom reads like a permissions problem and is not.
+- **The prompts degrade instead of stopping.** With no CLI they still push the branch and hand the user the title, the description file, and a create-PR URL. What they must not do is report "no Bitbucket access" without checking first: `twg` authenticates from its own saved profile in `~/.config/twg/`, so an empty environment proves nothing. This exact mistake left a finished branch unopened in a real session while the CLI to open it was installed the whole time.
+- Atlassian's installation docs currently say `twg upgrade`; that command does not exist in the shipped CLI (verified on 1.2.7). `docs/cli-setup.md` documents `twg update`.
+- The partials indexes in `templates/shared/prompts/_partials/README.md` and `templates/shared/prompts/README.md` were both missing `github-integration.md`, `release-node.md` and `release-wordpress.md`. Adding the Bitbucket row re-presented them as complete, so the pre-existing omissions were filled in too.
+- `docs/` is now published with the package (`package.json` `files`), so the README's link to the CLI setup guide resolves for anyone who installs it rather than only on GitHub.
+- README's three "13 skills total" counts are now 14.
+
 ## [2.8.2] - 2026-08-24
 
 ### Fixed

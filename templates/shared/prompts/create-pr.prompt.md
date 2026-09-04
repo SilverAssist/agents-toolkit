@@ -22,6 +22,10 @@ Create a pull request for the current branch linked to Jira ticket **{ticket-id}
 - Reference: `.github/prompts/_partials/pr-template.md`
 - Reference: `.github/prompts/_partials/git-operations.md`
 - Reference: `.github/prompts/_partials/jira-integration.md`
+- Reference: `.github/prompts/_partials/bitbucket-integration.md`
+- **CLI**: `twg` with a Bitbucket token (`twg login` **and** `twg setup bitbucket`) — see
+  `docs/cli-setup.md`. The PR is opened from the terminal; without the CLI this prompt
+  falls back to handing you a ready-to-paste description and URL (step 7).
 
 ## Steps
 
@@ -193,6 +197,38 @@ Brief description of what this PR accomplishes.
 - **Source**: Current branch
 - **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
 - **Reviewers**: Read `.github/CODEOWNERS` and map changed files to owners. If no CODEOWNERS file exists, leave the reviewers field empty and note it in the Output report.
+
+#### Open it
+
+Write the description to a file first — it is passed verbatim, so the body keeps its real
+newlines and Markdown instead of being mangled through shell escaping:
+
+```bash
+command -v twg >/dev/null 2>&1 && twg bb repo get >/dev/null 2>&1 || echo "twg bb unavailable"
+
+twg bb prs create \
+  --title "{ticket-id}: {Ticket Summary}" \
+  --source "$(git branch --show-current)" \
+  --dest "$BASE_BRANCH" \
+  --description-file <path-to-description>
+```
+
+The description file holds **only the body** — a `Title:` line at the top renders inside
+the PR. Jira issue keys are auto-linked by Bitbucket, so `{ticket-id}` in plain text is
+enough. Reviewers, if any, go in `--reviewer` and take a **display nickname or a
+24-character Atlassian account ID, not a username slug**.
+
+**If `twg bb` is unavailable**, do not stop and do not report "no Bitbucket access" — the
+CLI authenticates from its own saved profile, not from environment variables, so check
+before concluding. Report which of the two is missing (the binary, or the Bitbucket token
+that `twg setup bitbucket` adds), then hand the user the title, the path to the
+description file, and:
+
+```text
+https://bitbucket.org/<workspace>/<repo>/pull-requests/new?source=<branch>&dest=<base>
+```
+
+See `bitbucket-integration.md` for the full command surface.
 
 ### 8. Link PR to Jira
 

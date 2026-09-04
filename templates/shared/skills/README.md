@@ -17,6 +17,8 @@ skills directory contains symlinks to it (single source of truth):
 .agents/skills/                       # canonical store (real files)
 ├── ai-seo-optimization/
 │   └── SKILL.md
+├── bitbucket-review-management/
+│   └── SKILL.md
 ├── component-architecture/
 │   └── SKILL.md
 ├── core-review/
@@ -63,6 +65,7 @@ description: When to use this skill. Agents use this to decide relevance.
 | Skill | Description |
 |-------|-------------|
 | `ai-seo-optimization` | Optimize sites for Google generative AI features, agent-friendly HTML, E-E-A-T signals |
+| `bitbucket-review-management` | Create, review, comment on, resolve & merge Bitbucket PRs via the `twg` CLI |
 | `component-architecture` | React component patterns, folder structure, naming conventions |
 | `core-review` | Pre-review pass (before a PR / before pushing review fixes) run read-only — inline or via `@core-review` on Copilot, optionally a subagent on Claude Code — to preempt reviewer iterations. Forge-agnostic: invoked by `create-pr` (Jira/Bitbucket) and `create-github-pr` alike |
 | `create-component` | Scaffold a new component in a Silver Assist WordPress plugin (LoadableInterface pattern) |

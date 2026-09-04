@@ -20,25 +20,46 @@ Finalize PR for Jira ticket **{ticket-id}** after approval and prepare for merge
 - Reference: `.github/prompts/_partials/git-operations.md`
 - Reference: `.github/prompts/_partials/validations.md`
 - Reference: `.github/prompts/_partials/jira-integration.md`
+- Reference: `.github/prompts/_partials/bitbucket-integration.md`
+- **CLI**: `twg` with a Bitbucket token (`twg login` **and** `twg setup bitbucket`) — see
+  `docs/cli-setup.md`. Status, review comments and the merge itself run from the terminal.
 
 ## Steps
 
 ### 1. Verify PR Status
 
+```bash
+twg bb prs get <pr-id>            # state, approvals, reviewers
+twg bb prs activity <pr-id>       # approvals and status changes in order
+```
+
 Check:
 
 - All required approvals in place
-- CI/CD pipeline passed
+- CI/CD pipeline passed — `twg bb pipeline latest-failure --branch "$(git branch --show-current)"`
+  finds the failing run and its log tail in one call when it is not
 - No unresolved review comments
 
 ### 2. Address Review Comments
+
+```bash
+twg bb prs comment query <pr-id> -n 100
+```
 
 If there are unresolved comments:
 
 - List each comment
 - Address feedback
 - Push additional commits if needed
-- Request re-review if changes are significant
+- Reply in the thread, then resolve it:
+
+```bash
+twg bb prs comment create --pull-request <pr-id> --text "Fixed in <sha>." --reply-to <comment-id>
+twg bb prs comment resolve --pull-request <pr-id> --comment <comment-id>
+```
+
+Resolve only threads you actually addressed. Request re-review if changes are significant.
+The `bitbucket-review-management` skill covers the full loop, including inline anchors.
 
 ### 3. Sync with Base Branch
 
@@ -105,7 +126,7 @@ Transition ticket to appropriate status:
 - [ ] Ensure final documentation is complete
 - [ ] Verify commit history is clean
 
-### 7. Prepare Merge
+### 7. Merge
 
 **Recommended merge strategy**: Squash merge
 
@@ -118,6 +139,32 @@ Transition ticket to appropriate status:
 - Key change 2
 - Key change 3
 ```
+
+Confirm the PR is clean first — approvals in place, pipeline green, every review comment
+addressed and resolved:
+
+```bash
+twg bb prs get <pr-id>
+twg bb prs comment query <pr-id>
+```
+
+**Merging is irreversible. Ask the user to confirm before running this** unless they
+explicitly asked for the merge in the current request:
+
+```bash
+twg bb prs merge --pull-request <pr-id> \
+  --merge-strategy squash \
+  --merge-message "<final commit message>" \
+  --close-source-branch \
+  --wait
+```
+
+`--wait` blocks until Bitbucket confirms the PR reached `MERGED`, so the post-merge steps
+below do not race the merge. Other strategies: `merge_commit` (default), `fast_forward`.
+
+If `twg bb` is unavailable, report which piece is missing (the binary, or the Bitbucket
+token `twg setup bitbucket` adds) and hand the user the PR URL to merge by hand — do not
+report it as "no Bitbucket access" without checking.
 
 ### 8. Post-Merge Tasks
 
