@@ -9,8 +9,12 @@ This directory contains reusable prompt fragments that can be referenced in main
 | `validations.md` | Code quality validation steps | Pre-PR checks, CI validation |
 | `git-operations.md` | Git workflow operations | Branch management, commits |
 | `jira-integration.md` | Jira/Atlassian MCP operations | Ticket reading, updates |
+| `github-integration.md` | GitHub issue & PR operations via the `gh` CLI | GitHub tracker workflow |
+| `bitbucket-integration.md` | Bitbucket PR & repo operations via the `twg` CLI | Jira tracker workflow (Bitbucket host) |
 | `documentation.md` | Documentation standards | JSDoc, README, planning docs |
 | `pr-template.md` | Pull request templates | PR creation, review |
+| `release-node.md` | Node/npm version bump & quality checks | `prepare-github-release` |
+| `release-wordpress.md` | WordPress plugin version bump & quality checks | `prepare-github-release` |
 
 ## How to Reference
 

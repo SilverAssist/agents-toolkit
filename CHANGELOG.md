@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-09-04
+
+### Added
+
+- **Bitbucket is now driven from the terminal, like GitHub always was.** `create-pr` and `finalize-pr` described the PR *content* but never opened or merged anything — the Jira tracker workflow ended with a human clicking through the Bitbucket UI, while the GitHub track had `gh` wired end to end. Both prompts now call the **TWG CLI** (`twg bb`): `create-pr` opens the PR with `twg bb prs create --description-file`, and `finalize-pr` reads status and review comments, replies, resolves threads, and merges with `twg bb prs merge`. Merging is gated on explicit user confirmation.
+- **`bitbucket-integration.md` partial** — the Bitbucket counterpart to `github-integration.md`: PR create/read/comment/approve/merge, repo and file reads without cloning, branch operations, and pipeline debugging. Installed with the `jira` tracker.
+- **`bitbucket-review-management` skill** — the counterpart to `github-review-management`: the reply → resolve → verify loop, inline comment anchoring, merge strategies, and failing-pipeline triage. Installed with the `jira` tracker.
+- **Ticketless PRs are a supported path in the Jira track.** `create-pr` used to hard-stop when `{ticket-id}` was still a placeholder, and both prompts treated the Jira comment and transition as mandatory — so a `docs/*` or `chore/*` branch, which legitimately has no ticket, could not be finished without inventing one. Both prompts now derive the ticket from the branch name (`[A-Z][A-Z0-9]+-[0-9]+`) and skip every Jira step when there is none, reporting the skip explicitly instead of leaving a checklist line ambiguous. The Jira steps are also non-blocking when a ticket *is* present: a failed comment or a forbidden transition is reported, never a reason to stop — the PR or the merge is the deliverable, the Jira update is bookkeeping.
+  - Detection keys off the **ticket-ID pattern, not a branch-prefix list**: a prefix list fails closed on every prefix nobody enumerated (`refactor/`, `ci/`, `release/`, `spike/`), while the pattern handles them all. The prefix check stays where it belongs, as the separate "does this branch follow convention" step.
+  - No project-key alternation is hardcoded. `.agents-toolkit.json` already carries `jira.projectKey` per repo, and baking a fixed set into a shared toolkit would mean a release every time a new key appears — there are already more in circulation than any short list would cover. A key that differs from the configured one is a **warning, not a failure**.
+  - An explicit `{ticket-id}` argument that disagrees with the branch stops and asks: that mismatch almost always means the wrong branch is checked out, and guessing writes a comment on the wrong ticket.
+- **`docs/cli-setup.md`** — developer setup for both CLIs: install commands per platform, authentication, verification, and the gotchas. `README.md`'s Requirements section now names both.
+
+### Notes
+
+- **`twg bb` needs a Bitbucket token that `twg login` does not create.** OAuth login covers Jira and Confluence; Bitbucket is a separate credential added by `twg setup bitbucket`. Skipping it produces a working `twg whoami` and a failing `twg bb` — documented in every asset above, because the symptom reads like a permissions problem and is not.
+- **The prompts degrade instead of stopping.** With no CLI they still push the branch and hand the user the title, the description file, and a create-PR URL. What they must not do is report "no Bitbucket access" without checking first: `twg` authenticates from its own saved profile in `~/.config/twg/`, so an empty environment proves nothing. This exact mistake left a finished branch unopened in a real session while the CLI to open it was installed the whole time.
+- **Read PRs with `-o json`.** `twg bb prs get` in text mode prints the payload twice — the description raw and again as rendered HTML — which measured 62 KB on an ordinary docs PR against ~600 bytes for the CLI's compact agent view. Both new assets say so; an agent that dumps the raw payload burns its context for no added information.
+- Atlassian's installation docs currently say `twg upgrade`; that command does not exist in the shipped CLI (verified on 1.2.7). `docs/cli-setup.md` documents `twg update`.
+- The partials indexes in `templates/shared/prompts/_partials/README.md` and `templates/shared/prompts/README.md` were both missing `github-integration.md`, `release-node.md` and `release-wordpress.md`. Adding the Bitbucket row re-presented them as complete, so the pre-existing omissions were filled in too.
+- `docs/` is now published with the package (`package.json` `files`), so the README's link to the CLI setup guide resolves for anyone who installs it rather than only on GitHub.
+- README's three "13 skills total" counts are now 14.
+
 ## [2.8.2] - 2026-08-24
 
 ### Fixed

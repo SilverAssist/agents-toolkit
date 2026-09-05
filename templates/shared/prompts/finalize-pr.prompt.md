@@ -20,25 +20,63 @@ Finalize PR for Jira ticket **{ticket-id}** after approval and prepare for merge
 - Reference: `.github/prompts/_partials/git-operations.md`
 - Reference: `.github/prompts/_partials/validations.md`
 - Reference: `.github/prompts/_partials/jira-integration.md`
+- Reference: `.github/prompts/_partials/bitbucket-integration.md`
+- **CLI**: `twg` with a Bitbucket token (`twg login` **and** `twg setup bitbucket`) — see
+  `docs/cli-setup.md`. Status, review comments and the merge itself run from the terminal.
 
 ## Steps
 
+### 0. Resolve the ticket ID (non-blocking)
+
+```bash
+BRANCH=$(git branch --show-current)
+TICKET=$(printf '%s' "$BRANCH" | grep -oE '[A-Z][A-Z0-9]+-[0-9]+' | head -1)
+```
+
+- **`$TICKET` found** → run the Jira steps (5 and 8) against it.
+- **`$TICKET` empty** → ticketless work (`docs/*`, `chore/*`, `refactor/*`). **Skip the
+  Jira steps and finish the merge anyway**, then say so in the final report. Not an error,
+  and not a reason to stop.
+
+Detection is on the ticket-ID pattern, not on a list of branch prefixes. An explicit
+`{ticket-id}` argument that disagrees with the branch means the wrong branch is probably
+checked out — stop and ask rather than commenting on the wrong ticket. A key other than
+the repo's configured `jira.projectKey` is a warning, never a failure.
+
 ### 1. Verify PR Status
+
+```bash
+twg bb prs get <pr-id>            # state, approvals, reviewers
+twg bb prs activity <pr-id>       # approvals and status changes in order
+```
 
 Check:
 
 - All required approvals in place
-- CI/CD pipeline passed
+- CI/CD pipeline passed — `twg bb pipeline latest-failure --branch "$(git branch --show-current)"`
+  finds the failing run and its log tail in one call when it is not
 - No unresolved review comments
 
 ### 2. Address Review Comments
+
+```bash
+twg bb prs comment query <pr-id> -n 100
+```
 
 If there are unresolved comments:
 
 - List each comment
 - Address feedback
 - Push additional commits if needed
-- Request re-review if changes are significant
+- Reply in the thread, then resolve it:
+
+```bash
+twg bb prs comment create --pull-request <pr-id> --text "Fixed in <sha>." --reply-to <comment-id>
+twg bb prs comment resolve --pull-request <pr-id> --comment <comment-id>
+```
+
+Resolve only threads you actually addressed. Request re-review if changes are significant.
+The `bitbucket-review-management` skill covers the full loop, including inline anchors.
 
 ### 3. Sync with Base Branch
 
@@ -78,7 +116,14 @@ Verify:
 - All tests still pass
 - No new warnings
 
-### 5. Update Jira Ticket
+### 5. Update Jira Ticket — only when step 0 resolved a ticket
+
+Skip entirely for ticketless work; record it in the final report instead.
+
+**This step never blocks the merge.** If the comment or transition fails — ticket moved,
+workflow forbids the transition, permissions, MCP unavailable — report the failure and
+continue. The merge is the deliverable; the Jira update is bookkeeping that a human can
+finish in seconds.
 
 Add comment:
 
@@ -105,7 +150,7 @@ Transition ticket to appropriate status:
 - [ ] Ensure final documentation is complete
 - [ ] Verify commit history is clean
 
-### 7. Prepare Merge
+### 7. Merge
 
 **Recommended merge strategy**: Squash merge
 
@@ -118,6 +163,32 @@ Transition ticket to appropriate status:
 - Key change 2
 - Key change 3
 ```
+
+Confirm the PR is clean first — approvals in place, pipeline green, every review comment
+addressed and resolved:
+
+```bash
+twg bb prs get <pr-id>
+twg bb prs comment query <pr-id>
+```
+
+**Merging is irreversible. Ask the user to confirm before running this** unless they
+explicitly asked for the merge in the current request:
+
+```bash
+twg bb prs merge --pull-request <pr-id> \
+  --merge-strategy squash \
+  --merge-message "<final commit message>" \
+  --close-source-branch \
+  --wait
+```
+
+`--wait` blocks until Bitbucket confirms the PR reached `MERGED`, so the post-merge steps
+below do not race the merge. Other strategies: `merge_commit` (default), `fast_forward`.
+
+If `twg bb` is unavailable, report which piece is missing (the binary, or the Bitbucket
+token `twg setup bitbucket` adds) and hand the user the PR URL to merge by hand — do not
+report it as "no Bitbucket access" without checking.
 
 ### 8. Post-Merge Tasks
 
@@ -136,10 +207,12 @@ git push origin --delete <branch-name>
 git remote prune origin
 ```
 
-Update Jira:
+Update Jira — only when step 0 resolved a ticket, and never blocking:
 
 - Transition to "Done" or "Ready for QA"
 - Add deployment comment if applicable
+
+For ticketless work there is nothing to update: say so in the report and stop there.
 
 ## Output
 
@@ -162,7 +235,10 @@ Update Jira:
 
 - [ ] Local branch deleted
 - [ ] Remote branch deleted
-- [ ] Jira ticket updated
+- [ ] Jira ticket updated — or **"no ticket: branch `<name>` carries no ticket ID, Jira
+      steps skipped"**. State this explicitly rather than leaving the line unchecked, so
+      the reader can tell a deliberate skip from a forgotten step. Report any Jira failure
+      here too: it does not invalidate the merge.
 - [ ] Team notified (if needed)
 
 ## Notes

@@ -22,12 +22,38 @@ Create a pull request for the current branch linked to Jira ticket **{ticket-id}
 - Reference: `.github/prompts/_partials/pr-template.md`
 - Reference: `.github/prompts/_partials/git-operations.md`
 - Reference: `.github/prompts/_partials/jira-integration.md`
+- Reference: `.github/prompts/_partials/bitbucket-integration.md`
+- **CLI**: `twg` with a Bitbucket token (`twg login` **and** `twg setup bitbucket`) — see
+  `docs/cli-setup.md`. The PR is opened from the terminal; without the CLI this prompt
+  falls back to handing you a ready-to-paste description and URL (step 7).
 
 ## Steps
 
-### 0. Validate ticket ID
+### 0. Resolve the ticket ID (non-blocking)
 
-Verify that `{ticket-id}` has been replaced with a real ticket identifier (e.g. `WEB-1234`). If the literal string `{ticket-id}` is still present, stop and ask the user to provide the ticket ID.
+Derive the ticket from the branch name rather than requiring it as an argument:
+
+```bash
+BRANCH=$(git branch --show-current)
+TICKET=$(printf '%s' "$BRANCH" | grep -oE '[A-Z][A-Z0-9]+-[0-9]+' | head -1)
+```
+
+- **`$TICKET` found** → this is ticketed work. Use it for the Jira steps and the PR title.
+- **`$TICKET` empty** → this is **not** an error. Branches like `docs/*`, `chore/*`,
+  `refactor/*` are legitimately ticketless. **Skip every Jira step (3 and 8) and carry on**,
+  then say so in the final report. Do not stop, and do not ask the user to invent a ticket.
+
+Match on the ticket-ID pattern, not on a list of branch prefixes: a prefix list fails
+closed on every prefix nobody enumerated, while the pattern handles them all.
+
+Two conflicts to handle rather than resolve silently:
+
+- **An explicit `{ticket-id}` argument that disagrees with the branch** → stop and ask.
+  This almost always means the wrong branch is checked out, and guessing writes a comment
+  on the wrong ticket. An argument with no ticket in the branch is a valid override.
+- **A key that is not the repo's configured one** (`jira.projectKey` in
+  `.agents-toolkit.json`) → **warn, do not fail**. Keys legitimately cross projects, and
+  hardcoding the accepted set would mean a toolkit release every time a new one appears.
 
 ### 1. Verify Current State
 
@@ -38,7 +64,10 @@ git status
 
 Verify:
 
-- Branch follows convention: `feature/{ticket-id}-*` or `bugfix/{ticket-id}-*`
+- Branch follows convention: a prefix from `git.branchPrefix` in `.agents-toolkit.json`
+  (`feature/`, `bugfix/`, `hotfix/`), or a ticketless `docs/` / `chore/` prefix. This is a
+  *convention* check and is independent of step 0: a branch can follow the convention and
+  still carry no ticket.
 - All changes are committed
 - Not on protected branch
 
@@ -53,9 +82,11 @@ git diff "$BASE_BRANCH" --name-only
 - Summarize the changes made
 - Identify breaking changes or migrations
 
-### 3. Read Jira Ticket
+### 3. Read Jira Ticket — only when step 0 resolved a ticket
 
-Fetch ticket **{ticket-id}** details:
+Skip this step entirely for ticketless work.
+
+Fetch ticket **`$TICKET`** details:
 
 - Get summary for PR title
 - Extract acceptance criteria
@@ -146,8 +177,17 @@ git push -u origin $(git branch --show-current)
 
 #### PR Title
 
+Ticketed work:
+
 ```text
 {ticket-id}: {Ticket Summary}
+```
+
+Ticketless work — use a conventional-commit type matching the branch prefix:
+
+```text
+docs: {Summary}
+chore: {Summary}
 ```
 
 #### PR Description
@@ -194,7 +234,43 @@ Brief description of what this PR accomplishes.
 - **Target**: `<base-branch>` resolved from `.agents-toolkit.json` (fallback: `main`)
 - **Reviewers**: Read `.github/CODEOWNERS` and map changed files to owners. If no CODEOWNERS file exists, leave the reviewers field empty and note it in the Output report.
 
-### 8. Link PR to Jira
+#### Open it
+
+Write the description to a file first — it is passed verbatim, so the body keeps its real
+newlines and Markdown instead of being mangled through shell escaping:
+
+```bash
+command -v twg >/dev/null 2>&1 && twg bb repo get >/dev/null 2>&1 || echo "twg bb unavailable"
+
+twg bb prs create \
+  --title "{ticket-id}: {Ticket Summary}" \
+  --source "$(git branch --show-current)" \
+  --dest "$BASE_BRANCH" \
+  --description-file <path-to-description>
+```
+
+The description file holds **only the body** — a `Title:` line at the top renders inside
+the PR. Jira issue keys are auto-linked by Bitbucket, so `{ticket-id}` in plain text is
+enough. Reviewers, if any, go in `--reviewer` and take a **display nickname or a
+24-character Atlassian account ID, not a username slug**.
+
+**If `twg bb` is unavailable**, do not stop and do not report "no Bitbucket access" — the
+CLI authenticates from its own saved profile, not from environment variables, so check
+before concluding. Report which of the two is missing (the binary, or the Bitbucket token
+that `twg setup bitbucket` adds), then hand the user the title, the path to the
+description file, and:
+
+```text
+https://bitbucket.org/<workspace>/<repo>/pull-requests/new?source=<branch>&dest=<base>
+```
+
+See `bitbucket-integration.md` for the full command surface.
+
+### 8. Link PR to Jira — only when step 0 resolved a ticket
+
+Skip for ticketless work and note it in the report instead. If the comment fails (ticket
+moved, permissions, MCP unavailable), **the PR is already open — that is the deliverable**.
+Report the failure, do not retry in a loop, and never treat it as a reason to undo the PR.
 
 Add comment to Jira ticket:
 
@@ -213,7 +289,8 @@ Add comment to Jira ticket:
 Report:
 
 1. ✅ PR URL
-2. ✅ Jira ticket linked
+2. Jira ticket linked — or **"no ticket: branch `<name>` carries no ticket ID, Jira steps
+   skipped"**, which is a normal outcome for `docs/` and `chore/` work, not a failure
 3. ✅ Reviewers assigned
 
 ## Next Steps
