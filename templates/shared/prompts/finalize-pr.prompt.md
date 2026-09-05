@@ -26,6 +26,23 @@ Finalize PR for Jira ticket **{ticket-id}** after approval and prepare for merge
 
 ## Steps
 
+### 0. Resolve the ticket ID (non-blocking)
+
+```bash
+BRANCH=$(git branch --show-current)
+TICKET=$(printf '%s' "$BRANCH" | grep -oE '[A-Z][A-Z0-9]+-[0-9]+' | head -1)
+```
+
+- **`$TICKET` found** → run the Jira steps (5 and 8) against it.
+- **`$TICKET` empty** → ticketless work (`docs/*`, `chore/*`, `refactor/*`). **Skip the
+  Jira steps and finish the merge anyway**, then say so in the final report. Not an error,
+  and not a reason to stop.
+
+Detection is on the ticket-ID pattern, not on a list of branch prefixes. An explicit
+`{ticket-id}` argument that disagrees with the branch means the wrong branch is probably
+checked out — stop and ask rather than commenting on the wrong ticket. A key other than
+the repo's configured `jira.projectKey` is a warning, never a failure.
+
 ### 1. Verify PR Status
 
 ```bash
@@ -99,7 +116,14 @@ Verify:
 - All tests still pass
 - No new warnings
 
-### 5. Update Jira Ticket
+### 5. Update Jira Ticket — only when step 0 resolved a ticket
+
+Skip entirely for ticketless work; record it in the final report instead.
+
+**This step never blocks the merge.** If the comment or transition fails — ticket moved,
+workflow forbids the transition, permissions, MCP unavailable — report the failure and
+continue. The merge is the deliverable; the Jira update is bookkeeping that a human can
+finish in seconds.
 
 Add comment:
 
@@ -183,10 +207,12 @@ git push origin --delete <branch-name>
 git remote prune origin
 ```
 
-Update Jira:
+Update Jira — only when step 0 resolved a ticket, and never blocking:
 
 - Transition to "Done" or "Ready for QA"
 - Add deployment comment if applicable
+
+For ticketless work there is nothing to update: say so in the report and stop there.
 
 ## Output
 
@@ -209,7 +235,10 @@ Update Jira:
 
 - [ ] Local branch deleted
 - [ ] Remote branch deleted
-- [ ] Jira ticket updated
+- [ ] Jira ticket updated — or **"no ticket: branch `<name>` carries no ticket ID, Jira
+      steps skipped"**. State this explicitly rather than leaving the line unchecked, so
+      the reader can tell a deliberate skip from a forgotten step. Report any Jira failure
+      here too: it does not invalidate the merge.
 - [ ] Team notified (if needed)
 
 ## Notes

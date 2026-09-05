@@ -769,6 +769,47 @@ test('both PR-creation prompts run the core-review pass at --budget medium', () 
   }
 });
 
+test('both Jira-track PR prompts derive the ticket from the branch, non-blocking', () => {
+  // A ticketless branch (docs/*, chore/*) is normal work, not an error: the prompts must
+  // finish the PR and merge and report the skip, rather than stopping to demand a ticket.
+  for (const name of ['create-pr.prompt.md', 'finalize-pr.prompt.md']) {
+    const content = fs.readFileSync(path.join(process.cwd(), 'templates', 'shared', 'prompts', name), 'utf-8');
+
+    assert.match(
+      content,
+      /grep -oE '\[A-Z\]\[A-Z0-9\]\+-\[0-9\]\+'/,
+      `${name} must derive the ticket from the branch name`,
+    );
+    assert.match(content, /non-blocking/i, `${name} must mark ticket resolution as non-blocking`);
+
+    // Detection keys off the ticket pattern, never a hardcoded project-key alternation:
+    // `.agents-toolkit.json` already carries `jira.projectKey` per repo, and a baked-in
+    // list would need a toolkit release every time a new key appears.
+    assert.doesNotMatch(content, /WEB\|[A-Z]{2,}/, `${name} must not hardcode a project-key alternation`);
+    assert.match(content, /jira\.projectKey/, `${name} must defer to the configured project key`);
+  }
+});
+
+test('Jira steps are explicitly skippable in the Jira-track PR prompts', () => {
+  const createPr = fs.readFileSync(
+    path.join(process.cwd(), 'templates', 'shared', 'prompts', 'create-pr.prompt.md'),
+    'utf-8',
+  );
+  const finalizePr = fs.readFileSync(
+    path.join(process.cwd(), 'templates', 'shared', 'prompts', 'finalize-pr.prompt.md'),
+    'utf-8',
+  );
+
+  // Both Jira touchpoints in each prompt carry the conditional in their heading, so an
+  // agent skimming headings cannot miss it.
+  assert.match(createPr, /### 3\. Read Jira Ticket — only when step 0 resolved a ticket/);
+  assert.match(createPr, /### 8\. Link PR to Jira — only when step 0 resolved a ticket/);
+  assert.match(finalizePr, /### 5\. Update Jira Ticket — only when step 0 resolved a ticket/);
+
+  // The merge must not be held hostage to Jira bookkeeping.
+  assert.match(finalizePr, /never blocks the merge/i);
+});
+
 // ─── #39 M3: Copilot → Claude model: frontmatter remap ────────────────────────
 
 test('claude install remaps cheap-tier Copilot model to `haiku` alias', (t) => {

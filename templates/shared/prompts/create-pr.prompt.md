@@ -29,9 +29,31 @@ Create a pull request for the current branch linked to Jira ticket **{ticket-id}
 
 ## Steps
 
-### 0. Validate ticket ID
+### 0. Resolve the ticket ID (non-blocking)
 
-Verify that `{ticket-id}` has been replaced with a real ticket identifier (e.g. `WEB-1234`). If the literal string `{ticket-id}` is still present, stop and ask the user to provide the ticket ID.
+Derive the ticket from the branch name rather than requiring it as an argument:
+
+```bash
+BRANCH=$(git branch --show-current)
+TICKET=$(printf '%s' "$BRANCH" | grep -oE '[A-Z][A-Z0-9]+-[0-9]+' | head -1)
+```
+
+- **`$TICKET` found** → this is ticketed work. Use it for the Jira steps and the PR title.
+- **`$TICKET` empty** → this is **not** an error. Branches like `docs/*`, `chore/*`,
+  `refactor/*` are legitimately ticketless. **Skip every Jira step (3 and 8) and carry on**,
+  then say so in the final report. Do not stop, and do not ask the user to invent a ticket.
+
+Match on the ticket-ID pattern, not on a list of branch prefixes: a prefix list fails
+closed on every prefix nobody enumerated, while the pattern handles them all.
+
+Two conflicts to handle rather than resolve silently:
+
+- **An explicit `{ticket-id}` argument that disagrees with the branch** → stop and ask.
+  This almost always means the wrong branch is checked out, and guessing writes a comment
+  on the wrong ticket. An argument with no ticket in the branch is a valid override.
+- **A key that is not the repo's configured one** (`jira.projectKey` in
+  `.agents-toolkit.json`) → **warn, do not fail**. Keys legitimately cross projects, and
+  hardcoding the accepted set would mean a toolkit release every time a new one appears.
 
 ### 1. Verify Current State
 
@@ -42,7 +64,10 @@ git status
 
 Verify:
 
-- Branch follows convention: `feature/{ticket-id}-*` or `bugfix/{ticket-id}-*`
+- Branch follows convention: a prefix from `git.branchPrefix` in `.agents-toolkit.json`
+  (`feature/`, `bugfix/`, `hotfix/`), or a ticketless `docs/` / `chore/` prefix. This is a
+  *convention* check and is independent of step 0: a branch can follow the convention and
+  still carry no ticket.
 - All changes are committed
 - Not on protected branch
 
@@ -57,9 +82,11 @@ git diff "$BASE_BRANCH" --name-only
 - Summarize the changes made
 - Identify breaking changes or migrations
 
-### 3. Read Jira Ticket
+### 3. Read Jira Ticket — only when step 0 resolved a ticket
 
-Fetch ticket **{ticket-id}** details:
+Skip this step entirely for ticketless work.
+
+Fetch ticket **`$TICKET`** details:
 
 - Get summary for PR title
 - Extract acceptance criteria
@@ -150,8 +177,17 @@ git push -u origin $(git branch --show-current)
 
 #### PR Title
 
+Ticketed work:
+
 ```text
 {ticket-id}: {Ticket Summary}
+```
+
+Ticketless work — use a conventional-commit type matching the branch prefix:
+
+```text
+docs: {Summary}
+chore: {Summary}
 ```
 
 #### PR Description
@@ -230,7 +266,11 @@ https://bitbucket.org/<workspace>/<repo>/pull-requests/new?source=<branch>&dest=
 
 See `bitbucket-integration.md` for the full command surface.
 
-### 8. Link PR to Jira
+### 8. Link PR to Jira — only when step 0 resolved a ticket
+
+Skip for ticketless work and note it in the report instead. If the comment fails (ticket
+moved, permissions, MCP unavailable), **the PR is already open — that is the deliverable**.
+Report the failure, do not retry in a loop, and never treat it as a reason to undo the PR.
 
 Add comment to Jira ticket:
 
@@ -249,7 +289,8 @@ Add comment to Jira ticket:
 Report:
 
 1. ✅ PR URL
-2. ✅ Jira ticket linked
+2. Jira ticket linked — or **"no ticket: branch `<name>` carries no ticket ID, Jira steps
+   skipped"**, which is a normal outcome for `docs/` and `chore/` work, not a failure
 3. ✅ Reviewers assigned
 
 ## Next Steps
