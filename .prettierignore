@@ -2,6 +2,10 @@ node_modules
 package-lock.json
 dist
 
+# The docs microsite is a self-contained Vite app with its own tooling
+# (Prettier defaults, oxlint, tsc) — the root pipeline doesn't reach into it.
+site
+
 # Markdown is linted by markdownlint, never reformatted by Prettier.
 # Prettier rewrites code spans and fenced content whose exact whitespace is the
 # subject of the surrounding sentence — and `templates/` is the product, full of

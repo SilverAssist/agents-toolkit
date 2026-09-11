@@ -25,7 +25,9 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'bin/**', 'templates/**', 'scripts/**'],
+    // site/ is a self-contained Vite app with its own tooling (oxlint, tsc) —
+    // the root pipeline doesn't reach into it.
+    ignores: ['dist/**', 'node_modules/**', 'bin/**', 'templates/**', 'scripts/**', 'site/**'],
   },
   {
     files: ['**/*.ts'],

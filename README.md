@@ -5,6 +5,8 @@ Reusable AI agent prompts for development workflows — supports **GitHub Copilo
 [![npm version](https://img.shields.io/npm/v/@silverassist/agents-toolkit.svg)](https://www.npmjs.com/package/@silverassist/agents-toolkit)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial-blue.svg)](https://github.com/SilverAssist/agents-toolkit/blob/main/LICENSE)
 
+📖 **[Browse the full catalog](https://silverassist.github.io/agents-toolkit/)** — every skill, prompt, and instruction, searchable, with worked-example tutorials and a side-by-side Claude Code / Copilot / Codex comparison. Source in [`site/`](site/).
+
 ## Features
 
 - ✅ **Complete Workflow Prompts**: From ticket analysis to PR merge

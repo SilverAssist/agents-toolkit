@@ -3,7 +3,9 @@
   // main thing this lint exists to protect.
   "globs": ["**/*.md"],
   "ignores": [
-    "node_modules",
+    // Un-prefixed "node_modules" only matches the top-level directory — nested
+    // installs (e.g. site/node_modules for the docs microsite) need the glob.
+    "**/node_modules",
     // .github/skills and .claude/skills are symlinks to .agents/skills — keeping
     // them ignored avoids linting the same canonical files twice.
     ".github/skills",
