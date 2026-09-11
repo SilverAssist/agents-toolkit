@@ -58,13 +58,14 @@ export function PromptDetail() {
           <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Run it</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>
-              <span className="text-foreground">Claude Code</span> — <code>/{prompt.slug}</code>
+              <span className="text-foreground">Claude Code</span> — <code className="break-all">/{prompt.slug}</code>
             </li>
             <li>
               <span className="text-foreground">Copilot</span> — Run Prompt → {prompt.slug}
             </li>
             <li>
-              <span className="text-foreground">Codex</span> — installed to <code>.github/prompts/</code>, point the session at it
+              <span className="text-foreground">Codex</span> — installed to{" "}
+              <code className="break-all">.github/prompts/</code>, point the session at it
             </li>
           </ul>
         </div>

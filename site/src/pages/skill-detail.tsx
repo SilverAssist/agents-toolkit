@@ -48,16 +48,19 @@ export function SkillDetail() {
           <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Installs to</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>
-              <span className="text-foreground">Claude Code</span> — <code>.claude/skills/{skill.slug}</code>
+              <span className="text-foreground">Claude Code</span> —{" "}
+              <code className="break-all">.claude/skills/{skill.slug}</code>
             </li>
             <li>
-              <span className="text-foreground">Copilot</span> — <code>.github/skills/{skill.slug}</code>
+              <span className="text-foreground">Copilot</span> —{" "}
+              <code className="break-all">.github/skills/{skill.slug}</code>
             </li>
             <li>
-              <span className="text-foreground">Codex</span> — <code>.github/skills/{skill.slug}</code>
+              <span className="text-foreground">Codex</span> —{" "}
+              <code className="break-all">.github/skills/{skill.slug}</code>
             </li>
             <li className="border-t border-white/10 pt-2">
-              Canonical: <code>.agents/skills/{skill.slug}</code>
+              Canonical: <code className="break-all">.agents/skills/{skill.slug}</code>
             </li>
           </ul>
         </div>
