@@ -28,10 +28,12 @@ export function InstructionDetail() {
           <h2 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">Installs to</h2>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
             <li>
-              <span className="text-foreground">Copilot / Codex</span> — <code>.github/instructions/{instruction.slug}.instructions.md</code>
+              <span className="text-foreground">Copilot / Codex</span> —{" "}
+              <code className="break-all">.github/instructions/{instruction.slug}.instructions.md</code>
             </li>
             <li>
-              <span className="text-foreground">Claude Code</span> — shared reference via <code>.github/instructions/</code>
+              <span className="text-foreground">Claude Code</span> — shared reference via{" "}
+              <code className="break-all">.github/instructions/</code>
             </li>
           </ul>
         </div>
