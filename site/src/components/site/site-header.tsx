@@ -53,9 +53,6 @@ export function SiteHeader() {
               <GitHubIcon className="size-4" />
             </a>
           </Button>
-          <Button asChild size="sm">
-            <NavLink to="/agents">Get started</NavLink>
-          </Button>
         </div>
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

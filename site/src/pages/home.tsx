@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { CodeBlock } from "@/components/catalog/code-block";
 import { PromptCard } from "@/components/catalog/prompt-card";
@@ -35,26 +35,29 @@ export function Home() {
       <section className="relative overflow-hidden border-b border-white/10">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent" />
         <div className="relative mx-auto flex max-w-4xl flex-col items-center px-4 py-24 text-center sm:px-6 sm:py-32">
-          <ToneBadge tone="blue" className="mb-6">
-            {meta.name}@{meta.version} · {meta.license}
-          </ToneBadge>
+          <span className="mb-6 font-mono text-xs text-muted-foreground">
+            {meta.name}@{meta.version}
+          </span>
           <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-6xl">
-            One toolkit. Three agents.
+            One place for every skill,
             <br />
-            Every workflow encoded.
+            prompt, and instruction.
           </h1>
-          <p className="mt-6 max-w-2xl text-lg text-muted-foreground text-balance">{meta.description}</p>
+          <p className="mt-6 max-w-2xl text-lg text-muted-foreground text-balance">
+            A reference for what's already built into your Claude Code, Copilot, or Codex setup — so you reach for
+            an existing skill instead of reinventing it.
+          </p>
 
           <CodeBlock command={`npx ${meta.name}@latest install --claude`} className="mt-10 w-full max-w-lg" />
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button asChild size="lg">
-              <Link to="/agents">
-                Get started <ArrowRight className="size-4" />
+              <Link to="/skills">
+                Browse the catalog <ArrowRight className="size-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/skills">Browse the {counts.skills} skills</Link>
+              <Link to="/agents">Setup per agent</Link>
             </Button>
           </div>
 
@@ -271,20 +274,6 @@ export function Home() {
               </Link>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="border-t border-white/10">
-        <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-4 py-24 text-center sm:px-6">
-          <Sparkle className="size-6 text-accent-blue" />
-          <h2 className="text-3xl font-semibold text-balance sm:text-4xl">
-            Give your agent the same conventions, every time.
-          </h2>
-          <p className="max-w-xl text-muted-foreground">
-            One install per agent. No copy-pasting instructions between Claude, Copilot, and Codex ever again.
-          </p>
-          <CodeBlock command={`npx ${meta.name}@latest install --claude`} className="w-full max-w-lg" />
         </div>
       </section>
     </>

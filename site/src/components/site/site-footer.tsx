@@ -53,7 +53,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-12 flex flex-col gap-2 border-t border-white/10 pt-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>
-            {meta.name}@{meta.version} · {meta.license}
+            {meta.name}@{meta.version}
           </span>
           <a href={meta.repository} target="_blank" rel="noreferrer" className="hover:text-foreground">
             {meta.repository?.replace("https://", "")}
