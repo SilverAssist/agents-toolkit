@@ -11,7 +11,7 @@ export function PromptDetail() {
   if (!prompt) return <Navigate to="/prompts" replace />;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_280px]">
+    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_280px]">
       <article>
         <div className="flex flex-wrap gap-2">
           <ToneBadge tone={categoryTone(prompt.category)}>{prompt.category}</ToneBadge>

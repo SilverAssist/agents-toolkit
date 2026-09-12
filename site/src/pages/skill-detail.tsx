@@ -11,7 +11,7 @@ export function SkillDetail() {
   if (!skill) return <Navigate to="/skills" replace />;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_280px]">
+    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_280px]">
       <article>
         <ToneBadge tone={skillGroupTone(skill.group)}>{skill.group}</ToneBadge>
         <h1 className="mt-4 font-mono text-3xl font-semibold sm:text-4xl">{skill.name}</h1>

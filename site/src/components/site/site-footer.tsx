@@ -27,7 +27,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-white/10">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <div className="grid gap-10 sm:grid-cols-[2fr_1fr_1fr]">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-[2fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2 font-semibold">
               <Boxes className="size-5 text-accent-blue" />

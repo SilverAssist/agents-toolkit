@@ -9,10 +9,10 @@ export function InstructionDetail() {
   if (!instruction) return <Navigate to="/instructions" replace />;
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_280px]">
+    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_280px]">
       <article>
         {instruction.applyTo && (
-          <code className="inline-block rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-muted-foreground">
+          <code className="inline-block break-all rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-muted-foreground">
             {instruction.applyTo}
           </code>
         )}
