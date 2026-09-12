@@ -128,7 +128,7 @@ export function Home() {
               </Button>
             }
           />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {featuredSkills.map((skill) => (
               <SkillCard key={skill.slug} skill={skill} />
             ))}
@@ -174,12 +174,12 @@ export function Home() {
               </Button>
             }
           />
-          <div className="mt-10 grid gap-3 sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {instructions.slice(0, 6).map((instruction) => (
               <Link
                 key={instruction.slug}
                 to={`/instructions/${instruction.slug}`}
-                className="group flex items-start justify-between gap-4 rounded-lg border border-white/10 bg-card/60 p-4 transition hover:border-white/20 hover:bg-card"
+                className="group flex min-w-0 items-start justify-between gap-4 rounded-lg border border-white/10 bg-card/60 p-4 transition hover:border-white/20 hover:bg-card"
               >
                 <div className="min-w-0">
                   <h3 className="font-medium">{instruction.name}</h3>
@@ -215,7 +215,7 @@ export function Home() {
               </Button>
             }
           />
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {TUTORIALS.slice(0, 3).map((tutorial) => (
               <Link
                 key={tutorial.slug}
@@ -258,7 +258,7 @@ export function Home() {
               </Button>
             }
           />
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {AGENTS.map((agent) => (
               <Link
                 key={agent.slug}

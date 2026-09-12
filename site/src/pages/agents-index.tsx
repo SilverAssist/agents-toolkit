@@ -30,7 +30,7 @@ export function AgentsIndex() {
 
             <CodeBlock command={agent.installCommand} className="mt-6 max-w-xl" />
 
-            <div className="mt-8 grid gap-8 lg:grid-cols-2">
+            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
               <div>
                 <h3 className="font-mono text-xs tracking-widest text-muted-foreground uppercase">
                   Root file — {agent.rootFile}
