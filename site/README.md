@@ -5,7 +5,7 @@ every skill, prompt/command, and instruction the package ships, plus a side-by-s
 comparison of how Claude Code, GitHub Copilot, and Codex each install them.
 
 Design: a shadcn-style docs layout (sidebar-free landing + detail pages, dark theme,
-monospace accents) visually modeled after [skills.addy.ie](https://skills.addy.ie/).
+monospace accents).
 
 ## How content gets in
 
