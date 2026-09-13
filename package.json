@@ -62,7 +62,10 @@
     "access": "public"
   },
   "overrides": {
-    "smol-toml": "^1.7.1"
+    "smol-toml": "^1.7.1",
+    "unbuild": {
+      "typescript": "$typescript"
+    }
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
